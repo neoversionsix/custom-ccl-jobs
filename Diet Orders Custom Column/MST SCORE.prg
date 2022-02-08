@@ -12,7 +12,7 @@ FROM
 PLAN C
 
 WHERE
-;	C.UPDT_DT_TM > CNVTLOOKBEHIND("35,D")
+;	C.UPDT_DT_TM > CNVTLOOKBEHIND("35,D") ; Only get's data from oldest 35 days ago
 ;	AND
 	C.event_cd = 86163053 ; Filters for MST Score
 	
