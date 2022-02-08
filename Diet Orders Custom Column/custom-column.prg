@@ -81,7 +81,8 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
     from orders o
       ; FILTERS [jw]
       where EXPAND(exp_idx, 1, PERSON_CNT, o.encntr_id, reply->person[exp_idx].encntr_id)
-        and o.orig_order_dt_tm > CNVTLOOKBEHIND("48, D") ; Timeline to filter on;  ("48, H") this was the old format [jw]
+      ; Timeline to filter on;  ("48, H") this was the old format [jw]
+        and o.orig_order_dt_tm > CNVTLOOKBEHIND("48, D") 
         and o.catalog_cd = 105460833 ; Filters for Diet orders [jw]
 
     order by o.encntr_id, o.order_id
@@ -98,9 +99,11 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
       call ALTERLIST(reply->person[person_idx].contents, CNVTINT(order_cnt))
     head o.order_id
       order_idx = order_idx + 1
-
-      reply->person[person_idx].contents[order_idx].primary = TRIM(o.ordered_as_mnemonic)
-      reply->person[person_idx].contents[order_idx].secondary = FORMAT(o.orig_order_dt_tm, "@SHORTDATETIME")
+      ; DATA TO PULL [JW]
+      ; [JW] PREVIOUS: TRIM(o.ordered_as_mnemonic)
+      reply->person[person_idx].contents[order_idx].primary = TRIM(o.order_detail_display_line)
+      ; Commenting out the date below as it's alread in o.order_detail_display_line [JW]
+      ;reply->person[person_idx].contents[order_idx].secondary = FORMAT(o.orig_order_dt_tm, "@SHORTDATETIME")
     foot o.encntr_id
       person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, o.encntr_id, reply->person[loc_idx].encntr_id)
       
