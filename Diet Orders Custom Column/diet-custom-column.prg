@@ -82,7 +82,7 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
       ; FILTERS [jw]
       where EXPAND(exp_idx, 1, PERSON_CNT, o.encntr_id, reply->person[exp_idx].encntr_id)
       ; Timeline to filter on;  ("48, H") this was the old format [jw]
-        and o.orig_order_dt_tm > CNVTLOOKBEHIND("48, D") 
+        ;and o.orig_order_dt_tm > CNVTLOOKBEHIND("48, D") 
         and o.catalog_cd = 105460833 ; Filters for Diet orders [jw]
 
     order by o.encntr_id, o.order_id
