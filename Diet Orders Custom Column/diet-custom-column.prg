@@ -78,10 +78,11 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
   select
     into "nl:"
       order_cnt = COUNT(o.order_id) OVER(PARTITION BY o.encntr_id)
-    from orders o
-      ; FILTERS [jw]
-      where EXPAND(exp_idx, 1, PERSON_CNT, o.encntr_id, reply->person[exp_idx].encntr_id)
-      ; Timeline to filter on;  ("48, H") this was the old format [jw]
+    from 
+      orders o
+        ; FILTERS [jw]
+        where EXPAND(exp_idx, 1, PERSON_CNT, o.encntr_id, reply->person[exp_idx].encntr_id)
+        ;Timeline to filter on;  ("48, H") this was the old format [jw]
         ;and o.orig_order_dt_tm > CNVTLOOKBEHIND("48, D") 
         and o.catalog_cd = 105460833 ; Filters for Diet orders [jw]
 
@@ -102,8 +103,9 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
       ; DATA TO PULL [JW]
       ; [JW] PREVIOUS: TRIM(o.ordered_as_mnemonic)
       reply->person[person_idx].contents[order_idx].primary = TRIM(o.order_detail_display_line)
-      ; Commenting out the date below as it's alread in o.order_detail_display_line [JW]
+      ; Commenting out the date below as it's now already in o.order_detail_display_line [JW]
       ;reply->person[person_idx].contents[order_idx].secondary = FORMAT(o.orig_order_dt_tm, "@SHORTDATETIME")
+    
     foot o.encntr_id
       person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, o.encntr_id, reply->person[loc_idx].encntr_id)
       
