@@ -2,7 +2,7 @@
 * Mod Date       Engineer  CR            Comments                                                                                  *
 * --- ---------- --------  ------------  ----------------------------------------------------------------------------------------- *
 * 000 08/02/2016 BP025585  1-11053620131 Initial release
-JW 9 FEB 2021 Starting to work on MST Score                                                                           *
+JW 9 FEB 2021 Working for Diet orders for now                                                                           *
 ***********************************************************************************************************************************/
 drop program mp_wlfw_custom_column_orders:dba go
 create program mp_wlfw_custom_column_orders:dba
@@ -81,16 +81,26 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
       order_cnt = COUNT(o.order_id) OVER(PARTITION BY o.encntr_id)
     from 
       orders o
-      , (LEFT JOIN CLINICAL_EVENT ON CLINICAL_EVENT.PERSON_ID = o.PERSON_ID)
-        ; FILTERS [jw] on orders table
-        where EXPAND(exp_idx, 1, PERSON_CNT, o.encntr_id, reply->person[exp_idx].encntr_id)
-        ;Timeline to filter on;  ("48, H") this was the old format [jw]
-        ;and o.orig_order_dt_tm > CNVTLOOKBEHIND("48, D") 
-        and o.catalog_cd = 105460833 ; Filters for Diet orders [jw]
+      , clinical_event ce
 
-    
+    PLAN
+        o
+            ; FILTERS [jw]
+            where EXPAND(exp_idx, 1, PERSON_CNT, o.encntr_id, reply->person[exp_idx].encntr_id)
+            ;Timeline to filter on;  ("48, H") this was the old format [jw]
+            ;and o.orig_order_dt_tm > CNVTLOOKBEHIND("48, D")
+            and o.catalog_cd = 105460833 ; Filters for Diet orders [jw]
+
+    JOIN
+        ce
+            WHERE
+                o.person_id = ce.person_id
+                and
+                ce.event_cd = 86163053
 
     order by o.encntr_id, o.order_id
+
+
     head report
       person_idx = 0
       first_idx = 0
@@ -102,13 +112,16 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
       reply->person[person_idx].count = CNVTINT(order_cnt) ; Get the order count from the OLAP expression.
       
       call ALTERLIST(reply->person[person_idx].contents, CNVTINT(order_cnt))
+
     head o.order_id
-      order_idx = order_idx + 1
+        ; commenting out counter below because it appears above
+      ;order_idx = order_idx + 1
       ; DATA TO PULL [JW]
       ; [JW] PREVIOUS: TRIM(o.ordered_as_mnemonic)
       reply->person[person_idx].contents[order_idx].primary = TRIM(o.order_detail_display_line)
       ; Commenting out the date below as it's now already in o.order_detail_display_line [JW]
-      ;reply->person[person_idx].contents[order_idx].secondary = FORMAT(o.orig_order_dt_tm, "@SHORTDATETIME")
+      reply->person[person_idx].contents[order_idx].secondary = CE.RESULT_VAL
+    
     
     foot o.encntr_id
       person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, o.encntr_id, reply->person[loc_idx].encntr_id)
@@ -122,7 +135,9 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
         
         person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, o.encntr_id, reply->person[loc_idx].encntr_id)
       endwhile
-  with nocounter
+
+with nocounter
+
 end ; DetermineEncntrsRecentOrders
  
 /***********************************************************************************************************************************

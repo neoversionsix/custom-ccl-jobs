@@ -163,7 +163,6 @@ with outdev ,jsondata
 		if(mod(cnt, 20) = 1)
 			stat = alterlist(data->list,cnt + 19)
 		endif
-	
 		data->list[cnt].ENCNTR_ID = print_options->qual[d1.seq].ENCNTR_ID
 		data->list[cnt].PERSON_ID = print_options->qual[d1.seq].PERSON_ID
 		data->list[cnt].age = trim(print_options->qual[d1.seq].pat_age,3)
