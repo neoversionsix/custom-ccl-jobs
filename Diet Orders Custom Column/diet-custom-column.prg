@@ -86,6 +86,7 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
         ;Timeline to filter on;  ("48, H") this was the old format [jw]
         ;and o.orig_order_dt_tm > CNVTLOOKBEHIND("48, D") 
         and o.catalog_cd = 105460833 ; Filters for Diet orders [jw]
+        and o.ORDER_STATUS_CD = 2550 ; Filters for "Ordered" leaves out "Discontinued"
 
     order by o.encntr_id, o.order_id
     head report

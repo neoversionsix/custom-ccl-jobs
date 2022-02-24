@@ -16,6 +16,8 @@ WHERE
 	O.ORIG_ORDER_DT_TM > CNVTLOOKBEHIND("35,D") ; Timeline filter
 	AND
 	O.CATALOG_CD = 105460833 ; Diet Orders Only
+	AND
+	O.ORDER_STATUS_CD=2550.00 ; "Ordered" only not "Discontinued"
 	
 JOIN P
 JOIN OD
