@@ -104,7 +104,6 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
       order_idx = order_idx + 1
       ; DATA TO PULL [JW]
       ; [JW] PREVIOUS: TRIM(o.ordered_as_mnemonic)
-      ; o.order_detail_display_line - This is the diet orders with the datetime stamp
       reply->person[person_idx].contents[order_idx].primary = TRIM(o.order_detail_display_line)
       ; Commenting out the date below as it's now already in o.order_detail_display_line [JW]
       ;reply->person[person_idx].contents[order_idx].secondary = FORMAT(o.orig_order_dt_tm, "@SHORTDATETIME")
