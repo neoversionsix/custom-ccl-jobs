@@ -712,32 +712,30 @@ with outdev ,jsondata
 			,"<tr>"
 			,"<td class=patient-data-header>Location</td>"
 			,"<td class=patient-data-header>URN</td>"
+			,"<td class=patient-data-header>Allergies</td>"
 			,"<td class=patient-data-header>Admitting Dr</td>"
-			,"<td class=patient-data-header>Diagnosis</td>" 
 			,"<td class=patient-data-header>Admit Date</td>"
 			,"</tr>"
 			,"<tr>"
-			,"<td class=patient-info>",data->list[x].unit_disp,"<div>"
-			,data->list[x].room_disp,"<div>",data->list[x].bed_disp,"</div>","</td>"
+			,"<td class=patient-info>",data->list[x].unit_disp,",&nbsp;"
+			,data->list[x].room_disp,",&nbsp;",data->list[x].bed_disp,"</div>","</td>"
 			,"<td class=patient-info>",data->list[x].urn,"</td>"
-			,"<td class=patient-info>",data->list[x].admittingdoctor,"</td>"
-			,"<td class=patient-info> PRINCIPAL: ",data->list[x].diagnosis
-			, "<br/>ADDITIONALS: "
+			,"<td class=patient-info>"
 		)
-		; additional diagnosis'
-			for(y = 1 to data->list[x].diagnosisas_cnt)
+		; Allergies
+			for(y = 1 to data->list[x].allergy_cnt)
 				set patienthtml = build2(patienthtml
-					,"<br>",data->list[x]->diagnosisas[y].diagnosisa
-				)
+					,data->list[x]->allergies[y].allergy,",&nbsp;")
 			endfor
-		
-		set patienthtml = build2(patienthtml			
+
+		set patienthtml = build2(patienthtml
+			,"</td>"
+			,"<td class=patient-info>",data->list[x].admittingdoctor,"</td>"		
 			,"</td>"
 			,"<td class=patient-info>",data->list[x].admit_dt_tm_disp,"</td>"
 			, "</tr>"
 			,"</table>"
 		)
-
 
 		; PATIENT SUMMARY TABLE
 		set patienthtml = build2(patienthtml
@@ -745,28 +743,29 @@ with outdev ,jsondata
 			,'<table style="width:100%">'
 		)
 
-		; Allergies
+		; Diagnosis
 		set patienthtml = build2(patienthtml
 			,"<tr>"
-			,"<td class=patient-data-header>","Allergies","</td>"
-			,"<td class=patient-info-wide>"
+			,"<td class=patient-data-header-twofive>","Diagnosis","</td>"
+			,"<td class=patient-info-wide> PRINCIPAL: ",data->list[x].diagnosis
+			, "<br/>ADDITIONALS: "
 		)
-			for(y = 1 to data->list[x].allergy_cnt)
+		; additional diagnosis'
+			for(y = 1 to data->list[x].diagnosisas_cnt)
 				set patienthtml = build2(patienthtml
-					,data->list[x]->allergies[y].allergy,",&nbsp;")
+					,data->list[x]->diagnosisas[y].diagnosisa,",&nbsp"
+				)
 			endfor
+		
 		set patienthtml = build2(patienthtml
 			,"</td>"
 			,"</tr>"
-		)
-
-		set patienthtml = build2(patienthtml
 			,"<tr>"
-			,"<td class=patient-data-header>","Patient Summary","</td>"
+			,"<td class=patient-data-header-twofive>","Patient Summary","</td>"
 			,"<td class=patient-info-wide>",data->list[x].patient_summary,"</td>"
 			,"</tr>"
 			,"<tr>"
-			,"<td class=patient-data-header>","Situational Awareness & Planning","</td>"
+			,"<td class=patient-data-header-twofive>","Situational Awareness & Planning","</td>"
 			,"<td class=patient-info-wide>"
 		)
 			for(y = 1 to data->list[x].sit_aware_cnt)
@@ -778,12 +777,12 @@ with outdev ,jsondata
 			,"</td>"
 			,"</tr>"
 			,"<tr>"
-			,"<td class=patient-data-header>","Actions","</td>"
+			,"<td class=patient-data-header-twofive>","Actions","</td>"
 			,"<td class=patient-info-wide>"
 		)
 			for(y = 1 to data->list[x].actions_cnt)
 				set patienthtml = build2(patienthtml
-					,"- &nbsp;",data->list[x]->actions[y].action,"<br>")
+					,"&#9744;",data->list[x]->actions[y].action,"<br>")
 			endfor
 		set patienthtml = build2(patienthtml
 			,"</td>"
@@ -797,13 +796,13 @@ with outdev ,jsondata
 
 		; [1] New code for bloods
 		set patienthtml = build2(patienthtml
-			,"<table>"
+			,'<table style="width:100%">'
 			,"<tr>"
-			,"<td class=patient-data-header>Haemoglobin Level (Blood)</td>"
-			,"<td class=patient-data-header>White Cell Count (Blood)</td>"
-			,"<td class=patient-data-header>Platelet Count (Blood)</td>"
-			,"<td class=patient-data-header>C-Reactive Protein</td>"
-			,"<td class=patient-data-header>Creatinine Level (Serum/Plasma)</td>"
+			,"<td class=patient-data-header>Hb (Blood) (115-165)</td>"
+			,"<td class=patient-data-header>WCC (Blood) (4.0-11.0)</td>"
+			,"<td class=patient-data-header>Plts (Blood) (150-450)</td>"
+			,"<td class=patient-data-header>CRP (<10)</td>"
+			,"<td class=patient-data-header>Cr (Serum/Plasma) (60-110)</td>"
 			,"</tr>"
 			,"<tr>"
 			,"<td class=patient-info>"
@@ -919,16 +918,17 @@ with outdev ,jsondata
 		,".column {font-weight: bold; width: 10%}"
 		,".patient-info {width: 10%; border: 1px solid #dddddd}"
 		,".patient-info-wide {border: 1px dotted}"
-		,".patient-info-name {font-size: 120%; border: 1px solid #dddddd; font-weight: 800}"
+		,".patient-info-name {font-size: 105%; border: 1px solid #dddddd; font-weight: 800; background-color:lightgrey}"
 		,".bld {font-weight: bold}"
-		,".patient-data-header {width: 17%; font-weight: bold}" 
+		,".patient-data-header {font-weight: bold}" 
+		,".patient-data-header-twofive {width: 25%; font-weight: bold}" 
 		,".patient-data {width: 19%; border: 1px solid #dddddd}"
 		,".comment-box {height: 30px}"
 		,"</style> </head>"
 		; END OF CSS CODE START OF HEADER
 		,"<div id = print-container> <div class=print-header> <div class=printed-by-user>"
 		,"<span> Printed By:  </span> <span>",printuser_name,"</span>"
-		,"</div> <div class=print-title> <span> Physician Handoff </span> </div>"
+		,"</div> <div class=print-title> <span> Medical Worklist </span> </div>"
 		,"<div class=printed-date> <span>"
 		, "PRINTED: "
 		,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
