@@ -16,9 +16,9 @@
 ;----   --------------------------------------------------------------------------		-------- 	-----			*
 ;[1]    updating code so that it all works and pulling in more info		                2021-9      Jason Whittle
 
-drop program 1_physicianhandover:dba go
-create program 1_physicianhandover:dba
-; [1] changed 2 lines above: swapped "msj_ph_custom_print" with "1_physicianhandover" to identify the program name in
+drop program whs_physician_handover:dba go
+create program whs_physician_handover:dba
+; [1] changed 2 lines above: swapped "msj_ph_custom_print" with "whs_physician_handover" to identify the program name in
 ; in non-prod env without destroying the current print format
 prompt
 	"Output to File/Printer/MINE" = "MINE" ,
