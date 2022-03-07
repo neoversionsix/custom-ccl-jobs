@@ -5,6 +5,7 @@ SELECT
 	; , P.NAME_FULL_FORMATTED
 	, OD.OE_FIELD_DISPLAY_VALUE ; diet orders with datestamp
 	, O.order_detail_display_line
+	, DIET_SUB = SUBSTRING(22, 500, O.order_detail_display_line)
 
 FROM
 	ORDERS   O
