@@ -108,6 +108,9 @@ with outdev ,jsondata
 		2 diagnosisas_cnt			= i4
 		2 diagnosisas[*]
 		3 diagnosisa				= vc
+		2 mcomments_cnt				= i4
+		2 mcomments[*]
+		3 mcomment					= vc
 		2 code_status				= vc
 		2 admit_dt_tm				= dq8
 		2 admit_dt_tm_disp			= vc
@@ -231,23 +234,25 @@ with outdev ,jsondata
 	from
 		sticky_note s
 	plan s
-		where expand(idx,1,data->cnt,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-		and
-		s.sticky_note_type_cd = 78917771.00 ; MPages Comment
-	order by s.ENCNTR_ID
+			where 
+				expand(idx,1,data->cnt,s.parent_entity_id,data->list[idx].ENCNTR_ID)
+				and
+				s.sticky_note_type_cd = 78917771.00 ; MPages Comment
+	order by 
+		s.parent_entity_id, s.BEG_EFFECTIVE_DT_TM
 
-	head s.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,s.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	head s.parent_entity_id
+		pos = locateval(idx,1,data->cnt,s.parent_entity_id,data->list[idx].ENCNTR_ID)
 		cnt = 0
  
 	detail
 		if(pos > 0)
 			cnt += 1
 			stat = alterlist(data->list[pos]->mcomments, cnt)
-			data->list[pos]->mcomments[cnt].mcomment = D.DIAGNOSIS_DISPLAY
+			data->list[pos]->mcomments[cnt].mcomment = S.STICKY_NOTE_TEXT
 		endif
  
-	foot D.PERSON_ID
+	foot s.parent_entity_id
 		if(pos > 0)
 			data->list[pos].mcomments_cnt = cnt
 		endif
@@ -924,7 +929,15 @@ with outdev ,jsondata
 		,"<p>"
 		,"Comments:"
 		,"</p>"
-		,"<div class=comment-box>"
+		,"<div>"
+		; ,"<div class=comment-box>"
+		)
+			for(y = 1 to data->list[x].mcomments_cnt)
+				set patienthtml = build2(patienthtml
+					,"-&nbsp", data->list[x]->mcomments[y].mcomment, "<br>"
+				)
+			endfor
+		set patienthtml = build2(patienthtml
 		,"</div>"
 		,"<hr class=thick>"
 		,"</hr>")
