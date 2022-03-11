@@ -125,6 +125,8 @@ with outdev ,jsondata
 		2 allergy_cnt				= i4
 		2 allergies[*]
 		3 allergy					= vc
+		2 pct_ms					= vc
+		2 pct_t						= vc
 
 	) with protect
 	
@@ -135,6 +137,10 @@ with outdev ,jsondata
 		2 stop				= i4
 		2 patient_text		= vc
 	) with protect
+
+
+
+
 
 
 
@@ -231,6 +237,27 @@ with outdev ,jsondata
 		null
 	
 	with expand = 2
+
+; GET CARE TEAM DATA, P_PCT_MED_SERVICE_DISP, P_PCT_TEAM_DISP
+select into "nl:"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ;Get Mpage Comments
 	select into "nl:"

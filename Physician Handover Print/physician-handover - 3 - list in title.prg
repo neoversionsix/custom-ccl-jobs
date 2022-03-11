@@ -55,6 +55,7 @@ with outdev ,jsondata
 	declare finalhtml = vc with noconstant(" "),protect
 	declare newsize = i4 with noconstant(0),protect
 	declare printuser_name = vc with noconstant(" "),protect
+	declare tab_name = vc with noconstant(" "),protect
 
 
 ;Declare Records
@@ -137,6 +138,16 @@ with outdev ,jsondata
 	) with protect
 
 
+; Set tab name for Care Team
+	select into "nl:"
+	from
+		DCP_MP_PATIENT_LIST s
+	plan s
+		where s.updt_applctx = reqinfo->updt_applctx
+	
+	detail
+		tab_name = trim(s.name, 3)
+	with nocounter
 
 ;Set printuser_name
 	select into "nl:"
@@ -716,7 +727,7 @@ with outdev ,jsondata
 		and a.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime)
 		and (a.end_effective_dt_tm >= cnvtdatetime(curdate,curtime)
 			or a.end_effective_dt_tm = null)
-		and a.reaction_status_cd != 12025_CANCELED_CD
+		and a.reaction_status_cd = 3299 ; 'Active' from code set 12025
 	join n
 		where n.nomenclature_id = outerjoin(a.substance_nom_id)
 		and n.active_ind = outerjoin(1)
@@ -976,7 +987,7 @@ with outdev ,jsondata
 		; END OF CSS CODE START OF HEADER
 		,"<div id = print-container> <div class=print-header> <div class=printed-by-user>"
 		,"<span> Printed By:  </span> <span>",printuser_name,"</span>"
-		,"</div> <div class=print-title> <span> Medical Worklist </span> </div>"
+		,"</div> <div class=print-title> <span>","UPDT_APPLCTX", reqinfo->UPDT_APPLCTX, tab_name, "UPDT_TASK ", reqinfo->UPDT_TASK, "UPDT_ID ", reqinfo->UPDT_ID, " Medical Worklist </span> </div>"
 		,"<div class=printed-date> <span>"
 		, "PRINTED: "
 		,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
