@@ -238,28 +238,47 @@ with outdev ,jsondata
 	
 	with expand = 2
 
-; GET CARE TEAM DATA, P_PCT_MED_SERVICE_DISP, P_PCT_TEAM_DISP
-select into "nl:"
+;GET TEAM DATA
+	select into "nl:"
+	FROM
+	DCP_SHIFT_ASSIGNMENT   D
+	, (LEFT JOIN PCT_CARE_TEAM P ON (P.PCT_CARE_TEAM_ID = D.PCT_CARE_TEAM_ID))
+
+	PLAN D
+		WHERE
+			expand(idx,1,data->cnt,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+			AND
+			D.BEG_EFFECTIVE_DT_TM < CNVTDATETIME(CURDATE, curtime3)
+			AND
+			D.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, curtime3)
+	
+	JOIN P
+	
+	ORDER BY
+		D.BEG_EFFECTIVE_DT_TM
+
+	head D.ENCNTR_ID
+		pos = locateval(idx,1,data->cnt,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		cnt = 0
+ 
+	detail
+		if(pos > 0)
+			cnt += 1
+			stat = alterlist(data->list[pos]->medservices, cnt)
+			data->list[pos]->medservices[cnt].medservice = trim(uar_get_code_display(P.PCT_MED_SERVICE_CD),3)
+			stat = alterlist(data->list[pos]->medteams, cnt)
+			data->list[pos]->medteams[cnt].medteam = trim(uar_get_code_display(P.PCT_TEAM_CD),3)
+		endif
+ 
+	foot D.ENCNTR_ID
+		if(pos > 0)
+			data->list[pos].medservices_cnt = cnt
+			data->list[pos].medteams_cnt = cnt
+		endif
+	with expand = 2
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-;Get Mpage Comments
+;GET MPAGE COMMENTS
 	select into "nl:"
 	from
 		sticky_note s
@@ -287,11 +306,6 @@ select into "nl:"
 			data->list[pos].mcomments_cnt = cnt
 		endif
 	with expand = 2
-
-
-
-
-		
 
 
 ;Get URN

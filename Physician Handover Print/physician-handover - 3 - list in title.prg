@@ -248,11 +248,11 @@ with outdev ,jsondata
 	from
 		sticky_note s
 	plan s
-			where 
+			where
 				expand(idx,1,data->cnt,s.parent_entity_id,data->list[idx].ENCNTR_ID)
 				and
 				s.sticky_note_type_cd = 78917771.00 ; MPages Comment
-	order by 
+	order by
 		s.parent_entity_id, s.BEG_EFFECTIVE_DT_TM
 
 	head s.parent_entity_id
