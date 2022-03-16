@@ -801,6 +801,24 @@ with outdev ,jsondata
 			,"<div>"
 			,'<table style="width:100%">'
 			,"<tr>"
+			,"<td class=patient-data-header>Treating Teams: </td>"
+			,"<td class=patient-info-wide>"
+		)
+			for(y = 1 to data->list[x].medservices_cnt)
+				set patienthtml = build2(patienthtml
+					,data->list[x]->medservices[y].medservice
+					,"&nbsp;"
+					,data->list[x]->medteams[y].medteam
+					,", &nbsp;&nbsp;"
+				)
+			endfor
+			
+		set patienthtml = build2(patienthtml
+			,"</td>"
+			,"</tr>"
+			,"</table>"
+			,'<table style="width:100%">'
+			,"<tr>"
 			,"<td class=patient-data-header>Location</td>"
 			,"<td class=patient-data-header>URN</td>"
 			,"<td class=patient-data-header>Allergies</td>"
