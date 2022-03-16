@@ -112,6 +112,12 @@ with outdev ,jsondata
 		2 mcomments_cnt				= i4
 		2 mcomments[*]
 		3 mcomment					= vc
+		2 medservices_cnt			= i4
+		2 medservices[*]
+		3 medservice				= vc
+		2 medteams_cnt				= i4
+		2 medteams[*]
+		3 medteam					= vc
 		2 code_status				= vc
 		2 admit_dt_tm				= dq8
 		2 admit_dt_tm_disp			= vc
@@ -275,7 +281,9 @@ with outdev ,jsondata
 			data->list[pos].medservices_cnt = cnt
 			data->list[pos].medteams_cnt = cnt
 		endif
-	with expand = 2
+	WITH
+	expand = 2
+	, maxcol=5000
 
 
 ;GET MPAGE COMMENTS
@@ -750,6 +758,7 @@ with outdev ,jsondata
 	from
 		allergy a
 		,nomenclature n
+
 	plan a
 		where
 		expand(idx,1,data->cnt,a.PERSON_ID,data->list[idx].PERSON_ID)
@@ -757,7 +766,8 @@ with outdev ,jsondata
 		and a.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime)
 		and (a.end_effective_dt_tm >= cnvtdatetime(curdate,curtime)
 			or a.end_effective_dt_tm = null)
-		and a.reaction_status_cd != 12025_CANCELED_CD
+		and a.reaction_status_cd = 3299 ; 'Active' from code set 12025
+
 	join n
 		where n.nomenclature_id = outerjoin(a.substance_nom_id)
 		and n.active_ind = outerjoin(1)
