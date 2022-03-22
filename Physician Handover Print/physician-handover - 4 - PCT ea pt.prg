@@ -907,11 +907,11 @@ with outdev ,jsondata
 		set patienthtml = build2(patienthtml
 			,'<table style="width:100%">'
 			,"<tr>"
-			,"<td class=patient-data-header>Hb (Blood) (115-165)</td>"
-			,"<td class=patient-data-header>WCC (Blood) (4.0-11.0)</td>"
-			,"<td class=patient-data-header>Plts (Blood) (150-450)</td>"
-			,"<td class=patient-data-header>CRP (<10)</td>"
-			,"<td class=patient-data-header>Cr (Serum/Plasma) (60-110)</td>"
+			,"<td class=patient-data-header>Hb (Blood)</td>"
+			,"<td class=patient-data-header>WCC (Blood)</td>"
+			,"<td class=patient-data-header>Plts (Blood)</td>"
+			,"<td class=patient-data-header>CRP</td>"
+			,"<td class=patient-data-header>Cr (Serum/Plasma)</td>"
 			,"</tr>"
 			,"<tr>"
 			,"<td class=patient-info>"
