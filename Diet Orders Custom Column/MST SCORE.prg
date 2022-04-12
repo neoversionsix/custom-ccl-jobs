@@ -18,9 +18,9 @@ WHERE
 ;	C.UPDT_DT_TM > CNVTLOOKBEHIND("35,D") ; Only get's data from oldest 35 days ago
 ;	AND
 	C.event_cd = 86163053 ; Filters for MST Score
-;	AND C.encntr_id = "XXXXXXXXXX" ; For a specific patient encounter
 	AND C.valid_until_dt_tm > SYSDATE
 	AND C.publish_flag = 1
+;	AND C.encntr_id = "XXXXXXXXXX" ; For a specific patient encounter
 	
 	
 ;JOIN P

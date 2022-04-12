@@ -1,11 +1,14 @@
 /***********************************************************************************************************************************
-Programmer Jason Whittle
-
-Use: Pulls the diet MST score for a patient into a custom column                                                        
+* Mod Date       Engineer  CR            Comments                                                                                  *
+* --- ---------- --------  ------------  ----------------------------------------------------------------------------------------- *
+* 000 08/02/2016 BP025585  1-11053620131 Initial release
+JW 9 FEB 2021 Working for Diet orders for now                                                                           *
 ***********************************************************************************************************************************/
 drop program wh_cust_mst:dba go
 create program wh_cust_mst:dba
-
+/**
+Determine the orders placed in the last q 48 hours.
+*/
  
 /***********************************************************************************************************************************
 * DECLARATIONS *********************************************************************************************************************
@@ -35,7 +38,7 @@ record reply (
 * Subroutines                                                                                                                      *
 ***********************************************************************************************************************************/
 declare PUBLIC::Main(null) = null with private
-declare PUBLIC::DetermineEncntrsRecentOrders(null) = null with protect
+declare PUBLIC::DetermineMst(null) = null with protect
 
 /***********************************************************************************************************************************
 * Main PROGRAM *********************************************************************************************************************
@@ -55,58 +58,68 @@ Main subroutine.
 @returns null
 */
 subroutine PUBLIC::Main(null)
-  call DetermineEncntrsRecentOrders(null)
+  call DetermineMst(null)
   set reply->status_data.status = "S"
 end ; Main
  
 /***********************************************************************************************************************************
-* DetermineEncntrsRecentOrders                                                                                                     *
-************************************************************************************************************************************/
-
-subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
+* DetermineMst                                                                                                     *
+***********************************************************************************************************************************/
+/**
+Determine the count of orders placed in the last 48 hours. Add the orders' names and dates to the content list, but leave the actual
+count to the Worklist to determine.
+@param null
+@returns null
+*/
+subroutine PUBLIC::DetermineMst(null)
   declare PERSON_CNT = i4 with protect, constant(SIZE(reply->person, 5))
   declare exp_idx = i4 with protect, noconstant(0)
   declare loc_idx = i4 with protect, noconstant(0)
 
   select
     into "nl:"
-      order_cnt = COUNT(C.order_id) OVER(PARTITION BY C.encntr_id)
-    from
-      CLINICAL_EVENT C
-        where EXPAND(exp_idx, 1, PERSON_CNT, C.encntr_id, reply->person[exp_idx].encntr_id)
-        and C.event_cd = 86163053 ; Filters for MST Score
+      order_cnt = COUNT(o.order_id) OVER(PARTITION BY c.encntr_id)
+    from 
+      CLINICAL_EVENT  C
+        ; FILTERS [jw]
+        where EXPAND(exp_idx, 1, PERSON_CNT, c.encntr_id, reply->person[exp_idx].encntr_id)
+        ;Timeline to filter on;  ("48, H") this was the old format [jw]
+        ;and c.orig_order_dt_tm > CNVTLOOKBEHIND("48, D") 
+	      AND c.event_cd = 86163053 ; Filters for MST Score
+	      AND c.valid_until_dt_tm > SYSDATE ; not invalid
+	      AND c.publish_flag = 1 ; not hidden
 
-    order by C.encntr_id, C.order_id
+    order by c.encntr_id, c.order_id
     head report
       person_idx = 0
       first_idx = 0
-    head C.encntr_id
+    head c.encntr_id
       order_idx = 0
-      person_idx = LOCATEVAL(loc_idx, 1, PERSON_CNT, C.encntr_id, reply->person[loc_idx].encntr_id)
+      person_idx = LOCATEVAL(loc_idx, 1, PERSON_CNT, c.encntr_id, reply->person[loc_idx].encntr_id)
       first_idx = person_idx
       reply->person[person_idx].count = CNVTINT(order_cnt) ; Get the order count from the OLAP expression.
       
       call ALTERLIST(reply->person[person_idx].contents, CNVTINT(order_cnt))
-    head C.order_id
+    head c.order_id
       order_idx = order_idx + 1
       ; DATA TO PULL [JW]
-      ; [JW] PREVIOUS: TRIM(C.ordered_as_mnemonic)
+      ; [JW] PREVIOUS: TRIM(o.ordered_as_mnemonic)
       ; next line removes the datestamp from the order
-      reply->person[person_idx].contents[order_idx].primary = trim(C.RESULT_VAL)
-      ; Commenting out the date below as it's now already in C.order_detail_display_line [JW]
-      ;reply->person[person_idx].contents[order_idx].secondary = FORMAT(C.orig_order_dt_tm, "@SHORTDATETIME")
+      reply->person[person_idx].contents[order_idx].primary = TRIM(SUBSTRING(22, 500, c.result_val),2)
+      ; Commenting out the date below as it's now already in c.order_detail_display_line [JW]
+      ;reply->person[person_idx].contents[order_idx].secondary = FORMAT(o.orig_order_dt_tm, "@SHORTDATETIME")
     
-    foot C.encntr_id
-      person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, C.encntr_id, reply->person[loc_idx].encntr_id)
+    foot c.encntr_id
+      person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, c.encntr_id, reply->person[loc_idx].encntr_id)
       ; Since the same visit could have multiple occurrences in the Worklist, loop through the visit list to look for duplicates.
       while (person_idx > 0)
         reply->person[person_idx].count = CNVTINT(order_cnt)
         ; Copy the popup list from the first occurrence to each duplicate.
         stat = MOVERECLIST(reply->person[first_idx].contents, reply->person[person_idx].contents, 1, 0, CNVTINT(order_cnt), TRUE)
-        person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, C.encntr_id, reply->person[loc_idx].encntr_id)
+        person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, c.encntr_id, reply->person[loc_idx].encntr_id)
       endwhile
   with nocounter
-end ; DetermineEncntrsRecentOrders
+end ; DetermineMst
  
 /***********************************************************************************************************************************
 * EXIT PROGRAM *********************************************************************************************************************
