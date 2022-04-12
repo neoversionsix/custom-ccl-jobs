@@ -92,7 +92,7 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
       ; DATA TO PULL [JW]
       ; [JW] PREVIOUS: TRIM(C.ordered_as_mnemonic)
       ; next line removes the datestamp from the order
-      reply->person[person_idx].contents[order_idx].primary = C.RESULT_VAL
+      reply->person[person_idx].contents[order_idx].primary = trim(C.RESULT_VAL)
       ; Commenting out the date below as it's now already in C.order_detail_display_line [JW]
       ;reply->person[person_idx].contents[order_idx].secondary = FORMAT(C.orig_order_dt_tm, "@SHORTDATETIME")
     
