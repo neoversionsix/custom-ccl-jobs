@@ -1,13 +1,12 @@
 /***********************************************************************************************************************************
 * Mod Date       Engineer  CR            Comments                                                                                  *
 * --- ---------- --------  ------------  ----------------------------------------------------------------------------------------- *
-* 000 08/02/2016 BP025585  1-11053620131 Initial release
-JW 9 FEB 2021 Working for Diet orders for now                                                                           *
+* 000 08/02/2016 BP025585  1-11053620131 Initial release                                                                           *
 ***********************************************************************************************************************************/
 drop program wh_cust_mst:dba go
 create program wh_cust_mst:dba
 /**
-Determine the orders placed in the last q 48 hours.
+Determine the sex of each received person.
 */
  
 /***********************************************************************************************************************************
@@ -17,7 +16,7 @@ Determine the orders placed in the last q 48 hours.
 /***********************************************************************************************************************************
 * Record Structures                                                                                                                *
 ***********************************************************************************************************************************/
-/* The reply record must be declared by the consuming script, with the appropriate person details available.
+/* The reply record must be declared by the consuming script, with the appropriate person details already available.
 
 record reply (
   1 person[*]
@@ -38,7 +37,7 @@ record reply (
 * Subroutines                                                                                                                      *
 ***********************************************************************************************************************************/
 declare PUBLIC::Main(null) = null with private
-declare PUBLIC::DetermineMst(null) = null with protect
+declare PUBLIC::GetMst(null) = null with protect
 
 /***********************************************************************************************************************************
 * Main PROGRAM *********************************************************************************************************************
@@ -58,68 +57,48 @@ Main subroutine.
 @returns null
 */
 subroutine PUBLIC::Main(null)
-  call DetermineMst(null)
+  call GetMst(null)
   set reply->status_data.status = "S"
 end ; Main
  
 /***********************************************************************************************************************************
-* DetermineMst                                                                                                     *
+* GetMst                                                                                                              *
 ***********************************************************************************************************************************/
 /**
-Determine the count of orders placed in the last 48 hours. Add the orders' names and dates to the content list, but leave the actual
-count to the Worklist to determine.
+Determine the sex of each person. Add the resulting string to the person's content list. No secondary data is included.
 @param null
 @returns null
 */
-subroutine PUBLIC::DetermineMst(null)
+subroutine PUBLIC::GetMst(null)
   declare PERSON_CNT = i4 with protect, constant(SIZE(reply->person, 5))
   declare exp_idx = i4 with protect, noconstant(0)
   declare loc_idx = i4 with protect, noconstant(0)
 
   select
     into "nl:"
-      order_cnt = COUNT(o.order_id) OVER(PARTITION BY c.encntr_id)
-    from 
-      CLINICAL_EVENT  C
-        ; FILTERS [jw]
-        where EXPAND(exp_idx, 1, PERSON_CNT, c.encntr_id, reply->person[exp_idx].encntr_id)
-        ;Timeline to filter on;  ("48, H") this was the old format [jw]
-        ;and c.orig_order_dt_tm > CNVTLOOKBEHIND("48, D") 
-	      AND c.event_cd = 86163053 ; Filters for MST Score
-	      AND c.valid_until_dt_tm > SYSDATE ; not invalid
-	      AND c.publish_flag = 1 ; not hidden
-
-    order by c.encntr_id, c.order_id
+    from clinical_event   c
+      where EXPAND(exp_idx, 1, PERSON_CNT, c.person_id, reply->person[exp_idx].person_id)
+        ;and c.sex_cd > 0
+        AND c.event_cd = 86163053 ; Filters for MST Score
+	      AND c.valid_until_dt_tm > SYSDATE ; not invalid time
+	      AND c.publish_flag = 1 ; publish
+        AND c.view_level = 1; viewable
+    order by c.person_id, c.updt_dt_tm asc ;c.person_id
     head report
       person_idx = 0
-      first_idx = 0
-    head c.encntr_id
-      order_idx = 0
-      person_idx = LOCATEVAL(loc_idx, 1, PERSON_CNT, c.encntr_id, reply->person[loc_idx].encntr_id)
-      first_idx = person_idx
-      reply->person[person_idx].count = CNVTINT(order_cnt) ; Get the order count from the OLAP expression.
-      
-      call ALTERLIST(reply->person[person_idx].contents, CNVTINT(order_cnt))
-    head c.order_id
-      order_idx = order_idx + 1
-      ; DATA TO PULL [JW]
-      ; [JW] PREVIOUS: TRIM(o.ordered_as_mnemonic)
-      ; next line removes the datestamp from the order
-      reply->person[person_idx].contents[order_idx].primary = TRIM(SUBSTRING(22, 500, c.result_val),2)
-      ; Commenting out the date below as it's now already in c.order_detail_display_line [JW]
-      ;reply->person[person_idx].contents[order_idx].secondary = FORMAT(o.orig_order_dt_tm, "@SHORTDATETIME")
-    
-    foot c.encntr_id
-      person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, c.encntr_id, reply->person[loc_idx].encntr_id)
-      ; Since the same visit could have multiple occurrences in the Worklist, loop through the visit list to look for duplicates.
+    head c.person_id
+      person_idx = LOCATEVAL(loc_idx, 1, PERSON_CNT, c.person_id, reply->person[loc_idx].person_id)
+
+      ; Since the same person could have multiple visits in the Worklist, loop through the visit list to look for duplicates.
       while (person_idx > 0)
-        reply->person[person_idx].count = CNVTINT(order_cnt)
-        ; Copy the popup list from the first occurrence to each duplicate.
-        stat = MOVERECLIST(reply->person[first_idx].contents, reply->person[person_idx].contents, 1, 0, CNVTINT(order_cnt), TRUE)
-        person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, c.encntr_id, reply->person[loc_idx].encntr_id)
+        ; Add the result string to the contents list for the current person.
+        call ALTERLIST(reply->person[person_idx].contents, 1)
+        reply->person[person_idx].contents[1].primary = c.result_val      
+          
+        person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, c.person_id, reply->person[loc_idx].person_id)
       endwhile
   with nocounter
-end ; DetermineMst
+end ; GetMst
  
 /***********************************************************************************************************************************
 * EXIT PROGRAM *********************************************************************************************************************
@@ -132,3 +111,4 @@ endif
  
 end
 go
+ 
