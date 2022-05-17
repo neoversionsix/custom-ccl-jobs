@@ -12,8 +12,11 @@ FROM
 WHERE 	
 	YEAR(E.DISCH_DT_TM)= 2018 ; Year patients were admitted
 	AND
+	;86503988	Endocrine and Diabetes
+	;86504539	Endocrine and Gen Surgery
+	;98615881	F General and Endocrine Surgery
 	E.MED_SERVICE_CD IN(86503988,86504539,98615881) ; Med units
-	
+
 ORDER BY	
 	E.PERSON_ID   DESC
 	, E.DISCH_DT_TM   DESC
