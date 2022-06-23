@@ -83,7 +83,7 @@ subroutine PUBLIC::GetMst(null)
 	      AND c.valid_until_dt_tm > SYSDATE ; not invalid time
 	      AND c.publish_flag = 1 ; publish
         AND c.view_level = 1; viewable
-    order by c.person_id, c.updt_dt_tm asc ;c.person_id, changed asc to desc
+    order by c.person_id, c.updt_dt_tm asc ; the asc ord desc here changes to most recent MST Score
     head report
       person_idx = 0
     head c.person_id
