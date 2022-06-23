@@ -6,7 +6,7 @@
 drop program wh_cust_mst:dba go
 create program wh_cust_mst:dba
 /**
-Determine the sex of each received person.
+Determine MST.
 */
  
 /***********************************************************************************************************************************
