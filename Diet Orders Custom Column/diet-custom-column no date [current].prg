@@ -79,12 +79,12 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
   select
     into "nl:"
       order_cnt = COUNT(o.order_id) OVER(PARTITION BY o.encntr_id)
-    from 
+    from
       orders o
         ; FILTERS [jw]
         where EXPAND(exp_idx, 1, PERSON_CNT, o.encntr_id, reply->person[exp_idx].encntr_id)
         ;Timeline to filter on;  ("48, H") this was the old format [jw]
-        ;and o.orig_order_dt_tm > CNVTLOOKBEHIND("48, D") 
+        ;and o.orig_order_dt_tm > CNVTLOOKBEHIND("48, D")
         and o.catalog_cd = 105460833 ; Filters for Diet orders [jw]
         and o.ORDER_STATUS_CD = 2550 ; Filters for "Ordered" leaves out "Discontinued"
 
@@ -97,7 +97,7 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
       person_idx = LOCATEVAL(loc_idx, 1, PERSON_CNT, o.encntr_id, reply->person[loc_idx].encntr_id)
       first_idx = person_idx
       reply->person[person_idx].count = CNVTINT(order_cnt) ; Get the order count from the OLAP expression.
-      
+ 
       call ALTERLIST(reply->person[person_idx].contents, CNVTINT(order_cnt))
     head o.order_id
       order_idx = order_idx + 1
@@ -107,7 +107,7 @@ subroutine PUBLIC::DetermineEncntrsRecentOrders(null)
       reply->person[person_idx].contents[order_idx].primary = TRIM(SUBSTRING(22, 500, o.order_detail_display_line),2)
       ; Commenting out the date below as it's now already in o.order_detail_display_line [JW]
       ;reply->person[person_idx].contents[order_idx].secondary = FORMAT(o.orig_order_dt_tm, "@SHORTDATETIME")
-    
+ 
     foot o.encntr_id
       person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, o.encntr_id, reply->person[loc_idx].encntr_id)
       ; Since the same visit could have multiple occurrences in the Worklist, loop through the visit list to look for duplicates.
