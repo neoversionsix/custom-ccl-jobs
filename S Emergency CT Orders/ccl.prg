@@ -1,7 +1,7 @@
 select	; placed orders	
 	UR_number = ea_URN.alias	
 	, patient_name = p.name_full_formatted  ;"xxxx"	
-	, patient_id = o.person_id	
+;	, patient_id = o.person_id	
 	, encntr_dates = concat(format(e_orig.arrive_dt_tm, "dd/mm/yy hh:mm"), " - ", format(e_orig.depart_dt_tm, "dd/mm/yy hh:mm"))	
 	, visit_no = ea_visit.alias	
 	, o.encntr_id	
@@ -37,13 +37,13 @@ select	; placed orders
 	else p_o.name_full_formatted	
 	endif	
 ;	, specimen_type = o_d8.oe_field_display_value 	
-	, o.clinical_display_line	
+;	, o.clinical_display_line	
 	, o.order_id	
 	, o.ordered_as_mnemonic	
 	, synonym_mnemonic = ocs.mnemonic	
 	, synonym_type = uar_get_code_display(ocs.mnemonic_type_cd)	
-	, synonym_id = o.synonym_id	
-	, order_rank = dense_rank() over (partition by 0	
+;	, synonym_id = o.synonym_id	
+;	, order_rank = dense_rank() over (partition by 0	
 	order by	
 	o.orig_order_dt_tm	
 	, o.status_dt_tm	
@@ -57,7 +57,7 @@ from
 ;	, (left join order_detail o_d8 on o_d8.order_id = o.order_id	
 ;	and o_d8.oe_field_id = 12584	; 'Specimen Type' oef field
 ;	)	
-	, (left join encounter e_orig on e_orig.encntr_id = o.encntr_id)	
+	, (left join encounter e_orig on e_orig.encntr_id = o.encntr_id)
 	, (left join encntr_alias ea_URN on ea_URN.encntr_id = o.encntr_id	
 	and ea_URN.encntr_alias_type_cd = 1079	; 'URN' from code set 319
 	and ea_URN.active_ind = 1	; active URNs only
@@ -89,7 +89,9 @@ from
 		
 plan	o	
 ;where	o.catalog_cd = 	
+;where	o.catalog_cd IN () 	
 where o.CATALOG_TYPE_CD = 2517 ; Radiology
+; and orders are ct orders
 ;and	o.orig_order_dt_tm > cnvtdatetime("01-DEC-2020")	
 and	o.order_status_cd in (	
 ;	2546	; Future
@@ -117,16 +119,16 @@ and	o.order_status_cd in (
 join	p_o	
 join	p_o_stat	
 ;join	o_d8	
-join	e_orig	
+join	e_orig where e_orig.loc_facility_cd =    86163400 ; Sunshine	
 join	ea_URN	
 join	ea_visit	
-join	elh	
+join	elh where elh.loc_nurse_unit_cd = 86169725 ; "S Emergency"
 join	o_a_order	
 ;where	o_a_order.updt_id = 1235678	; orders placed by …
 ;and	o_a_order.updt_dt_tm between cnvtdatetime("01-DEC-2016") and cnvtdatetime("01-DEC-2020")	; between dates
 join	p_o_a_order	
-join	p	
-join	ocs	
+join	p	where p.name_last_key != "TESTWHS"
+join	ocs	where ocs.activity_subtype_cd = 633747 ; "Computerised Tomography"
 ;join	e_curr	
 		
 order by		
@@ -135,4 +137,7 @@ order by
 	, o.order_id	
 	, ea_URN.alias	
 		
-with	time = 1200, maxrec = 1000
+with	time = 60, maxrec = 1000
+
+; elh.loc_nurse_unit_cd = s emergency = 86169725
+; order_catalog_synonym.activity_subtype_cd = 633747	;computerised tomography
