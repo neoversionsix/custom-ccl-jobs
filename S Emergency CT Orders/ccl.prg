@@ -1,10 +1,10 @@
 select	; placed orders	
 	UR_number = ea_URN.alias	
 	, patient_name = p.name_full_formatted  ;"xxxx"	
-;	, patient_id = o.person_id	
+;	, patient_id = o.person_id
 	, encntr_dates = concat(format(e_orig.arrive_dt_tm, "dd/mm/yy hh:mm"), " - ", format(e_orig.depart_dt_tm, "dd/mm/yy hh:mm"))	
-	, visit_no = ea_visit.alias	
-	, o.encntr_id	
+	, visit_no = ea_visit.alias
+	, o.encntr_id
 	, facility_at_time_of_order = uar_get_code_display(e_orig.loc_facility_cd)	
 	, unit_at_time_of_order = if(elh.loc_nurse_unit_cd > 0) uar_get_code_display(elh.loc_nurse_unit_cd)	
 	else uar_get_code_display(e_orig.loc_nurse_unit_cd)	
@@ -122,8 +122,21 @@ where o.CATALOG_TYPE_CD = 2517 ; Radiology
 ;	o.projected_stop_dt_tm = null	
 ;	)	
 ;and	o.catalog_cd in ()	
-;and	o.synonym_id  in ()	
-join	p_o	
+;and	o.synonym_id  in ()
+
+join	p_o	where p_o.position_cd in (
+	   	86288503.00	;Nursing - Stoma Wound
+   		, 86287373.00	;Nursing - Diabetes Educator
+   		, 86287751.00	;Nursing - Infection Control
+   		, 86286997.00	;Nursing - AP
+   		, 86288127.00	;Nursing - Specialty
+   		, 86265753.00	;Nursing
+   		, 86285787.00	;Nursing - Student
+	   	, 87611902.00	;Nursing - Registered Midwife
+   		, 87612402.00	;Nursing - Nurse Prac/Eligible Midwife
+      	, 89164379.00	;Nursing - Enrolled Endorsed
+		)
+
 join	p_o_stat	
 ;join	o_d8	
 join	e_orig ;where e_orig.loc_facility_cd = 86163400 ; Sunshine	
