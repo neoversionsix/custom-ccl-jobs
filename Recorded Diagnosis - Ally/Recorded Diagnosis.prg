@@ -1,10 +1,10 @@
 select distinct	; recorded diagnoses
-/*I was hoping you would be able to re-run the attached query for me please
- so I have updated information from July 2021 until now please?
-Also, I was hoping to be able to get a breakdown of either who added the 
-diagnosis or what position. We need the info as a KPI for a business case in Nutrition.
+/*updated information from July 2021 until now.
+breakdown of either WHO ADDED THE DIAGNOSIS OR WHAT POSITION. 
+KPI for a business case in Nutrition.
 */
-	UR_number = ea_URN.alias	
+	UR_number = ea_URN.alias
+	, DIAGNOSED_BY = D.DIAG_PRSNL_NAME; ADDED THIS 	
 	, patient_name = p.name_full_formatted ;"xxxx"	
 	, patient_id = d.person_id	
 	, encntr_dates = concat(format(e_orig.arrive_dt_tm, "dd/mm/yy hh:mm"), " - ", format(e_orig.depart_dt_tm, "dd/mm/yy hh:mm"))	
