@@ -1,10 +1,13 @@
 select distinct	; recorded diagnoses
+
 /*updated information from July 2021 until now.
-breakdown of either WHO ADDED THE DIAGNOSIS OR WHAT POSITION. 
+breakdown of either WHO ADDED THE DIAGNOSIS OR WHAT POSITION.
 KPI for a business case in Nutrition.
 */
+
 	UR_number = ea_URN.alias
-	, DIAGNOSED_BY = D.DIAG_PRSNL_NAME; ADDED THIS 	
+	, DIAGNOSED_BY = D.DIAG_PRSNL_NAME; ADDED THIS
+	, diagnosis_active_status_updater = p_d_act_stat.name_full_formatted ; ADDED THIS
 	, patient_name = p.name_full_formatted ;"xxxx"	
 	, patient_id = d.person_id	
 	, encntr_dates = concat(format(e_orig.arrive_dt_tm, "dd/mm/yy hh:mm"), " - ", format(e_orig.depart_dt_tm, "dd/mm/yy hh:mm"))	
@@ -89,7 +92,8 @@ from
 ;	 and o_a.action_type_cd = 2534	; 'order' from codeset 6003
 ;	)	
 ;	, (left join prsnl p_o_a on p_o_a.person_id = o_a.action_personnel_id)	
-;	, (left join order_catalog_synonym ocs on ocs.synonym_id = o.synonym_id)	
+;	, (left join order_catalog_synonym ocs on ocs.synonym_id = o.synonym_id)
+	, (left join prsnl p_d_act_stat on p_d_act_stat.person_id = d.active_status_prsnl_id); ADDED THIS TOO	
 		
 plan	d	
 where	d.active_ind = 1	; active disgnoses only
@@ -105,7 +109,8 @@ join	e_orig
 join	ea_URN	
 join	ea_visit	
 join	elh	
-join	p	
+join	p
+join	p_d_act_stat ; added this	
 ;join	o	
 ;where	o.template_order_id = 0	; template orders only (ie not exploded orders based on frequency)
 ;and	o.order_status_cd in (	
