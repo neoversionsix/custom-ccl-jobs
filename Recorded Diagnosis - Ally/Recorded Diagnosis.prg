@@ -9,7 +9,8 @@ KPI for a business case in Nutrition.
 	, DIAGNOSED_BY = D.DIAG_PRSNL_NAME; ADDED THIS
 	, diagnosis_active_status_updater = p_d_act_stat.name_full_formatted ; ADDED THIS
 	, patient_name = p.name_full_formatted ;"xxxx"	
-	, patient_id = d.person_id	
+	, patient_id = d.person_id
+	, d.updt_dt_tm "YYYY-MM-DD HH:MM:SS;;D"
 	, encntr_dates = concat(format(e_orig.arrive_dt_tm, "dd/mm/yy hh:mm"), " - ", format(e_orig.depart_dt_tm, "dd/mm/yy hh:mm"))	
 	, visit_no = ea_visit.alias	
 	, d.encntr_id	
@@ -103,7 +104,7 @@ and	d.nomenclature_id in ( select n.nomenclature_id
 	from nomenclature n	
 	where n.source_string_keycap = "MALNUTRITION*"	
 	)	
-and 	d.updt_dt_tm between cnvtdatetime("01-JUL-2020") and cnvtdatetime("30-JUN-2021")	
+and 	d.updt_dt_tm between cnvtdatetime("01-JUL-2020") and cnvtdatetime("30-DEC-2050"); TIME FILTER	
 join	n_d	
 join	e_orig	
 join	ea_URN	
