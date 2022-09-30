@@ -1,6 +1,14 @@
 select distinct	; PowerForm details	; 'distinct' used for multiple codified_response_options
 /*
 Is there a way that this audit can be broken down by timeframes?
+
+This part sets the timeframe (line 149)
+
+    ce_cd_res.updt_dt_tm between
+        CNVTDATETIME("01-JUL-2022 00:00:00.00")
+        and
+        CNVTDATETIME("01-JUL-2022 00:00:00.00")     
+
  */
 
 	form_display = form_ref.description
@@ -136,10 +144,15 @@ from
 	, (left join (select ce.event_cd, count = count(*) from clinical_event ce group by ce.event_cd) form_ces on form_ces.event_cd = form_ref.event_cd)	; form results
 	, (left join (select ce_cd_res.nomenclature_id, count = count(*) 	; nomenclature results  (comment back in to return a row for each codified response).
 	from ce_coded_result ce_cd_res 	; comment back in to return a row for each codified response.
-	where ce_cd_res.nomenclature_id > 0 	;                                                              " "
-	group by ce_cd_res.nomenclature_id	;                                                              " "
-	) nom_ces on nom_ces.nomenclature_id = ar.nomenclature_id	;                                                              " "
-	)	;                                                              " "
+	where ce_cd_res.nomenclature_id > 0 	;
+    and
+    ce_cd_res.updt_dt_tm between
+        CNVTDATETIME("01-JAN-2022 00:00:00.00")
+        and
+        CNVTDATETIME("01-FEB-2022 00:00:00.00")                           
+	group by ce_cd_res.nomenclature_id	;                                      
+	) nom_ces on nom_ces.nomenclature_id = ar.nomenclature_id	;
+	)	;                 
 		
 plan	form_ref_curr_v	
 where	form_ref_curr_v.dcp_form_instance_id = (select max(dcp_form_instance_id)	
