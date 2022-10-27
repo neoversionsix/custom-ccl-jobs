@@ -89,3 +89,41 @@ with outdev ,jsondata
 		stat = alterlist(data->list,cnt)
 	
 	with nocounter
+
+;Add to 'patienthtml' variable, a HTML table for each patient
+	call alterlist(html_log->list,data->cnt)
+	for(x = 1 to data->cnt)
+		set html_log->list[x].start = textlen(trim(patienthtml,3)) + 1
+		set patienthtml = build2(patienthtml
+			,"<p class=patient-info-name>",data->list[x].patient_name," ",data->list[x].age," ",data->list[x].gender,"</p>"
+			,"<div>"
+			,'<table style="width:100%">'
+			,"<tr>"
+			,"<td class=patient-data-header>Treating Teams: </td>"
+			,"<td class=patient-info-wide>"
+		)
+    endfor
+
+;Build HTML Page and substitute in the patient table
+	set finalhtml = build2(
+		"<!doctype html><html><head>"
+		,"<meta charset=utf-8><meta name=description><meta http-equiv=X-UA-Compatible content=IE=Edge>"
+		,"<title>MPage Print</title>"
+		; CSS CODE IS BELOW
+		,"<style type=text/css>"
+		,".patient-info-name {font-size: 105%; border: 1px solid #dddddd; font-weight: 800; background-color:lightgrey}"
+		,"</style> </head>"
+		; END OF CSS CODE START OF HEADER
+		,"<div id = print-container> <div class=print-header> <div class=printed-by-user>"
+		,"<span> Printed By:  </span> <span>",printuser_name,"</span>"
+		,"</div> <div class=print-title> <span> Medical Worklist </span> </div>"
+		,"<div class=printed-date> <span>"
+		, "PRINTED: "
+		,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
+		,"</span> </div> </div> </div>"
+		,"<p class=print-title></p>"
+		,'<div><b><table style="width:100%"><tr><tr>'
+		,"</tr></tr></table></b></div>"
+		; PATIENT DATA IN THE VARIABLE BELOW
+		,patienthtml
+		,"</body></html>")

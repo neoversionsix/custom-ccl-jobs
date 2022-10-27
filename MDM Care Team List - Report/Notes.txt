@@ -1,0 +1,16 @@
+MDM Powerform
+1. Consultant
+2. Clinical Notes
+3. Imaging
+4. Pathology
+5. Question
+6. MDM date
+7. Pre-op/Post-op discussion
+8. Clinic Appointment / Follow Up Planned
+9. Scopes
+10. Relevant Bloods
+11. Cancer MDM or Surgical Meeting
+
+Plus
+Patient details (name, UR, DOB, age, sex) of patients on the Care Team List
+Care Team List name (i.e. the actual Care Team List which contains the patients e.g. Multidisciplinary | MDM Breast Cancer)
