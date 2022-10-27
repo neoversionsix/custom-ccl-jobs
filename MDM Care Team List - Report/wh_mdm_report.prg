@@ -31,3 +31,61 @@ with outdev ,jsondata
 
 ;Declare Records
 	record data (
+    1 cnt							= i4
+	1 list[*]
+		2 PERSON_ID					= f8
+		2 ENCNTR_ID					= f8
+
+    ) with protect
+
+;HTML Log
+    record html_log (
+	1 list[*]
+		2 start				= i4
+		2 stop				= i4
+		2 patient_text		= vc
+	) with protect
+
+;Set printuser_name
+	select into "nl:"
+	from
+		prsnl p
+	plan p
+		where p.PERSON_ID = reqinfo->updt_id
+	
+	detail
+		printuser_name = trim(p.name_full_formatted, 3)
+	
+	with nocounter
+
+;Add json patients to data record
+	set stat = cnvtjsontorec($jsondata)
+	
+	select into "nl:"
+		encounter = print_options->qual[d1.seq].ENCNTR_ID
+	from
+		(dummyt d1 with seq = evaluate(size(print_options->qual,5),0,1,size(print_options->qual,5)))
+	plan d1
+		where size(print_options->qual,5) > 0
+	order by encounter
+	
+	head report
+		cnt = 0
+	
+	head encounter
+		cnt += 1
+		if(mod(cnt, 20) = 1)
+			stat = alterlist(data->list,cnt + 19)
+		endif
+		data->list[cnt].ENCNTR_ID = print_options->qual[d1.seq].ENCNTR_ID
+		data->list[cnt].PERSON_ID = print_options->qual[d1.seq].PERSON_ID
+		data->list[cnt].age = trim(print_options->qual[d1.seq].pat_age,3)
+	
+	foot encounter
+		null
+	
+	foot report
+		data->cnt = cnt
+		stat = alterlist(data->list,cnt)
+	
+	with nocounter
