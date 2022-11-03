@@ -1,5 +1,5 @@
-drop program wh_med_admin_paed:group1 go
-create program wh_med_admin_paed:group1
+drop program wh_paediatric_meds_administ:group1 go
+create program wh_paediatric_meds_administ:group1
 
 /* NOTES
 Programmer: Jason Whittle jason.whittle@wh.org.au
