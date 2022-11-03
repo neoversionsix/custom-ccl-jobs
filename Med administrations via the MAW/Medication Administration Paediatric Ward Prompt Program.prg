@@ -6,9 +6,8 @@ Programmer: Jason Whittle jason.whittle@wh.org.au
 Data Requestor: Example User example.user@wh.org.au
 Date: 17-OCT-2022
 Purpose:
-Used as a template for creating promt programs. This code 
-will return all the usernames for accounts that were updated
-from the date chosen to the current date.
+to identify if paediatric patients are scanned or not scanned when
+administering pharmacy medications
 */
 
 prompt 
@@ -120,7 +119,7 @@ go
 
 
 /*
-FOOT NOTES
+NOTES
 
 ORDER COMPLETE CONVERSIONS
 CARE ADMIN = MAW
@@ -141,7 +140,5 @@ CODE SET FOR SCAN REASONS
 4003287 STORED IN TABLE MED_ADMIN_PT_ERROR
 
 July 2019 MAW went active
-
-example updaters Ann,Adrain,Rachel,Annie; 11659304,13975953,11658813,12876451
 
  */ 
