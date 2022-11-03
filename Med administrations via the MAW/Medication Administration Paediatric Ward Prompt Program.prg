@@ -13,7 +13,8 @@ from the date chosen to the current date.
 
 prompt 
 	"Output to File/Printer/MINE" = "MINE"
-	, "Starting Date" = "CURDATE" 
+	, "Start Date" = "CURDATE"
+	, "End Date" = "CURDATE" 
 
 with OUTDEV, FROMDT, ENDDT
 
