@@ -44,6 +44,9 @@
 		2 ENCNTR_ID					= f8
 		2 PATIENT_NAME				= vc
 		2 GENDER					= vc
+		2 URN						= vc
+		2 AGE						= vc
+		2 CONSULTANT_NME			= vc
     ) with protect
 
 ;HTML Log
@@ -87,6 +90,7 @@
 		endif
 		data->list[cnt].ENCNTR_ID = print_options->qual[d1.seq].ENCNTR_ID
 		data->list[cnt].PERSON_ID = print_options->qual[d1.seq].PERSON_ID
+		data->list[cnt].AGE = trim(print_options->qual[d1.seq].PAT_AGE,3)
 	
 	foot encounter
 		null
@@ -117,6 +121,53 @@
 	
 	WITH EXPAND = 2
 
+;Get URN
+	SELECT INTO "nl:"
+	FROM
+		ENCNTR_ALIAS EA
+	PLAN EA
+		WHERE EXPAND(idx,1,data->cnt,EA.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		AND EA.ACTIVE_IND = 1
+		AND EA.BEG_EFFECTIVE_DT_TM <= CNVTDATETIME(CURDATE,CURTIME)
+		AND EA.END_EFFECTIVE_DT_TM >= CNVTDATETIME(CURDATE,CURTIME)
+		AND EA.ENCNTR_ALIAS_TYPE_CD = 319_URN_CD
+	ORDER BY EA.ENCNTR_ID
+	
+	HEAD EA.ENCNTR_ID
+		pos = locatevalsort(idx,1,data->cnt,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		if(pos > 0)
+			data->list[pos].URN = TRIM(CNVTALIAS(EA.ALIAS, EA.ALIAS_POOL_CD),3)
+		endif
+	
+	FOOT EA.ENCNTR_ID
+		null
+	
+	WITH EXPAND = 2
+
+;Get Consultant Name
+	SELECT INTO "nl:"
+	FROM
+		CLINICAL_EVENT CE
+	PLAN CE
+		WHERE 
+			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+			AND CE.EVENT_CD = 134666758 ; EVENT CODE FOR 'Consultant' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+	ORDER BY CE.PERSON_ID
+	
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			data->list[pos].CONSULTANT_NME = TRIM(CE.RESULT_VAL,3)
+		endif
+	
+	FOOT CE.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
 ;Add to 'patienthtml' variable, a HTML table for each patient
 	call alterlist(html_log->list,data->cnt)
 	for(x = 1 to data->cnt)
@@ -133,12 +184,13 @@
 				,"<th>Gender</th>"
               ,"</tr>"
               ,"<tr>"
-                ,"<td>Alfreds Futterkiste</td>"
+                ,"<td>", data->list[x].URN, "</td>"
                 ,"<td>Maria Anders</td>"
-                ,"<td>Germany</td>"
-				,"<td>France</td>"
+                ,"<td>", data->list[x].AGE, "</td>"
+				,"<td>", data->list[x].GENDER, "</td>"
               ,"</tr>"
             ,"</table>"
+			,"<br>"
 
             ,"<table>"
               ,"<tr>"
@@ -149,11 +201,12 @@
               ,"</tr>"
               ,"<tr>"
                 ,"<td>Alfreds Futterkiste</td>"
-                ,"<td>Maria Anders</td>"
+                ,"<td>", data->list[x].CONSULTANT_NME, "</td>"
                 ,"<td>Germany</td>"
 				,"<td>France</td>"
               ,"</tr>"
             ,"</table>"
+			,"<br>"
 
             ,"<table>"
               ,"<tr>"
@@ -169,6 +222,7 @@
 				,"<td>France</td>"
               ,"</tr>"
             ,"</table>"
+			,"<br>"
 
             ,"<table>"
               ,"<tr>"
@@ -184,6 +238,7 @@
 				,"<td>France</td>"
               ,"</tr>"
             ,"</table>"
+			,"<br>"
 		)
     endfor
 
@@ -200,6 +255,7 @@
 			,"width: 100%;"
 			,"}"
 			,"th, td {"
+			,"width:25%;"
 			,"border: 1px solid;"
   			,"padding: 15px;"
   			,"text-align: left;"
