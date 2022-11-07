@@ -10,11 +10,11 @@
 
 
 ;CREATE PROGRAM AND PROMPT
-    drop program whs_physician_handover:dba go
-    create program whs_physician_handover:dba
+    ; drop program whs_physician_handover:dba go
+    ; create program whs_physician_handover:dba
 
-    ; drop program wh_mdm_report go   ;drop program wh_mdm_report:dba go
-    ; create program wh_mdm_report    ;create program wh_mdm_report:dba
+    drop program wh_mdm_report go   ;drop program wh_mdm_report:dba go
+    create program wh_mdm_report    ;create program wh_mdm_report:dba
 
     prompt
     	"Output to File/Printer/MINE" = "MINE" ,
