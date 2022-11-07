@@ -260,7 +260,7 @@
   			,"padding: 15px;"
   			,"text-align: left;"
 			,"}"
-			,"tr:hover {background-color: coral;}"
+			,"tr:hover {background-color: cornsilk;}"
 		    ,"</style> </head>"
 		; END OF CSS CODE START OF HEADER
 		    ,"<div id = print-container> <div class=print-header> <div class=printed-by-user>"
