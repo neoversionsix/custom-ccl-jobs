@@ -40,13 +40,14 @@
 	record data (
     1 cnt							= i4
 	1 list[*]
-		2 PERSON_ID					= f8
-		2 ENCNTR_ID					= f8
-		2 PATIENT_NAME				= vc
-		2 GENDER					= vc
-		2 URN						= vc
-		2 AGE						= vc
-		2 CONSULTANT_NME			= vc
+		2 PERSON_ID					= F8
+		2 ENCNTR_ID					= F8
+		2 PATIENT_NAME				= VC
+		2 URN						= VC
+		2 DOB						= VC
+		2 AGE						= VC
+		2 GENDER					= VC
+		2 CONSULTANT_NAME			= VC
     ) with protect
 
 ;HTML Log
@@ -144,6 +145,30 @@
 	
 	WITH EXPAND = 2
 
+;GET DATE OF BIRTH (DOB)
+	SELECT INTO "nl:"
+	FROM
+		PERSON P
+	PLAN P
+		WHERE 
+			expand(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
+			AND P.ACTIVE_IND = 1 ; DONT PULL IF THE PERSON IS INACTIVE IN THE DB
+
+	ORDER BY P.PERSON_ID
+	
+	HEAD P.PERSON_ID
+		pos = locateval(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			;CONVERT DATE TIME DQ8 TO A STRING AND STORE
+			data->list[pos].DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
+		endif
+	
+	FOOT P.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
+
 ;Get Consultant Name
 	SELECT INTO "nl:"
 	FROM
@@ -160,7 +185,7 @@
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
-			data->list[pos].CONSULTANT_NME = TRIM(CE.RESULT_VAL,3)
+			data->list[pos].CONSULTANT_NAME = TRIM(CE.RESULT_VAL,3)
 		endif
 	
 	FOOT CE.PERSON_ID
@@ -185,7 +210,7 @@
               ,"</tr>"
               ,"<tr>"
                 ,"<td>", data->list[x].URN, "</td>"
-                ,"<td>Maria Anders</td>"
+                ,"<td>", data->list[x].DOB, "</td>"
                 ,"<td>", data->list[x].AGE, "</td>"
 				,"<td>", data->list[x].GENDER, "</td>"
               ,"</tr>"
@@ -200,10 +225,10 @@
                 ,"<th>Imaging</th>"
               ,"</tr>"
               ,"<tr>"
-                ,"<td>Alfreds Futterkiste</td>"
-                ,"<td>", data->list[x].CONSULTANT_NME, "</td>"
-                ,"<td>Germany</td>"
-				,"<td>France</td>"
+                ,"<td>", "data->list[x].CARE_TEAMS", "</td>"
+                ,"<td>", data->list[x].CONSULTANT_NAME, "</td>"
+                ,"<td>", "data->list[x].CLINICAL_NOTES", "</td>"
+				,"<td>", "data->list[x].IMAGING", "</td>"
               ,"</tr>"
             ,"</table>"
 			,"<br>"
@@ -216,10 +241,10 @@
 				,"<th>Pre-op/Post-op Discussion</th>"
               ,"</tr>"
               ,"<tr>"
-                ,"<td>Alfreds Futterkiste</td>"
-                ,"<td>Maria Anders</td>"
-                ,"<td>Germany</td>"
-				,"<td>France</td>"
+                ,"<td>", "data->list[x].PATHOLOGY", "</td>"
+                ,"<td>", "data->list[x].MDM_QUESTION", "</td>"
+                ,"<td>", "data->list[x].MDM_DATE", "</td>"
+				,"<td>", "data->list[x].OP_DISCUSSION", "</td>"
               ,"</tr>"
             ,"</table>"
 			,"<br>"
@@ -232,10 +257,10 @@
 				,"<th>Cancer MDM or Surgical Meeting</th>"
               ,"</tr>"
               ,"<tr>"
-                ,"<td>Alfreds Futterkiste</td>"
-                ,"<td>Maria Anders</td>"
-                ,"<td>Germany</td>"
-				,"<td>France</td>"
+                ,"<td>", "data->list[x].APPOINMENT", "</td>"
+                ,"<td>", "data->list[x].SCOPES", "</td>"
+                ,"<td>", "data->list[x].BLOODS", "</td>"
+				,"<td>", "data->list[x].MEETING", "</td>"
               ,"</tr>"
             ,"</table>"
 			,"<br>"
