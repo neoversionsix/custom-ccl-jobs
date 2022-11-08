@@ -7,14 +7,11 @@
 
     */
 
-
-
 ;CREATE PROGRAM AND PROMPT
-    ; drop program whs_physician_handover:dba go
-    ; create program whs_physician_handover:dba
 
-    drop program wh_mdm_report go   ;drop program wh_mdm_report:dba go
-    create program wh_mdm_report    ;create program wh_mdm_report:dba
+
+    drop program wh_mdm_report go
+    create program wh_mdm_report
 
     prompt
     	"Output to File/Printer/MINE" = "MINE" ,
@@ -25,18 +22,17 @@
 	declare 319_URN_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",319,"URN")),protect
 	;[1] 319 is the code set for URN on the CODE_VALUE table "URN" is the DISPLAY_KEY for urn
 
-
-;Call Constants
+;CALL CONSTANTS
     call echo(build2("319_URN_CD: ",319_URN_CD))
 
-;Declare Variables
+;DECLARE VARIABLES
 	declare idx = i4 with noconstant(0),protect
 	declare patienthtml = vc with noconstant(" "),protect
 	declare finalhtml = vc with noconstant(" "),protect
 	declare newsize = i4 with noconstant(0),protect
 	declare printuser_name = vc with noconstant(" "),protect
 
-;Declare Records
+;DECLARE RECORDS
 	record data (
     1 cnt							= i4
 	1 list[*]
@@ -67,7 +63,7 @@
 		2 MEETING					= VC
     ) with protect
 
-;HTML Log
+;HTML LOG
     record html_log (
 	1 list[*]
 		2 start				= i4
@@ -75,7 +71,7 @@
 		2 patient_text		= vc
 	) with protect
 
-;Set printuser_name
+;SET PRINTUSER_NAME
 	select into "nl:"
 	from
 		prsnl p
@@ -87,7 +83,7 @@
 	
 	with nocounter
 
-;Add json patients to data record
+;ADD JSON PATIENTS TO DATA RECORD
 	set stat = cnvtjsontorec($jsondata)
 	
 	select into "nl:"
@@ -119,7 +115,7 @@
 	
 	with nocounter
 
-;Get patient information NAME GENDER
+;GET PATIENT INFORMATION NAME GENDER
 	SELECT INTO "nl:"
 	FROM
 		PERSON P
@@ -139,7 +135,7 @@
 	
 	WITH EXPAND = 2
 
-;Get URN
+;GET URN
 	SELECT INTO "nl:"
 	FROM
 		ENCNTR_ALIAS EA
@@ -581,7 +577,7 @@
 		)
     endfor
 
-;Build HTML Page and substitute in the patient table
+;BUILD HTML PAGE AND SUBSTITUTE IN THE PATIENT TABLE
 	set finalhtml = build2(
 		"<!doctype html><html><head>"
 		,"<meta charset=utf-8><meta name=description><meta http-equiv=X-UA-Compatible content=IE=Edge>"
@@ -612,7 +608,7 @@
 		    ,patienthtml
 		,"</body></html>")
 
-;Send HTML string back to PowerChart for printing
+;SEND HTML STRING BACK TO POWERCHART FOR PRINTING
 	if(validate(_memory_reply_string) = 1)
 		set _memory_reply_string = finalhtml
 	else
