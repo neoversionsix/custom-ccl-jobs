@@ -47,7 +47,24 @@
 		2 DOB						= VC
 		2 AGE						= VC
 		2 GENDER					= VC
+		2 CLINICAL_NOTES			= VC
+		2 MEDSERVICES_CNT			= I4
+		2 MEDSERVICES[*]
+		3 MEDSERVICE				= VC
+		2 MEDTEAMS_CNT				= I4
+		2 MEDTEAMS[*]
+		3 MEDTEAM					= VC
 		2 CONSULTANT_NAME			= VC
+		2 CLINICAL_NOTES			= VC
+		2 IMAGING					= VC
+		2 PATHOLOGY					= VC
+		2 MDM_QUESTION				= VC
+		2 MDM_DATE					= VC
+		2 OP_DISCUSSION				= VC
+		2 APPOINMENT				= VC
+		2 SCOPES					= VC
+		2 BLOODS					= VC
+		2 MEETING					= VC
     ) with protect
 
 ;HTML Log
@@ -102,7 +119,7 @@
 	
 	with nocounter
 
-;Get patient information
+;Get patient information NAME GENDER
 	SELECT INTO "nl:"
 	FROM
 		PERSON P
@@ -169,7 +186,50 @@
 	WITH EXPAND = 2
 
 
-;Get Consultant Name
+;GET TEAM DATA
+	SELECT INTO "nl:"
+	FROM
+	DCP_SHIFT_ASSIGNMENT   D
+	, (LEFT JOIN PCT_CARE_TEAM P ON (P.PCT_CARE_TEAM_ID = D.PCT_CARE_TEAM_ID))
+
+	PLAN D
+		WHERE
+			EXPAND(idx,1,data->cnt,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+			AND
+			D.BEG_EFFECTIVE_DT_TM < CNVTDATETIME(CURDATE, CURTIME3)
+			AND
+			D.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, CURTIME3)
+	
+	JOIN P
+	
+	ORDER BY
+		D.BEG_EFFECTIVE_DT_TM
+
+	head D.ENCNTR_ID
+		pos = LOCATEVAL(idx,1,data->cnt,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		cnt = 0
+ 
+	detail
+		IF(pos > 0)
+			cnt += 1
+			stat = alterlist(data->list[pos]->MEDSERVICES, cnt)
+			data->list[pos]->MEDSERVICES[cnt].MEDSERVICE = TRIM(UAR_GET_CODE_DISPLAY(P.PCT_MED_SERVICE_CD),3)
+			stat = alterlist(data->list[pos]->MEDTEAMS, cnt)
+			data->list[pos]->MEDTEAMS[cnt].MEDTEAM = TRIM(UAR_GET_CODE_DISPLAY(P.PCT_TEAM_CD),3)
+		ENDIF
+ 
+	foot D.ENCNTR_ID
+		IF(pos > 0)
+			data->list[pos].MEDSERVICES_CNT = cnt
+			data->list[pos].MEDTEAMS_CNT = cnt
+		ENDIF
+	WITH
+		EXPAND = 2
+		, MAXCOL=5000
+
+
+
+;GET CONSULTANT NAME
 	SELECT INTO "nl:"
 	FROM
 		CLINICAL_EVENT CE
@@ -193,14 +253,254 @@
 	
 	WITH EXPAND = 2
 
-;Add to 'patienthtml' variable, a HTML table for each patient
+
+;GET CLINICAL NOTES
+	SELECT INTO "nl:"
+	FROM
+		CLINICAL_EVENT CE
+	PLAN CE
+		WHERE 
+			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+			AND CE.EVENT_CD = 134666765 ; EVENT CODE FOR 'Clinical Notes' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+	ORDER BY CE.PERSON_ID
+	
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			data->list[pos].CLINICAL_NOTES = TRIM(CE.RESULT_VAL,3)
+		endif
+	
+	FOOT CE.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
+;GET IMAGING
+	SELECT INTO "nl:"
+	FROM
+		CLINICAL_EVENT CE
+	PLAN CE
+		WHERE 
+			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+			AND CE.EVENT_CD = 134666811 ; EVENT CODE FOR 'IMAGING' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+	ORDER BY CE.PERSON_ID
+	
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			data->list[pos].IMAGING = TRIM(CE.RESULT_VAL,3)
+		endif
+	
+	FOOT CE.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
+;GET PATHOLOGY
+	SELECT INTO "nl:"
+	FROM
+		CLINICAL_EVENT CE
+	PLAN CE
+		WHERE 
+			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+			AND CE.EVENT_CD = 134666827 ; EVENT CODE FOR 'PATHOLOGY' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+	ORDER BY CE.PERSON_ID
+	
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			data->list[pos].PATHOLOGY = TRIM(CE.RESULT_VAL,3)
+		endif
+	
+	FOOT CE.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
+;GET MDM QUESTION
+	SELECT INTO "nl:"
+	FROM
+		CLINICAL_EVENT CE
+	PLAN CE
+		WHERE 
+			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+			AND CE.EVENT_CD = 134666841 ; EVENT CODE FOR 'MDM QUESTION' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+	ORDER BY CE.PERSON_ID
+	
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			data->list[pos].MDM_QUESTION = TRIM(CE.RESULT_VAL,3)
+		endif
+	
+	FOOT CE.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
+;GET MDM DATE
+	SELECT INTO "nl:"
+	FROM
+		CLINICAL_EVENT CE
+	PLAN CE
+		WHERE 
+			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+			AND CE.EVENT_CD = 134666881 ; EVENT CODE FOR 'MDM DATE' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+	ORDER BY CE.PERSON_ID
+	
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			data->list[pos].MDM_DATE = FORMAT(CNVTDATE2(SUBSTRING(3, 8, CE.RESULT_VAL), "YYYYMMDD"), "DD/MMM/YYYY ;;D")
+		endif
+	
+	FOOT CE.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
+;GET OP DISCUSSION
+	SELECT INTO "nl:"
+	FROM
+		CLINICAL_EVENT CE
+	PLAN CE
+		WHERE 
+			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+			AND CE.EVENT_CD = 134666895 ; EVENT CODE FOR 'OP DISCUSSION' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+	ORDER BY CE.PERSON_ID
+	
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			data->list[pos].OP_DISCUSSION = TRIM(CE.RESULT_VAL,3)
+		endif
+	
+	FOOT CE.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
+;GET APPOINMENT
+	SELECT INTO "nl:"
+	FROM
+		CLINICAL_EVENT CE
+	PLAN CE
+		WHERE 
+			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+			AND CE.EVENT_CD = 134666935 ; EVENT CODE FOR 'APPOINTMENT' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+	ORDER BY CE.PERSON_ID
+	
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			data->list[pos].APPOINMENT = TRIM(CE.RESULT_VAL,3)
+		endif
+	
+	FOOT CE.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
+;GET SCOPES
+	SELECT INTO "nl:"
+	FROM
+		CLINICAL_EVENT CE
+	PLAN CE
+		WHERE 
+			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+			AND CE.EVENT_CD = 134667119 ; EVENT CODE FOR 'Clinical Notes' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+	ORDER BY CE.PERSON_ID
+	
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			data->list[pos].SCOPES = TRIM(CE.RESULT_VAL,3)
+		endif
+	
+	FOOT CE.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
+;GET BLOODS
+	SELECT INTO "nl:"
+	FROM
+		CLINICAL_EVENT CE
+	PLAN CE
+		WHERE 
+			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+			AND CE.EVENT_CD = 134666954 ; EVENT CODE FOR 'BLOODS' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+	ORDER BY CE.PERSON_ID
+	
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			data->list[pos].BLOODS = TRIM(CE.RESULT_VAL,3)
+		endif
+	
+	FOOT CE.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
+;GET MEETING
+	SELECT INTO "nl:"
+	FROM
+		CLINICAL_EVENT CE
+	PLAN CE
+		WHERE 
+			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+			AND CE.EVENT_CD = 134666960 ; EVENT CODE FOR 'MEETING' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+	ORDER BY CE.PERSON_ID
+	
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		if(pos > 0)
+			data->list[pos].MEETING = TRIM(CE.RESULT_VAL,3)
+		endif
+	
+	FOOT CE.PERSON_ID
+		NULL
+	
+	WITH EXPAND = 2
+
+;ADD TO 'PATIENTHTML' VARIABLE, A HTML TABLE FOR EACH PATIENT
 	call alterlist(html_log->list,data->cnt)
 	for(x = 1 to data->cnt)
 		set html_log->list[x].start = textlen(trim(patienthtml,3)) + 1
 		set patienthtml = build2(patienthtml
 			,"<p class=patient-info-name>", data->list[x].PATIENT_NAME,"</p>"
 			,"<br>"
-
             ,"<table>"
               ,"<tr>"
 			  	,"<th>URN</th>"
@@ -225,10 +525,24 @@
                 ,"<th>Imaging</th>"
               ,"</tr>"
               ,"<tr>"
-                ,"<td>", "data->list[x].CARE_TEAMS", "</td>"
+                ,"<td>"
+				
+		)
+		; This 'for' block of code writes patient care teams
+			for(y = 1 to data->list[x].MEDSERVICES_CNT)
+				set patienthtml = build2(patienthtml
+					,data->list[x]->MEDSERVICES[y].MEDSERVICE
+					,"&nbsp;"
+					,data->list[x]->MEDTEAMS[y].MEDTEAM
+					,", &nbsp;&nbsp;"
+				)
+			endfor
+			
+		set patienthtml = build2(patienthtml
+				,"</td>"
                 ,"<td>", data->list[x].CONSULTANT_NAME, "</td>"
-                ,"<td>", "data->list[x].CLINICAL_NOTES", "</td>"
-				,"<td>", "data->list[x].IMAGING", "</td>"
+                ,"<td>", data->list[x].CLINICAL_NOTES, "</td>"
+				,"<td>", data->list[x].IMAGING, "</td>"
               ,"</tr>"
             ,"</table>"
 			,"<br>"
@@ -241,10 +555,10 @@
 				,"<th>Pre-op/Post-op Discussion</th>"
               ,"</tr>"
               ,"<tr>"
-                ,"<td>", "data->list[x].PATHOLOGY", "</td>"
-                ,"<td>", "data->list[x].MDM_QUESTION", "</td>"
-                ,"<td>", "data->list[x].MDM_DATE", "</td>"
-				,"<td>", "data->list[x].OP_DISCUSSION", "</td>"
+                ,"<td>", data->list[x].PATHOLOGY, "</td>"
+                ,"<td>", data->list[x].MDM_QUESTION, "</td>"
+                ,"<td>", data->list[x].MDM_DATE, "</td>"
+				,"<td>", data->list[x].OP_DISCUSSION, "</td>"
               ,"</tr>"
             ,"</table>"
 			,"<br>"
@@ -257,10 +571,10 @@
 				,"<th>Cancer MDM or Surgical Meeting</th>"
               ,"</tr>"
               ,"<tr>"
-                ,"<td>", "data->list[x].APPOINMENT", "</td>"
-                ,"<td>", "data->list[x].SCOPES", "</td>"
-                ,"<td>", "data->list[x].BLOODS", "</td>"
-				,"<td>", "data->list[x].MEETING", "</td>"
+                ,"<td>", data->list[x].APPOINMENT, "</td>"
+                ,"<td>", data->list[x].SCOPES, "</td>"
+                ,"<td>", data->list[x].BLOODS, "</td>"
+				,"<td>", data->list[x].MEETING, "</td>"
               ,"</tr>"
             ,"</table>"
 			,"<br>"
@@ -281,7 +595,6 @@
 			,"}"
 			,"th, td {"
 			,"width:25%;"
-			,"border: 1px solid;"
   			,"padding: 15px;"
   			,"text-align: left;"
 			,"}"
