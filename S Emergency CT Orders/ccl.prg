@@ -124,7 +124,20 @@ where o.CATALOG_TYPE_CD = 2517 ; Radiology
 ;and	o.catalog_cd in ()	
 ;and	o.synonym_id  in ()
 
-join	p_o	where p_o.position_cd in (
+join	p_o	
+
+join	p_o_stat	
+;join	o_d8	
+join	e_orig ;where e_orig.loc_facility_cd = 86163400 ; Sunshine	
+join	ea_URN	
+join	ea_visit	
+join	elh where elh.loc_nurse_unit_cd = 86169725 ; "S Emergency"
+join	o_a_order	
+;where	o_a_order.updt_id = 1235678	; orders placed by …
+;and	o_a_order.updt_dt_tm between cnvtdatetime("01-DEC-2016") and cnvtdatetime("01-DEC-2020")	; between dates
+join	p_o_a_order	
+where p_o_a_order.position_cd in ;(86288503.00,86287373.00,86287751.00,86286997.00,86288127.00,86265753.00,86285787.00,87611902.00,87612402.00,89164379.00)
+		(
 	   	86288503.00	;Nursing - Stoma Wound
    		, 86287373.00	;Nursing - Diabetes Educator
    		, 86287751.00	;Nursing - Infection Control
@@ -137,16 +150,6 @@ join	p_o	where p_o.position_cd in (
       	, 89164379.00	;Nursing - Enrolled Endorsed
 		)
 
-join	p_o_stat	
-;join	o_d8	
-join	e_orig ;where e_orig.loc_facility_cd = 86163400 ; Sunshine	
-join	ea_URN	
-join	ea_visit	
-join	elh where elh.loc_nurse_unit_cd = 86169725 ; "S Emergency"
-join	o_a_order	
-;where	o_a_order.updt_id = 1235678	; orders placed by …
-;and	o_a_order.updt_dt_tm between cnvtdatetime("01-DEC-2016") and cnvtdatetime("01-DEC-2020")	; between dates
-join	p_o_a_order	
 join	p	where p.name_last_key != "TESTWHS"
 join	ocs	where ocs.activity_subtype_cd = 633747 ; "Computerised Tomography"
 ;join	e_curr	
