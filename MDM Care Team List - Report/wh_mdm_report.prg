@@ -8,11 +8,8 @@
     */
 
 ;CREATE PROGRAM AND PROMPT
-
-
     drop program wh_mdm_report go
     create program wh_mdm_report
-
     prompt
     	"Output to File/Printer/MINE" = "MINE" ,
     	"JSON Request:" = ""
