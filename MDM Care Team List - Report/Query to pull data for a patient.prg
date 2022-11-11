@@ -3,7 +3,7 @@ SELECT
     , *
     
 FROM
-CLINICAL_EVENT CE
+    CLINICAL_EVENT CE
 
 WHERE
     CE.PERSON_ID = 14286126 ; PERSONS ID GOES HERE
@@ -11,7 +11,6 @@ WHERE
     CE.EVENT_CD = 134666758 ; EVENT_CD FOR THE FIELD GOES HERE, THIS ONE IS THE 'CONSULTANT' IN B2031
     AND
     CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping
-
 
 /*
 Consultant	134666758
