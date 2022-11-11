@@ -4,7 +4,6 @@
     Date Created: 27th of October 2022
     Description: Report for MDM Care Team Meeting
     Programmer: Jason Whittle
-
     */
 
 ;CREATE PROGRAM AND PROMPT
@@ -233,7 +232,7 @@
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
 
 
-	ORDER BY CE.PERSON_ID
+	ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
 	
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
@@ -258,7 +257,7 @@
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
 
 
-	ORDER BY CE.PERSON_ID
+	ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
 	
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
@@ -281,8 +280,7 @@
 			AND CE.EVENT_CD = 134666811 ; EVENT CODE FOR 'IMAGING' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
 
-
-	ORDER BY CE.PERSON_ID
+	ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
 	
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
@@ -306,7 +304,7 @@
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
 
 
-	ORDER BY CE.PERSON_ID
+	ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
 	
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
@@ -330,7 +328,7 @@
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
 
 
-	ORDER BY CE.PERSON_ID
+	ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
 	
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
@@ -354,7 +352,7 @@
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
 
 
-	ORDER BY CE.PERSON_ID
+	ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
 	
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
@@ -378,7 +376,7 @@
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
 
 
-	ORDER BY CE.PERSON_ID
+	ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
 	
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
@@ -402,7 +400,7 @@
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
 
 
-	ORDER BY CE.PERSON_ID
+	ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
 	
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
@@ -426,7 +424,7 @@
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
 
 
-	ORDER BY CE.PERSON_ID
+	ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
 	
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
@@ -450,7 +448,7 @@
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
 
 
-	ORDER BY CE.PERSON_ID
+	ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
 	
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
@@ -474,7 +472,7 @@
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
 
 
-	ORDER BY CE.PERSON_ID
+	ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
 	
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
