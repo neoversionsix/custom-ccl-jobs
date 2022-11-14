@@ -1,5 +1,8 @@
 ;NOTES
     /*
+
+	This version had old formatting. Works. Keeping in case of reverting back to this formatting.
+
     Program: wh_mdm_report
     Date Created: 27th of October 2022
     Description: Report for MDM Care Team Meeting
@@ -490,56 +493,85 @@
 	for(x = 1 to data->cnt)
 		set html_log->list[x].start = textlen(trim(patienthtml,3)) + 1
 		set patienthtml = build2(patienthtml
+			,"<p class=patient-info-name>", data->list[x].PATIENT_NAME,"</p>"
+			,"<br>"
+            ,"<table>"
+              ,"<tr>"
+			  	,"<th>URN</th>"
+				,"<th>DOB</th>"
+				,"<th>Age</th>"
+				,"<th>Gender</th>"
+              ,"</tr>"
+              ,"<tr>"
+                ,"<td>", data->list[x].URN, "</td>"
+                ,"<td>", data->list[x].DOB, "</td>"
+                ,"<td>", data->list[x].AGE, "</td>"
+				,"<td>", data->list[x].GENDER, "</td>"
+              ,"</tr>"
+            ,"</table>"
+			,"<br>"
 
-        ,"<tr>"
-            ,"<td> "
-            ,data->list[x].PATIENT_NAME
-            ,"<br>"
-            ,data->list[x].URN
-            ,"<br>"
-            ,data->list[x].DOB
-            ,"<br>"
-            ,data->list[x].AGE
-            ,"<br>"
-            ,data->list[x].GENDER
-            ,"</td>"
-            ,"<td>"
-        )
-            	for(y = 1 to data->list[x].MEDSERVICES_CNT)
+            ,"<table>"
+              ,"<tr>"
+				,"<th>Care Teams</th>"
+                ,"<th>Consultant</th>"
+                ,"<th>Clinical Notes</th>"
+                ,"<th>Imaging</th>"
+              ,"</tr>"
+              ,"<tr>"
+                ,"<td>"
+				
+		)
+		; This 'for' block of code writes patient care teams
+			for(y = 1 to data->list[x].MEDSERVICES_CNT)
 				set patienthtml = build2(patienthtml
 					,data->list[x]->MEDSERVICES[y].MEDSERVICE
 					,"&nbsp;"
 					,data->list[x]->MEDTEAMS[y].MEDTEAM
 					,", &nbsp;&nbsp;"
 				)
-				endfor
-        set patienthtml = build2(patienthtml    
-        ,"</td>"
-            ,"<td>"
-            ,data->list[x].CONSULTANT_NAME
-            ,"</td>"
-            ,"<td>"
-            ,data->list[x].CLINICAL_NOTES
-            ,"</td>"
-            ,"<td>"
-            ,data->list[x].IMAGING
-            ,data->list[x].SCOPES
-            ,"</td>"
-            ,"<td>"
-            ,data->list[x].PATHOLOGY
-            ,data->list[x].BLOODS
-            ,"</td>"
-            ,"<td>"
-            ,data->list[x].OP_DISCUSSION
-            ,data->list[x].MEETING
-            ,"</td>"
-            ,"<td>"
-            ,data->list[x].APPOINMENT
-            ,"</td>"
-            ,"<td>"
-            ,data->list[x].MDM_QUESTION
-            ,"</td>"
-        ,"</tr>"
+			endfor
+			
+		set patienthtml = build2(patienthtml
+				,"</td>"
+                ,"<td>", data->list[x].CONSULTANT_NAME, "</td>"
+                ,"<td>", data->list[x].CLINICAL_NOTES, "</td>"
+				,"<td>", data->list[x].IMAGING, "</td>"
+              ,"</tr>"
+            ,"</table>"
+			,"<br>"
+
+            ,"<table>"
+              ,"<tr>"
+				,"<th>Pathology</th>"
+				,"<th>MDM Question</th>"
+				,"<th>MDM Date</th>"
+				,"<th>Pre-op/Post-op Discussion</th>"
+              ,"</tr>"
+              ,"<tr>"
+                ,"<td>", data->list[x].PATHOLOGY, "</td>"
+                ,"<td>", data->list[x].MDM_QUESTION, "</td>"
+                ,"<td>", data->list[x].MDM_DATE, "</td>"
+				,"<td>", data->list[x].OP_DISCUSSION, "</td>"
+              ,"</tr>"
+            ,"</table>"
+			,"<br>"
+
+            ,"<table>"
+              ,"<tr>"
+				,"<th>Clinic Appointment/Follow Up Planned</th>"
+				,"<th>Scopes</th>"
+				,"<th>Relevant Bloods</th>"
+				,"<th>Cancer MDM or Surgical Meeting</th>"
+              ,"</tr>"
+              ,"<tr>"
+                ,"<td>", data->list[x].APPOINMENT, "</td>"
+                ,"<td>", data->list[x].SCOPES, "</td>"
+                ,"<td>", data->list[x].BLOODS, "</td>"
+				,"<td>", data->list[x].MEETING, "</td>"
+              ,"</tr>"
+            ,"</table>"
+			,"<br>"
 		)
     endfor
 
@@ -553,47 +585,26 @@
 		    ,".patient-info-name {font-size: 120%; border: 1px solid #dddddd; font-weight: 800; background-color:lightgrey}"
 			,"table {"
 			,"border: 1px solid;"
-			,"border-collapse: collapse;"
 			,"width: 100%;"
 			,"}"
 			,"th, td {"
-			,"width:11.1%;"
+			,"width:25%;"
   			,"padding: 15px;"
   			,"text-align: left;"
-			,"border: 1px solid;"
-			,"border-collapse: collapse;"
 			,"}"
 			,"tr:hover {background-color: cornsilk;}"
 		    ,"</style> </head>"
 		; END OF CSS CODE START OF HEADER
 		    ,"<div id = print-container> <div class=print-header> <div class=printed-by-user>"
-		    ,"<span> Printed By:  </span> <span>"
-			,printuser_name
-			,"</span>"
+		    ,"<span> Printed By:  </span> <span>",printuser_name,"</span>"
 		    ,"<div class=printed-date> <span>"
 		    , "PRINTED: "
 		    ,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
 		    ,"</span> </div> </div> </div>"
 		    ,"</div> <div class=print-title> <h2> Cancer MDM Worklist </h2> </div>"
-			,"<table>"
-			,"<tr>"
-            ,"<th>Patient</th>"
-            ,"<th>Care Team/s</th>"
-            ,"<th>Consultant</th>"
-            ,"<th>Clinical Notes</th>"
-            ,"<th>Imaging & Scope</th>"
-            ,"<th>Pathology and Relevant Bloods</th>"
-            ,"<th>Pre-Op/Post-op Discussion, Cancer MDM or Surgical Meeting</th>"
-            ,"<th>Clinic appt/Follow up panned</th>"
-            ,"<th>MDM Question</th>"
-        	,"</tr>"
 		; PATIENT DATA IN THE VARIABLE BELOW
 		    ,patienthtml
-		;AFTER PATIENT DATA IS SUBSTITUTED
-			,"</table>"
-			,"</body>"
-			,"</html>"
-	)
+		,"</body></html>")
 
 ;SEND HTML STRING BACK TO POWERCHART FOR PRINTING
 	if(validate(_memory_reply_string) = 1)

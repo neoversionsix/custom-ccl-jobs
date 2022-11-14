@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Table</title>
+</head>
+<body>
+    <table>
+        <tr>
+            <th>Patient</th>
+            <th>Care Team/s</th>
+            <th>Consultant</th>
+            <th>Clinical Notes</th>
+            <th>Imaging & Scope</th>
+            <th>Pathology and Relevant Bloods</th>
+            <th>Pre-Op/Post-op Discussion, Cancer MDM or Surgical Meeting</th>
+            <th>Clinic appt/Follow up panned</th>
+            <th>MDM Question</th>
+        </tr>
+        <tr>
+            <td> 
+            data->list[x].PATIENT_NAME
+            <br>
+            data->list[x].URN
+            <br>
+            data->list[x].DOB
+            <br>
+            data->list[x].AGE
+            <br>
+            data->list[x].GENDER
+            </td>
+            <td>
+            )
+            	for(y = 1 to data->list[x].MEDSERVICES_CNT)
+				set patienthtml = build2(patienthtml
+					,data->list[x]->MEDSERVICES[y].MEDSERVICE
+					,"&nbsp;"
+					,data->list[x]->MEDTEAMS[y].MEDTEAM
+					,", &nbsp;&nbsp;"
+			)
+		endfor
+        set patienthtml = build2(patienthtml
+        </td>
+            <td>
+            data->list[x].CONSULTANT_NAME
+            </td>
+            <td>
+            data->list[x].CLINICAL_NOTES
+            </td>
+            <td>
+            data->list[x].IMAGING
+            data->list[x].SCOPES
+            </td>
+            <td>
+            data->list[x].PATHOLOGY
+            data->list[x].BLOODS
+            </td>
+            <td>
+            data->list[x].OP_DISCUSSION
+            data->list[x].MEETING
+            </td>
+            <td>
+            data->list[x].APPOINMENT
+            </td>
+            <td>
+            data->list[x].MDM_QUESTION
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
