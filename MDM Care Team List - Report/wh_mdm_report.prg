@@ -550,7 +550,6 @@
 		,"<title>MPage Print</title>"
 		; CSS CODE IS BELOW
 		    ,"<style type=text/css>"
-		    ,".patient-info-name {font-size: 120%; border: 1px solid #dddddd; font-weight: 800; background-color:lightgrey}"
 			,"table {"
 			,"border: 1px solid;"
 			,"border-collapse: collapse;"
@@ -575,6 +574,7 @@
 		    ,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
 		    ,"</span> </div> </div> </div>"
 		    ,"</div> <div class=print-title> <h2> Cancer MDM Worklist </h2> </div>"
+		; TABLE OF PATIENT DATA
 			,"<table>"
 			,"<tr>"
             ,"<th>Patient</th>"
