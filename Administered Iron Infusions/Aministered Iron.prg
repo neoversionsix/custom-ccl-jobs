@@ -25,45 +25,11 @@ JOIN O
 	AND
 	O.CATALOG_CD IN
 	(
-	"124212029"
-	, "139426142"
-	, "124212014"
-	, "139439007"
-	, "124212059"
-	, "124212035"
-	, "124212052"
+	"124212029" ;iron polymaltose (>1g) infusion xx mg in Sodium Chloride 0.9
+	, "139426142" ;ferric (iron) carboxymaltose infusion xx mg in Sodium Chlori
+	, "124212014" ; ferric (iron) carboxymaltose infusion 1000 mg in Sodium Chlo
+	, "139439007" ; iron polymaltose infusion xx mg in Sodium Chloride 0.9% xx m
+	, "124212035" ; iron polymaltose infusion 1000 mg in Sodium Chloride 0.9% 10
 	)
 
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT
-
-/*
-;code to get iron codes
-SELECT
-	O_CATALOG_DISP = UAR_GET_CODE_DISPLAY(O.CATALOG_CD)
-	, O.CATALOG_CD
-	, O_CATALOG_TYPE_DISP = UAR_GET_CODE_DISPLAY(O.CATALOG_TYPE_CD)
-	, O.DESCRIPTION
-
-FROM
-	ORDER_CATALOG   O
-
-WHERE 
-	(
-	O.DESCRIPTION = "*infusion*"
-	OR
-	O.DESCRIPTION = "*Infusion*"
-	OR
-	O.DESCRIPTION = "*INFUSION*"
-	)
-	
-	AND 
-	(
-	O.DESCRIPTION = "*iron*"
-	OR
-	O.DESCRIPTION = "*Iron*"
-	OR
-	O.DESCRIPTION = "*IRON*"
-	)
-
-WITH MAXREC = 100, NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 20
- */

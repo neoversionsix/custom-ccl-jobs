@@ -553,7 +553,7 @@
 			,"table {"
 			,"border: 1px solid;"
 			,"border-collapse: collapse;"
-			,"width: 100%;"
+			,"width: 99.9%;"
 			,"}"
 			,"th, td {"
 			,"width:11.1%;"
