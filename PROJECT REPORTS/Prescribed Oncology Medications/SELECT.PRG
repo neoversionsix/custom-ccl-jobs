@@ -1,4 +1,7 @@
 SELECT
+/*
+This query extracts all the current oncology patients
+ */
 	E.NAME_FULL_FORMATTED
 	, E.PERSON_ID
 	, ADMIT = NULLVAL(E.ARRIVE_DT_TM,E.REG_DT_TM) "@SHORTDATETIME"
