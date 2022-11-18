@@ -32,4 +32,4 @@ JOIN O
 	, 124212035 ; iron polymaltose infusion 1000 mg in Sodium Chloride 0.9% 10
 	)
 
-WITH NOCOUNTER, SEPARATOR=" ", FORMAT
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
