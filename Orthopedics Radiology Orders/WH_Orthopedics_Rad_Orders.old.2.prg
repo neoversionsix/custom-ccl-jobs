@@ -1,0 +1,102 @@
+drop program WH_Orthopedics_Rad_Orders go
+create program WH_Orthopedics_Rad_Orders
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE" ;* Enter or select the printer or file name to send this report to.
+	, "Start date for the Encounter" = "CURDATE"
+	, "END date for the Encounter" = "CURDATE"
+	, "Start Date for Order Filtering" = "CURDATE"
+	, "End Date for Order Filtering" = "SYSDATE" 
+
+with OUTDEV, START_DT_ENC, END_DT_ENC, START_DT_ORD, END_DT_ORD
+
+SELECT into $OUTDEV
+    URN = PA.ALIAS
+	, PATIENT = P.NAME_FULL_FORMATTED
+	, MED_SERVICE = UAR_GET_CODE_DISPLAY(ELH.MED_SERVICE_CD)
+	, APPT_ENCOUNTER_DATE = ELH.BEG_EFFECTIVE_DT_TM "DD/MM/YYYY HH:MM"
+	, ORDERER = PR.NAME_FULL_FORMATTED
+	, ORDER_DATE = O.ORIG_ORDER_DT_TM "DD/MM/YYYY HH:MM"
+	, RAD_ORDER = O.ORDERED_AS_MNEMONIC
+	, ORDER_DETAILS = O.ORDER_DETAIL_DISPLAY_LINE
+
+
+FROM
+	ENCNTR_LOC_HIST   ELH
+	, ENCOUNTER   E
+	, ORDERS   O
+	, PERSON   P
+    , PERSON_ALIAS PA
+	, PRSNL   PR
+	; , SCH_APPT   S
+
+PLAN ELH
+	WHERE
+        ELH.ACTIVE_IND = 1
+        AND
+        ELH.PM_HIST_TRACKING_ID > 0	; to remove duplicate row that seems to occur at discharge
+        AND
+		ELH.MED_SERVICE_CD IN (
+			87625391.00;Orthopaedic Surgery
+  			,86504090.00;Prosthetics & Orthoses
+  			,98636040.00;SP Paed Orthopaedics
+		)
+		AND
+		ELH.BEG_EFFECTIVE_DT_TM BETWEEN ; FILTER FOR ORTHO APPOINTMENTS IN THIS TIME RANGE
+       		CNVTDATETIME($START_DT_ENC)
+			AND
+			CNVTDATETIME($END_DT_ENC)
+
+JOIN E ; ENCOUNTER
+	WHERE 
+		E.ENCNTR_ID = ELH.ENCNTR_ID
+		AND
+		E.ENCNTR_STATUS_CD IN (
+			854.00 ;ACTIVE
+			,856.00;DISCHARGED
+			,666808.00; PENDING ARRIVAL
+		)
+		AND
+		E.ENCNTR_TYPE_CD IN (309309.00); Outpatient Encounters only
+
+
+
+JOIN P ; PERSON
+	WHERE
+		P.PERSON_ID = E.PERSON_ID
+		AND
+		P.ACTIVE_IND = 1
+
+JOIN PA
+    WHERE
+        P.PERSON_ID = PA.PERSON_ID
+        AND
+        PA.ALIAS_POOL_CD = 9569589.00 ; this filters for the UR Number
+        AND
+        PA.ACTIVE_IND = 1
+		
+
+JOIN O ; ORDERS
+	WHERE O.ENCNTR_ID = OUTERJOIN(ELH.ENCNTR_ID) ; OUTERJOIN => KEEP PATIENTS EVEN WITH NO RADIOLOGY ORDERS
+	AND 
+	O.CATALOG_TYPE_CD = OUTERJOIN(2517.00); RADIOLOGY Orders only; OUTERJOIN => KEEP PATIENTS EVEN WITH NO RADIOLOGY ORDERS
+	AND
+	O.ORIG_ORDER_DT_TM >= OUTERJOIN(CNVTDATETIME($START_DT_ORD)) ; Start date range of orders
+	AND
+	O.ORIG_ORDER_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DT_ORD)) ; end date range of orders
+	AND
+	O.ACTIVE_IND = OUTERJOIN(1)
+
+JOIN PR ; PRSNL
+	WHERE PR.PERSON_ID = OUTERJOIN(O.STATUS_PRSNL_ID)
+
+ORDER BY
+    P.NAME_FULL_FORMATTED
+	, ELH.BEG_EFFECTIVE_DT_TM   DESC
+
+
+WITH TIME = 120, SEPARATOR=" ", FORMAT
+
+
+END
+GO
