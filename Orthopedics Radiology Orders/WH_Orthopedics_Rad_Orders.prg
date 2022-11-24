@@ -1,28 +1,127 @@
-drop program WH_Orthopedics_Rad_Orders go
-create program WH_Orthopedics_Rad_Orders
+DROP PROGRAM WH_Orthopedics_Rad_Orders GO
+CREATE PROGRAM WH_Orthopedics_Rad_Orders
 
-prompt 
+PROMPT 
 	"Output to File/Printer/MINE" = "MINE"                   ;* Enter or select the printer or file name to send this report to.
 	, "Start date for Appointment filtering" = "CURDATE"
-	, "END date for for Appointment filtering" = "CURDATE" 
+	, "END date for for Appointment filtering" = "CURDATE"
 
-with OUTDEV, START_DT_ENC, END_DT_ENC
+WITH OUTDEV, START_DT_ENC, END_DT_ENC
 
 SELECT into $OUTDEV
+	APPT_DT_TIME = E.ARRIVE_DT_TM "DD/MMM/YYYY HH:MM:SS"
+	,
+	URN = PA.ALIAS
+	,
+	PATIENT = P.NAME_FULL_FORMATTED
+	, 
+	MED_SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+	,
+	ORDER_DATE = O.ORIG_ORDER_DT_TM "DD/MMM/YYYY HH:MM"
+	,
+	ORDER_STATUS = UAR_GET_CODE_DISPLAY(O.ORDER_STATUS_CD)
+	,
+	OD_TYPE = OD.OE_FIELD_DISPLAY_VALUE
+	,
+	ORDERED_BY = PR.NAME_FULL_FORMATTED
+	, 
+	O.ORDERED_AS_MNEMONIC
+	, 
+	O.ORDER_DETAIL_DISPLAY_LINE
+
+FROM
+	ENCOUNTER		E
+	, 
+	PERSON			P
+	,
+	PERSON_ALIAS	PA
+	, 
+	ORDERS			O
+	,
+	ORDER_DETAIL	OD
+	, 
+	PRSNL			PR
 
 
+PLAN E
+	WHERE 
+		E.ARRIVE_DT_TM BETWEEN ; FILTER FOR APPOINTMENTS IN THIS TIME RANGE
+       		; CNVTDATETIME("01-JAN-2022 00:00:00.00"); This line is used for query testing purposes
+			CNVTDATETIME($START_DT_ENC)
+			AND
+			; CNVTDATETIME("10-JAN-2022 23:59:59.00"); This line is used for query testing purposes
+			CNVTDATETIME($END_DT_ENC)
+		AND
+		E.MED_SERVICE_CD IN (
+			87625391.00;Orthopaedic Surgery
+  			,
+			86504090.00;Prosthetics & Orthoses
+  			,
+			98636040.00;SP Paed Orthopaedics
+		)
+		AND
+		E.ENCNTR_STATUS_CD IN (
+			854.00 ;ACTIVE
+			,
+			856.00;DISCHARGED
+			,
+			666808.00; PENDING ARRIVAL
+		)
+		AND
+		E.ENCNTR_TYPE_CD IN (309309.00);Outpatient
 
 
+JOIN P ; PERSON
+	WHERE
+		P.PERSON_ID = E.PERSON_ID
+		AND
+		P.ACTIVE_IND = 1
 
 
+JOIN PA
+    WHERE
+        P.PERSON_ID = PA.PERSON_ID
+        AND
+        PA.ALIAS_POOL_CD = 9569589.00 ; this filters for the UR Number
+        AND
+        PA.ACTIVE_IND = 1
+		AND
+		PA.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, curtime3)
 
+
+JOIN O ; ORDERS
+	WHERE
+		O.ENCNTR_ID = OUTERJOIN(E.ENCNTR_ID) ; OUTERJOIN => KEEP PATIENTS EVEN WITH NO RADIOLOGY ORDERS
+		AND 
+		O.ORIG_ORDER_DT_TM >= OUTERJOIN(CNVTLOOKBEHIND("6,M")) ; Filter for orders in the last 6 months
+		AND
+		O.ACTIVE_IND = OUTERJOIN(1) ; Active orders only
+		AND
+		O.CATALOG_TYPE_CD = OUTERJOIN(2517.00); RADIOLOGY Orders only; OUTERJOIN => KEEP PATIENTS EVEN WITH NO RADIOLOGY ORDERS
+
+
+JOIN OD ; ORDER_DETAIL
+	WHERE
+		OD.ORDER_ID = OUTERJOIN(O.ORDER_ID) ; OUTERJOIN => KEEP PATIENTS EVEN WITH NO RADIOLOGY ORDERS
+		AND
+		OD.OE_FIELD_ID = OUTERJOIN(138036400.00) ; INPATIENT, OUTPATIENT ETC
+
+JOIN PR ; PRSNL
+	WHERE 
+		PR.PERSON_ID = OUTERJOIN(O.STATUS_PRSNL_ID)
+		
 
 ORDER BY
-	, E.ARRIVE_DT_TM ASC
+    E.ARRIVE_DT_TM ASC
+	,
+	P.NAME_FULL_FORMATTED
 
 
-WITH TIME = 120, SEPARATOR=" ", FORMAT
-
-
+WITH 
+	TIME = 30
+	,
+	SEPARATOR=" "
+	,
+	FORMAT
 END
 GO
