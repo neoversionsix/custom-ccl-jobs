@@ -3,19 +3,30 @@ CREATE PROGRAM WH_Orthopedics_Rad_Orders
 
 PROMPT 
 	"Output to File/Printer/MINE" = "MINE"                   ;* Enter or select the printer or file name to send this report to.
-	, "Start date for Appointment filtering" = "CURDATE"
-	, "END date for for Appointment filtering" = "CURDATE"
+	, 
+	"Start date for Appointment filtering" = "CURDATE"
+	, 
+	"END date for for Appointment filtering" = "CURDATE"
 
-WITH OUTDEV, START_DT_ENC, END_DT_ENC
+WITH 
+	OUTDEV
+	,
+	START_DT_ENC
+	,
+	END_DT_ENC
 
 SELECT into $OUTDEV
-	APPT_DT_TIME = E.ARRIVE_DT_TM "DD/MMM/YYYY HH:MM:SS"
+	APPT_DT_TIME = E.ARRIVE_DT_TM "DD/MMM/YYYY HH:MM"
 	,
 	URN = PA.ALIAS
 	,
 	PATIENT = P.NAME_FULL_FORMATTED
-	, 
+	,
+	VISIT_NO = EA_VISIT.ALIAS
+	,
 	MED_SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+	,
+	NURSE_UNIT_LOC = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
 	,
 	ORDER_DATE = O.ORIG_ORDER_DT_TM "DD/MMM/YYYY HH:MM"
 	,
@@ -31,6 +42,8 @@ SELECT into $OUTDEV
 
 FROM
 	ENCOUNTER		E
+	,
+	ENCNTR_ALIAS	EA_VISIT
 	, 
 	PERSON			P
 	,
@@ -41,6 +54,7 @@ FROM
 	ORDER_DETAIL	OD
 	, 
 	PRSNL			PR
+	
 
 
 PLAN E
@@ -69,6 +83,19 @@ PLAN E
 		)
 		AND
 		E.ENCNTR_TYPE_CD IN (309309.00);Outpatient
+
+
+JOIN EA_VISIT ; ENCNTR_ALIAS
+	WHERE
+		EA_VISIT.ENCNTR_ID = E.ENCNTR_ID
+		AND
+		EA_VISIT.ALIAS != "ROP*" ; Filter out ROP Encounters (Encounters created by the Rad Dept)
+		AND 
+		EA_VISIT.ENCNTR_ALIAS_TYPE_CD = 1077	; 'FIN NBR' FROM CODE SET 319
+		AND
+		EA_VISIT.ACTIVE_IND = 1	; ACTIVE FIN NBRS ONLY
+		AND
+		EA_VISIT.END_EFFECTIVE_DT_TM > SYSDATE	; EFFECTIVE FIN NBRS ONLY
 
 
 JOIN P ; PERSON
