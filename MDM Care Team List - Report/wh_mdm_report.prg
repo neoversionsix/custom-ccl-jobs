@@ -492,15 +492,17 @@
 		set patienthtml = build2(patienthtml
 
         ,"<tr>"
-            ,"<td> "
+			,"<td>"
+			,data->list[x].URN
+			,"</td>"
+            ,"<td>"
             ,data->list[x].PATIENT_NAME
-            ,"<br>"
-            ,data->list[x].URN
-            ,"<br>"
+            ,"</td>"
+			,"<td>"
             ,data->list[x].DOB
-            ,"<br>"
+            ,", "
             ,data->list[x].AGE
-            ,"<br>"
+            ,", "
             ,data->list[x].GENDER
             ,"</td>"
             ,"<td>"
@@ -519,19 +521,22 @@
             ,data->list[x].CONSULTANT_NAME
             ,"</td>"
             ,"<td>"
+            ,data->list[x].OP_DISCUSSION
+			,"<br>"
+            ,data->list[x].MEETING
+            ,"</td>"
+            ,"<td>"
             ,data->list[x].CLINICAL_NOTES
             ,"</td>"
             ,"<td>"
             ,data->list[x].IMAGING
+			,"&nbsp;"
             ,data->list[x].SCOPES
             ,"</td>"
             ,"<td>"
             ,data->list[x].PATHOLOGY
+			,"&nbsp;"
             ,data->list[x].BLOODS
-            ,"</td>"
-            ,"<td>"
-            ,data->list[x].OP_DISCUSSION
-            ,data->list[x].MEETING
             ,"</td>"
             ,"<td>"
             ,data->list[x].APPOINMENT
@@ -553,10 +558,10 @@
 			,"table {"
 			,"border: 1px solid;"
 			,"border-collapse: collapse;"
-			,"width: 99.9%;"
+			,"width: 99%;"
 			,"}"
 			,"th, td {"
-			,"width:11.1%;"
+			,"width:9%;"
   			,"padding: 15px;"
   			,"text-align: left;"
 			,"border: 1px solid;"
@@ -577,14 +582,16 @@
 		; TABLE OF PATIENT DATA
 			,"<table>"
 			,"<tr>"
+			,"<th>URN</th>"
             ,"<th>Patient</th>"
+			,"<th>DOB, Age, Gender</th>"
             ,"<th>Care Team/s</th>"
             ,"<th>Consultant</th>"
+			,"<th>Pre-Op/Post-op Discussion</th>"
             ,"<th>Clinical Notes</th>"
             ,"<th>Imaging & Scope</th>"
             ,"<th>Pathology and Relevant Bloods</th>"
-            ,"<th>Pre-Op/Post-op Discussion, Cancer MDM or Surgical Meeting</th>"
-            ,"<th>Clinic appt/Follow up panned</th>"
+            ,"<th>Clinic appt/Follow up</th>"
             ,"<th>MDM Question</th>"
         	,"</tr>"
 		; PATIENT DATA IN THE VARIABLE BELOW
