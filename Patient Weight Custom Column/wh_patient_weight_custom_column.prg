@@ -5,8 +5,8 @@ Requestor: Alison Qvist
 Date 25th of November 2022
 */
 
-drop program wh_patient_weight_custom_column go
-create program wh_patient_weight_custom_column
+drop program wh_patient_weight_custom_colum go
+create program wh_patient_weight_custom_colum
 
  declare PUBLIC::Main(null) = null with private
 declare PUBLIC::GetWeight(null) = null with protect
@@ -26,7 +26,7 @@ subroutine PUBLIC::GetWeight(null)
     from clinical_event   c
       where EXPAND(exp_idx, 1, PERSON_CNT, c.person_id, reply->person[exp_idx].person_id)
         ;and c.sex_cd > 0
-        AND c.event_cd = 86163053 ; Filters Weight Measured
+        AND c.event_cd = 7334438 ; Filters Weight Measured
 	      AND c.valid_until_dt_tm > SYSDATE ; not invalid time
 	      AND c.publish_flag = 1 ; publish
         AND c.view_level = 1; viewable
@@ -47,9 +47,6 @@ subroutine PUBLIC::GetWeight(null)
   with nocounter
 end ; GetWeight
  
-/***********************************************************************************************************************************
-* EXIT PROGRAM *********************************************************************************************************************
-***********************************************************************************************************************************/
 #EXIT_SCRIPT
  
 if (reqdata->loglevel >= 4 or VALIDATE(debug_ind, 0) > 0)
