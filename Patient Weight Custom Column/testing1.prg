@@ -1,7 +1,12 @@
-drop program wh_patient_weight_cust:dba go
-create program wh_patient_weight_cust:dba
+/***********************************************************************************************************************************
+2 DEC 2022
+Programmer: Jason Whittle
+Customer: Ally.Q
+***********************************************************************************************************************************/
+drop program wh_last_patient_weight:dba go
+create program wh_last_patient_weight:dba
 /**
-NOTES
+Retrieve the last recorded weight of the patient if in 
 */
  
 /***********************************************************************************************************************************
@@ -32,7 +37,7 @@ record reply (
 * Subroutines                                                                                                                      *
 ***********************************************************************************************************************************/
 declare PUBLIC::Main(null) = null with private
-declare PUBLIC::GetWeight(null) = null with protect
+declare PUBLIC::FetchWeight(null) = null with protect
 
 /***********************************************************************************************************************************
 * Main PROGRAM *********************************************************************************************************************
@@ -52,73 +57,70 @@ Main subroutine.
 @returns null
 */
 subroutine PUBLIC::Main(null)
-  call GetWeight(null)
+  call FetchWeight(null)
   set reply->status_data.status = "S"
 end ; Main
  
 /***********************************************************************************************************************************
-* GetWeight                                                                                                     *
+* FetchWeight                                                                                                         *
 ***********************************************************************************************************************************/
 /**
-Determine the count of orders placed in the last 48 hours. Add the orders' names and dates to the content list, but leave the actual
-count to the Worklist to determine.
+Determine the currently active problems for each person. A comma-separated list of the problem names will be built out for each 
+person, and the resulting string is added to the person's content list. No secondary data is included.
 @param null
 @returns null
 */
-subroutine PUBLIC::GetWeight(null)
+subroutine PUBLIC::FetchWeight(null)
   declare PERSON_CNT = i4 with protect, constant(SIZE(reply->person, 5))
+  declare LIFE_CYCLE_STATUS_ACTIVE_CD = f8 with protect,constant(UAR_GET_CODE_BY("MEANING", 12030, "ACTIVE"))
+  declare weights_str = vc with protect, noconstant("")
   declare exp_idx = i4 with protect, noconstant(0)
   declare loc_idx = i4 with protect, noconstant(0)
 
   select
     into "nl:"
-      order_cnt = COUNT(ce.clinical_event_id) OVER(PARTITION BY ce.encntr_id)
+    weight_pt = TRIM(ce.result_val, 3)
+    ,
+    weight_dt_tm = TRIM(format(ce.performed_dt_tm,"dd/mm/yyyy"), 3)
     from 
-      clinical_event ce
-        ; FILTERS [jw]
-        where EXPAND(exp_idx, 1, PERSON_CNT, ce.encntr_id, reply->person[exp_idx].encntr_id)
-        ;Timeline to filter on;  ("48, H") this was the old format [jw]
-        ;AND ce.PERFORMED_DT_TM > CNVTLOOKBEHIND("6, M")
-        AND c.event_cd = 7334438 ; Filters Weight Measured
-	    AND c.valid_until_dt_tm > SYSDATE ; not invalid time
-	    AND c.publish_flag = 1 ; publish
-        AND c.view_level = 1; viewable
-
-    order by ce.encntr_id, ce.clinical_event_id
+        clinical_event ce
+            where
+                EXPAND(exp_idx, 1, PERSON_CNT, ce.person_id, reply->person[exp_idx].person_id)
+                AND ce.performed_dt_tm > CNVTLOOKBEHIND("6, M")
+                AND ce.event_cd = 7334438 ; Filters Weight Measured
+	            AND ce.valid_until_dt_tm > SYSDATE ; not invalid time
+	            AND ce.publish_flag = 1 ; publish
+                AND ce.view_level = 1; viewable
+    
+    ; join x
+    ;   where x._id = OUTERJOIN(x._id)
+    ;     and x.active_ind = OUTERJOIN(1)
+    order by ce.person_id, ce.performed_dt_tm desc ; desc=most recent weight in #1 position
     head report
       person_idx = 0
-      first_idx = 0
-    head ce.encntr_id
-      order_idx = 0
-      person_idx = LOCATEVAL(loc_idx, 1, PERSON_CNT, ce.encntr_id, reply->person[loc_idx].encntr_id)
-      first_idx = person_idx
+    head ce.person_id
+      weights_str = FILLSTRING(120, " ")
+      weight_cnt = 0
+    detail
+      weight_cnt = weight_cnt + 1
+      if (weight_cnt = 1) ; only concatenate weights_str for the last recorded weight
+        weights_str = BUILD2(weight_pt," (", weight_dt_tm, ")")
+    ;   else
+    ;     weights_str = BUILD2("none")
+      endif
       
-      reply->person[person_idx].count = CNVTINT(order_cnt) ; Get the order count from the OLAP expression.
-      
-      call ALTERLIST(reply->person[person_idx].contents, CNVTINT(order_cnt))
-    head ce.clinical_event_id
-      order_idx = order_idx + 1
-      ; DATA TO PULL [JW]
-      ; [JW] PREVIOUS: TRIM(ce.ordered_as_mnemonic)
-      ; ce.order_detail_display_line - This is the diet orders with the datetime stamp
-      reply->person[person_idx].contents[order_idx].primary = TRIM(ce.result_val)
-      ; Commenting out the date below as it's now already in ce.order_detail_display_line [JW]
-      reply->person[person_idx].contents[order_idx].secondary = FORMAT(ce.PERFORMED_DT_TM, "@SHORTDATETIME")
-    
-    foot ce.encntr_id
-      person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, ce.encntr_id, reply->person[loc_idx].encntr_id)
-      
-      ; Since the same visit could have multiple occurrences in the Worklist, loop through the visit list to look for duplicates.
+    foot ce.person_id
+      person_idx = LOCATEVAL(loc_idx, 1, PERSON_CNT, ce.person_id, reply->person[loc_idx].person_id)
+
+      ; Since the same person could have multiple visits in the Worklist, loop through the visit list to look for duplicates.
       while (person_idx > 0)
-        reply->person[person_idx].count = CNVTINT(order_cnt)
+        call ALTERLIST(reply->person[person_idx].contents, 1)
+        reply->person[person_idx].contents[1].primary = weights_str
         
-        ; Copy the popup list from the first occurrence to each duplicate.
-        stat = MOVERECLIST(reply->person[first_idx].contents, reply->person[person_idx].contents, 1, 0, CNVTINT(order_cnt), TRUE)
-        
-        person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, ce.encntr_id, reply->person[loc_idx].encntr_id)
+        person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, ce.person_id, reply->person[loc_idx].person_id)
       endwhile
   with nocounter
-end ; GetWeight
+end ; FetchWeight
  
 /***********************************************************************************************************************************
 * EXIT PROGRAM *********************************************************************************************************************
@@ -131,3 +133,4 @@ endif
  
 end
 go
+ 
