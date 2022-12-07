@@ -27,14 +27,14 @@ select	facility = uar_get_code_display( e.loc_facility_cd )
 		, o.simplified_display_line
 		, nurse = pr.name_full_formatted
 		
-from	clinical_event		ce
-		, ce_med_result		cem
-		, task_activity		ta
-		, encounter			e
-		, encntr_alias		ea
-		, person			p
-		, prsnl				pr
-		, orders			o
+from	clinical_event			ce
+		, ce_med_result			cem
+		, task_activity			ta
+		, encounter				e
+		, encntr_alias			ea
+		, person				p
+		, prsnl					pr
+		, orders				o
 		, frequency_schedule	fs
 		
 plan	ce
