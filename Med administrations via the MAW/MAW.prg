@@ -39,7 +39,7 @@ FROM
 ;	, PERSON_ALIAS	PA
 
 PLAN O
-	WHERE 
+	WHERE
 		O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
 		AND 
 		O.ORDER_STATUS_CD = 2543 ; Completed Orders
@@ -48,7 +48,7 @@ PLAN O
 		BETWEEN
         	CNVTDATETIME("01-JUN-2022 00:00:00.00")
         	AND
-        	CNVTDATETIME("01-AUG-2022 00:00:00.00")	 
+        	CNVTDATETIME("01-AUG-2022 00:00:00.00")
 ;		AND
 ;		O.PERSON_ID = 12921277 ; limit by patient "TESTHTS, Joanne"
 
