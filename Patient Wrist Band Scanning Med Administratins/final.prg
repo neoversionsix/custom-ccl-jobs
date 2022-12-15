@@ -1,3 +1,7 @@
+/*
+Notes
+*/
+
 drop program wh_med_administr_errors:dba go
 create program wh_med_administr_errors:dba
 
@@ -8,10 +12,6 @@ prompt
 
 with OUTDEV, STA_DATE_TM, END_DATE_TM
 
-SELECT INTO $OUTDEV
-/*
-*/
-;DECLARE LOOK_BACK = C3 WITH CONSTANT("1,W"), PROTECT
 
 SELECT INTO $OUTDEV
     M_A_P_E.REASON_CD
@@ -67,9 +67,9 @@ FOOT REPORT
 	row +1 "</html>"
 
 WITH TIME = 60,
-	MAXREC = 5000, 
+	; MAXREC = 5000, 
 	NOCOUNTER,  
-	MAXCOL = 500,
+	MAXCOL = 5000,
 	FORMAT
 
 end
