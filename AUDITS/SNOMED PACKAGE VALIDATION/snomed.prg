@@ -38,7 +38,7 @@ HEAD REPORT
 WITH TIME=10
 
 
-;Get an example of an active updated snomed item
+;Get an example of an new snomed item
 SELECT INTO "NL:"
 	*
 FROM
@@ -51,6 +51,8 @@ WHERE
 	N.UPDT_DT_TM >= CNVTDATETIME(LAST_UPDATE_VAR)
 	AND
 	N.END_EFFECTIVE_DT_TM >= CNVTDATETIME(LAST_UPDATE_VAR); active Item as of update time
+	AND
+	N.UPDT_CNT = 0
 HEAD REPORT
 	NAME_UPDATED_ACTIVE_VAR = N.SOURCE_STRING
 WITH MAXREC = 1, TIME=10
@@ -82,13 +84,18 @@ set FINALHTML_VAR = build2(
     ,'</head>'
     ,'<body>'
     ,'<h1>Snomed Package Validation Checks</h1>'
-	,'<h3>Last Update (Package Install Date): </h3>'
+	,'<br>'
+	,'<h2>Last Update (Package Install Date): </h2>'
     , LAST_UPDATE_VAR
 	,'<br>'
-	,'<h3>Updated Active Item: </h3>'
+	,'<br>'
+	,'<h2>New Item: </h2>'
+	,'Name (N.SOURCE_STRING):<br>'
     , NAME_UPDATED_ACTIVE_VAR
 	,'<br>'
-	,'<h3>Updated Inactive Item: </h3>'
+	,'<br>'
+	,'<h2>Updated effective date time to the past: </h2>'
+	,'Name (N.SOURCE_STRING):<br>'
     , NAME_UPDATED_INACTIVE_VAR
 	,'<br>'
     ,'</body>'
