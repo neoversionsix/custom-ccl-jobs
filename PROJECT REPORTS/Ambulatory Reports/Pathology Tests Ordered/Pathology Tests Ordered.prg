@@ -112,7 +112,7 @@ WHERE
 ;	or	
 ;	o.projected_stop_dt_tm = null	
 ;	)	
-and	o.catalog_cd in (2513.00); PATHOLOGY	
+and	o.catalog_cd in (2513.00); LABORATORY (PATHOLOGY)	
 ;and	o.synonym_id  in ()	
 JOIN	p_o	
 JOIN	p_o_stat	
