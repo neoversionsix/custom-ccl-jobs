@@ -90,7 +90,7 @@ FROM
 PLAN	o	
 WHERE	
     ; o.synonym_id =
-;and	o.orig_order_dt_tm > cnvtdatetime("01-DEC-2020")	
+	o.orig_order_dt_tm > cnvtdatetime("12-JAN-2023")	
 ;and	o.order_status_cd in (	
 ;	2546	; Future
 ;	, 2547	; Incomplete
@@ -112,7 +112,7 @@ WHERE
 ;	or	
 ;	o.projected_stop_dt_tm = null	
 ;	)	
-and	o.catalog_cd in (2513.00); LABORATORY (PATHOLOGY)	
+and	o.catalog_type_cd in (2513.00); LABORATORY (PATHOLOGY)	
 ;and	o.synonym_id  in ()	
 JOIN	p_o	
 JOIN	p_o_stat	
@@ -140,8 +140,8 @@ JOIN	ea_visit
 JOIN	elh	
 JOIN	o_a_order	
 ;where	o_a_order.updt_id = 1235678	; orders placed by …
-;and	o_a_order.updt_dt_tm between cnvtdatetime("01-DEC-2016") and cnvtdatetime("01-DEC-2020")	; between dates
-JOIN	p_o_a_order	
+;and	o_a_order.updt_dt_tm between cnvtdatetime("01-DEC-2022") and cnvtdatetime("10-DEC-2022")	; ORGINAL ORDER between dates
+JOIN	p_o_a_order
 JOIN	p	
 JOIN	ocs	
 ;JOIN	e_curr	
@@ -152,4 +152,4 @@ ORDER BY
 	, o.order_id	
 	, ea_URN.alias	
 		
-WITH	time = 1200	
+WITH	time = 10
