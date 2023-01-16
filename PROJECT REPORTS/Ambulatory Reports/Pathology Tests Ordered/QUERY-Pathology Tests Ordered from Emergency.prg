@@ -90,7 +90,12 @@ FROM
 PLAN	o	
 WHERE	
     ; o.synonym_id =
-	o.orig_order_dt_tm > cnvtdatetime("12-JAN-2023")	
+	o.orig_order_dt_tm 
+		BETWEEN 
+			CNVTDATETIME("15-JAN-2023 00:00:00") 
+			AND 
+			CNVTDATETIME("16-JAN-2023 00:00:00")
+
 ;and	o.order_status_cd in (	
 ;	2546	; Future
 ;	, 2547	; Incomplete

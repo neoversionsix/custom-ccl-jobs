@@ -15,8 +15,10 @@ SELECT into $OUTDEV
 
 FROM
 	PERSON   P
-WHERE P.PERSON_ID = $PID
-	AND P.ACTIVE_IND = 1
+WHERE 
+	P.PERSON_ID = $PID
+	AND
+	P.ACTIVE_IND = 1
 
 head report
 	row +1 "<html>"
@@ -34,6 +36,7 @@ foot report
 	row +1 "</table>"
 	row +1 "</body>"
 	row +1 "</html>"	
+
 WITH NOCOUNTER, FORMAT, maxrec = 200, maxcol=500
 
 end
