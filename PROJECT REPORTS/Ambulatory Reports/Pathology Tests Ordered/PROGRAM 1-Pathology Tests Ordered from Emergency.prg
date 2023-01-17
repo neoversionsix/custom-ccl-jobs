@@ -10,7 +10,10 @@ prompt
 	, "Start Date and Time" = "CURDATE"
 	, "End Date and Time" = "CURDATE" 
 
-with OUTDEV, STA_DATE_TM, END_DATE_TM
+with 
+	OUTDEV ; where to send the output
+	, STA_DATE_TM ; start date, Control Type= Data Time, Prompt Type: String, Prompt Options: Date and Time
+	, END_DATE_TM ; end date, Control Type= Data Time, Prompt Type: String, Prompt Options: Date and Time
 
 
 
@@ -112,27 +115,27 @@ WHERE
 			AND 
 			CNVTDATETIME("16-JAN-2023 00:00:00")
 
-;and	o.order_status_cd in (	
-;	2546	; Future
-;	, 2547	; Incomplete
-;	, 2548	; InProcess
-;	, 2549	; On Hold, Med Student
-;	, 2550	; Ordered
-;	, 2551	; Pending Review
-;	, 2552	; Suspended
-;	, 2553	; Unscheduled
-;	, 614538	; Transfer/Canceled
-;	, 643466	; Pending Complete
-;	)	
-;and	o.orig_ord_as_flag = 0	; inpatient orders only
-;and	o.orig_ord_as_flag = 1	; discharge prescriptions only
-;and	o.orig_ord_as_flag = 2	; Recorded / Home Meds only
-;and	o.active_ind = 1	; active orders only
-;and	(	
-;	o.projected_stop_dt_tm > sysdate	; current orders only (future stop date or no stop date)
-;	or	
-;	o.projected_stop_dt_tm = null	
-;	)	
+	;and	o.order_status_cd in (	
+	;	2546	; Future
+	;	, 2547	; Incomplete
+	;	, 2548	; InProcess
+	;	, 2549	; On Hold, Med Student
+	;	, 2550	; Ordered
+	;	, 2551	; Pending Review
+	;	, 2552	; Suspended
+	;	, 2553	; Unscheduled
+	;	, 614538	; Transfer/Canceled
+	;	, 643466	; Pending Complete
+	;	)	
+	;and	o.orig_ord_as_flag = 0	; inpatient orders only
+	;and	o.orig_ord_as_flag = 1	; discharge prescriptions only
+	;and	o.orig_ord_as_flag = 2	; Recorded / Home Meds only
+	;and	o.active_ind = 1	; active orders only
+	;and	(	
+	;	o.projected_stop_dt_tm > sysdate	; current orders only (future stop date or no stop date)
+	;	or	
+	;	o.projected_stop_dt_tm = null	
+	;	)	
 and	o.catalog_type_cd in (2513.00); LABORATORY (PATHOLOGY)	
 ;and	o.synonym_id  in ()	
 JOIN	p_o	
