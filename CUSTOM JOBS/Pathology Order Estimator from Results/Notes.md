@@ -1,0 +1,16 @@
+ENCNTR_TYPE_CD on the ENCOUNTER TABLE
+
+
+CODE_VALUE	DISPLAY	CDF_MEANING	DESCRIPTION	DISPLAY_KEY	CKI
+     309308.00	Inpatient		Inpatient	INPATIENT	CKI.CODEVALUE!3958
+     309309.00	Outpatient		Outpatient	OUTPATIENT	CKI.CODEVALUE!3959
+     309310.00	Emergency		Emergency	EMERGENCY	CKI.CODEVALUE!3957
+     309313.00	Pre-admit		Pre-admit	PREADMIT	CKI.CODEVALUE!8320
+    4085029.00	Unmatched		Unmatched	UNMATCHED	
+    4085032.00	Private		Private	PRIVATE	
+    4085028.00	Historical		Historical	HISTORICAL	
+    4038555.00	Community Client		Community Client	COMMUNITYCLIENT	
+    4038556.00	Not Applicable		Not Applicable	NOTAPPLICABLE	
+    4038557.00	Same Day		Same Day	SAMEDAY	
+    4038558.00	Unknown		Unknown	UNKNOWN	
+   87933542.00	No Visit		No Visit	NOVISIT	

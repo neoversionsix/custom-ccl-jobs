@@ -8,7 +8,7 @@ select distinct	; Clinical Event details	; 'distinct' used for multiple URNs on 
 ;	concat(format(ce.valid_from_dt_tm, "dd/mm/yy hh:mm"), " - ")	
 ;	else concat(format(ce.valid_from_dt_tm, "dd/mm/yy hh:mm"), " - ", format(ce.valid_until_dt_tm, "dd/mm/yy hh:mm"))	
 ;	endif	
-	, event_end = format(ce.event_end_dt_tm, "dd/mm/yyyy hh:mm:ss")	
+	, event_end = format(ce.event_end_dt_tm, "YYYY-MM-DD hh:mm:ss")	; this is the time the blood was taken
 ;	, result_type = evaluate(ce.event_class_cd	
 ;	, 223, "Date"	
 ;	, 224, "DOC (comment/report)"	
@@ -44,6 +44,7 @@ select distinct	; Clinical Event details	; 'distinct' used for multiple URNs on 
 		
 from		
 	clinical_event   ce	
+	/* 
 	, (left join prsnl p_ce on p_ce.person_id = ce.updt_id)	
 	, (left join person p on ce.person_id = p.person_id)	
 	, (left join encntr_alias ea_URN on ea_URN.encntr_id = ce.encntr_id	
@@ -60,16 +61,18 @@ from
 	and ce_b.valid_from_dt_tm = ce.valid_from_dt_tm	
 	and ce_b.valid_until_dt_tm  = ce.valid_until_dt_tm	
 	)	
-		
+	*/
+
 plan	ce	
-where	ce.view_level = 1	; only show events visible to endusers
-and	ce.valid_until_dt_tm > sysdate	; only show events that are still 'valid' (modified results show only the latest value as 'valid')
-and	ce.contributor_system_cd = 86524974	; WH_LAB (Pathology results only)
-and	(ce.event_end_dt_tm BETWEEN
-        CNVTDATETIME("01-JAN-2022 00:00:00.00")
-        AND
-        CNVTDATETIME("01-JAN-2023 00:00:00.00"))
-; and	ce.event_end_dt_tm > cnvtlookbehind("1,w")	; last week only
+	where	ce.view_level = 1	; only show events visible to endusers
+	and	ce.valid_until_dt_tm > sysdate	; only show events that are still 'valid' (modified results show only the latest value as 'valid')
+	and	ce.contributor_system_cd = 86524974	; WH_LAB (Pathology results only)
+	and	(ce.event_end_dt_tm BETWEEN
+			CNVTDATETIME("01-JAN-2022 00:00:00.00")
+			AND
+			CNVTDATETIME("01-JAN-2023 00:00:00.00"))
+	; and	ce.event_end_dt_tm > cnvtlookbehind("1,w")	; last week only
+	;and ce.event_cd = 4054683; FBE Result comment
 join	p_ce	
 join	p	
 join	ea_URN	
