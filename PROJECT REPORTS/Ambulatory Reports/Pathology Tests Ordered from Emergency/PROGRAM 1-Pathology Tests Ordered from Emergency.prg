@@ -1,5 +1,10 @@
 /*
-This program will retrieve pathology orders associated with Emergency Encounters
+Description: This program will retrieve pathology orders associated with Emergency Encounters
+Report Alias: Pathology Orders for Emergency Encounters
+Programmer: Jason Whittle/Mark Bailey
+Customer: Emily Sanders
+Notes: Created as part of the EMR Upgrade Project Reports
+Date: Jan 2023
 */
 
 drop program wh_pathology_orders_emergency:dba go
@@ -7,15 +12,13 @@ create program wh_pathology_orders_emergency:dba
 
 prompt 
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
-	, "Start Date and Time" = "CURDATE"
-	, "End Date and Time" = "CURDATE" 
+	, "Order Date/Time filter (start at this time)" = "SYSDATE"
+	, "Order Date/Time filter (end at this time)" = "SYSDATE" 
 
 with 
 	OUTDEV ; where to send the output
 	, STA_DATE_TM ; start date, Control Type= Data Time, Prompt Type: String, Prompt Options: Date and Time
 	, END_DATE_TM ; end date, Control Type= Data Time, Prompt Type: String, Prompt Options: Date and Time
-
-
 
 SELECT INTO $OUTDEV	; placed orders
 	UR_number = ea_URN.alias
@@ -111,9 +114,9 @@ WHERE
     ; o.synonym_id =
 	o.orig_order_dt_tm 
 		BETWEEN 
-			CNVTDATETIME("15-JAN-2023 00:00:00") 
+			CNVTDATETIME($STA_DATE_TM) 
 			AND 
-			CNVTDATETIME("16-JAN-2023 00:00:00")
+			CNVTDATETIME($END_DATE_TM)
 
 	;and	o.order_status_cd in (	
 	;	2546	; Future
@@ -176,7 +179,7 @@ ORDER BY
 	, o.order_id	
 	, ea_URN.alias	
 		
-WITH	time = 10, SEPARATOR=" ", FORMAT
+WITH	time = 60, SEPARATOR=" ", FORMAT
 
 END
 GO
