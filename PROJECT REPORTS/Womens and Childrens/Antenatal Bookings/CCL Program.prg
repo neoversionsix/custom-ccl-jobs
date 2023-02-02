@@ -1,0 +1,1 @@
+https://community.cerner.com/t5/CCL-Discern-Explorer-Client-and-Cerner-Collaboration/Trying-to-optimize-a-query-of-appointments-when-there-is-an-outerjoin-for-location/m-p/334516
