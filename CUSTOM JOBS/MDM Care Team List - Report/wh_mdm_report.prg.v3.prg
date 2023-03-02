@@ -35,6 +35,9 @@
     , "CLINICAPPOINTMENTFOLLOWUPPLANNED"
     , "MDMDATE"
     , "SCOPES"
+
+
+	Updating to fix bug where users are displayed in two rows 3 March 2023
     */
 
 ;CREATE PROGRAM AND PROMPT
