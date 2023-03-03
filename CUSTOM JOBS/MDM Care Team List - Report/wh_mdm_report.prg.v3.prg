@@ -142,6 +142,7 @@
 
 	with nocounter
 
+/*
 ;GET PATIENT INFORMATION NAME GENDER
 	SELECT INTO "nl:"
 	FROM
@@ -149,7 +150,6 @@
 	PLAN P
 		WHERE EXPAND(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
 	ORDER BY P.PERSON_ID
-
 	HEAD P.PERSON_ID
 		pos = locateval(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
 		IF(pos > 0)
@@ -159,6 +159,7 @@
 	foot P.PERSON_ID
 		NULL
 	WITH EXPAND = 2
+ */
 
 ;GET URN
 	/*
@@ -185,7 +186,7 @@
 	WITH EXPAND = 2
 	*/
 
-
+;Get URN name and gender
 	SELECT INTO "nl:"
 	FROM
 		PERSON   P
@@ -195,19 +196,24 @@
 	WHERE
 		EXPAND(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
 		AND
-		PA.ALIAS_POOL_CD = 319_URN_CD ; 9569589.00 ; this filters for the UR Number
+		PA.ALIAS_POOL_CD = 9569589.00 ;319_URN_CD ; 9569589.00 ; this filters for the UR Number
 		AND
 		PA.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
-	HEAD PA.PERSON_ID
+		AND
+		P.ACTIVE_IND = 1 ; DONT PULL IF THE PERSON IS INACTIVE IN THE DB
+	HEAD P.PERSON_ID
 	pos = locateval(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
 	if(pos > 0)
 		data->list[pos].URN = TRIM(PA.ALIAS, 3)
+		data->list[pos].PATIENT_NAME = TRIM(P.NAME_FULL_FORMATTED,3)
+		data->list[pos].GENDER = TRIM(UAR_GET_CODE_DISPLAY(P.SEX_CD),3)
+		data->list[pos].DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
 	endif
 	FOOT P.PERSON_ID
 		NULL
 	WITH EXPAND = 2
 
-
+/*
 ;GET DATE OF BIRTH (DOB)
 	SELECT INTO "nl:"
 	FROM
@@ -216,28 +222,23 @@
 		WHERE
 			expand(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
 			AND P.ACTIVE_IND = 1 ; DONT PULL IF THE PERSON IS INACTIVE IN THE DB
-
 	ORDER BY P.PERSON_ID
-
 	HEAD P.PERSON_ID
 		pos = locateval(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			;CONVERT DATE TIME DQ8 TO A STRING AND STORE
 			data->list[pos].DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
 		endif
-
 	FOOT P.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
-
+ */
 
 ;GET TEAM DATA
 	SELECT INTO "nl:"
 	FROM
 	DCP_SHIFT_ASSIGNMENT   D
 	, (LEFT JOIN PCT_CARE_TEAM P ON (P.PCT_CARE_TEAM_ID = D.PCT_CARE_TEAM_ID))
-
 	PLAN D
 		WHERE
 			EXPAND(idx,1,data->cnt,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
@@ -245,16 +246,12 @@
 			D.BEG_EFFECTIVE_DT_TM < CNVTDATETIME(CURDATE, CURTIME3)
 			AND
 			D.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, CURTIME3)
-
 	JOIN P
-
 	ORDER BY
 		D.BEG_EFFECTIVE_DT_TM
-
 	head D.ENCNTR_ID
 		pos = LOCATEVAL(idx,1,data->cnt,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
-
 	detail
 		IF(pos > 0)
 			cnt += 1
@@ -263,7 +260,6 @@
 			stat = alterlist(data->list[pos]->MEDTEAMS, cnt)
 			data->list[pos]->MEDTEAMS[cnt].MEDTEAM = TRIM(UAR_GET_CODE_DISPLAY(P.PCT_TEAM_CD),3)
 		ENDIF
-
 	foot D.ENCNTR_ID
 		IF(pos > 0)
 			data->list[pos].MEDSERVICES_CNT = cnt
@@ -524,19 +520,14 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666960, 152031405) ; (BUILD, MOCK) EVENT CODE FOR 'Cancer MDM or Surgical Meeting' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-
-
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].MEETING = TRIM(CE.RESULT_VAL,3)
 		endif
-
 	FOOT CE.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
 
 ;ADD TO 'PATIENTHTML' VARIABLE, A HTML TABLE FOR EACH PATIENT
