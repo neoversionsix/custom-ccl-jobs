@@ -131,7 +131,6 @@
 		endif
 		data->list[cnt].ENCNTR_ID = print_options->qual[d1.seq].ENCNTR_ID
 		data->list[cnt].PERSON_ID = print_options->qual[d1.seq].PERSON_ID
-		data->list[cnt].AGE = trim(print_options->qual[d1.seq].PAT_AGE,3)
 
 	foot encounter
 		null
@@ -208,6 +207,8 @@
 		data->list[pos].PATIENT_NAME = TRIM(P.NAME_FULL_FORMATTED,3)
 		data->list[pos].GENDER = TRIM(UAR_GET_CODE_DISPLAY(P.SEX_CD),3)
 		data->list[pos].DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
+		data->list[pos].AGE = TRIM(CNVTAGE(P.BIRTH_DT_TM))
+
 	endif
 	FOOT P.PERSON_ID
 		NULL
@@ -623,7 +624,7 @@
 		    , "PRINTED: "
 		    ,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
 		    ,"</span> </div> </div> </div>"
-		    ,"</div> <div class=print-title> <h2> Cancer MDM Worklist </h2> </div>"
+		    ,"</div> <div class=print-title> <h2> Cancer MDM Worklist - TESTING V1 </h2> </div>"
 		; TABLE OF PATIENT DATA
 			,"<table>"
 			,"<tr>"
