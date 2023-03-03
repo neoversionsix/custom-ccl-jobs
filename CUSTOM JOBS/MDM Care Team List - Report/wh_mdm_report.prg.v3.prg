@@ -35,9 +35,6 @@
     , "CLINICAPPOINTMENTFOLLOWUPPLANNED"
     , "MDMDATE"
     , "SCOPES"
-
-
-	Updating to fix bug where users are displayed in two rows 3 March 2023
     */
 
 ;CREATE PROGRAM AND PROMPT
@@ -159,13 +156,12 @@
 			data->list[pos].PATIENT_NAME = TRIM(P.NAME_FULL_FORMATTED,3)
 			data->list[pos].GENDER = TRIM(UAR_GET_CODE_DISPLAY(P.SEX_CD),3)
 		ENDIF
-
 	foot P.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
 
 ;GET URN
+	/*
 	SELECT INTO "nl:"
 	FROM
 		ENCNTR_ALIAS EA
@@ -187,6 +183,30 @@
 		null
 
 	WITH EXPAND = 2
+	*/
+
+
+	SELECT INTO "nl:"
+	FROM
+		PERSON   P
+		, (LEFT JOIN PERSON_ALIAS PA ON (P.PERSON_ID = PA.PERSON_ID))
+	PLAN P
+	JOIN PA
+	WHERE
+		EXPAND(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
+		AND
+		PA.ALIAS_POOL_CD = 319_URN_CD ; 9569589.00 ; this filters for the UR Number
+		AND
+		PA.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+	HEAD PA.PERSON_ID
+	pos = locateval(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
+	if(pos > 0)
+		data->list[pos].URN = TRIM(PA.ALIAS, 3)
+	endif
+	FOOT P.PERSON_ID
+		NULL
+	WITH EXPAND = 2
+
 
 ;GET DATE OF BIRTH (DOB)
 	SELECT INTO "nl:"
