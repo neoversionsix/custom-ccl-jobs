@@ -104,10 +104,8 @@
 		prsnl p
 	plan p
 		where p.PERSON_ID = reqinfo->updt_id
-
 	detail
 		printuser_name = trim(p.name_full_formatted, 3)
-
 	with nocounter
 
 ;ADD JSON PATIENTS TO DATA RECORD
@@ -136,6 +134,7 @@
 		data->cnt = cnt
 		stat = alterlist(data->list,cnt)
 	with nocounter
+
 
 /*
 ;GET PATIENT INFORMATION NAME GENDER
@@ -306,6 +305,7 @@
 	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
+
 
 ;GET IMAGING
 	SELECT INTO "nl:"
