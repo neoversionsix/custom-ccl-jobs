@@ -128,6 +128,7 @@
 	JOIN E
 		WHERE
 			E.PERSON_ID = P.PERSON_ID
+			AND
 			E.ACTIVE_IND = 1
 	HEAD E.ENCNTR_ID
 	pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
