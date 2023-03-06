@@ -79,7 +79,7 @@
 		printuser_name = trim(p.name_full_formatted, 3)
 	with nocounter
 
-;ADD JSON PATIENTS TO DATA RECORD
+;ENCOUNTER AND PERSON_IDS ADD JSON PATIENTS TO DATA RECORD
 	set stat = cnvtjsontorec($jsondata)
 	select into "nl:"
 		encounter = print_options->qual[d1.seq].ENCNTR_ID
@@ -105,7 +105,7 @@
 	with nocounter
 
 
-;Get URN name age and gender
+;URN NAME AGE GENDER
 	SELECT INTO "nl:"
 	FROM
 		PERSON   P
@@ -138,30 +138,30 @@
 		data->list[pos].DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
 		data->list[pos].AGE = TRIM(CNVTAGE(P.BIRTH_DT_TM))
 	endif
-	FOOT P.PERSON_ID
+	FOOT E.ENCNTR_ID
 		NULL
 	WITH EXPAND = 2
 
-;GET URN
-	SELECT INTO "nl:"
-	FROM
-		ENCNTR_ALIAS EA
-	PLAN EA
-		WHERE EXPAND(idx,1,data->cnt,EA.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-		AND EA.ACTIVE_IND = 1
-		AND EA.BEG_EFFECTIVE_DT_TM <= CNVTDATETIME(CURDATE,CURTIME)
-		AND EA.END_EFFECTIVE_DT_TM >= CNVTDATETIME(CURDATE,CURTIME)
-		AND EA.ENCNTR_ALIAS_TYPE_CD = 319_URN_CD
-	ORDER BY EA.ENCNTR_ID
+; ;GET URN
+; 	SELECT INTO "nl:"
+; 	FROM
+; 		ENCNTR_ALIAS EA
+; 	PLAN EA
+; 		WHERE EXPAND(idx,1,data->cnt,EA.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+; 		AND EA.ACTIVE_IND = 1
+; 		AND EA.BEG_EFFECTIVE_DT_TM <= CNVTDATETIME(CURDATE,CURTIME)
+; 		AND EA.END_EFFECTIVE_DT_TM >= CNVTDATETIME(CURDATE,CURTIME)
+; 		AND EA.ENCNTR_ALIAS_TYPE_CD = 319_URN_CD
+; 	ORDER BY EA.ENCNTR_ID
 
-	HEAD EA.ENCNTR_ID
-		pos = locatevalsort(idx,1,data->cnt,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-		if(pos > 0)
-			data->list[pos].URN = TRIM(CNVTALIAS(EA.ALIAS, EA.ALIAS_POOL_CD),3)
-		endif
-	FOOT EA.ENCNTR_ID
-		null
-	WITH EXPAND = 2
+; 	HEAD EA.ENCNTR_ID
+; 		pos = locatevalsort(idx,1,data->cnt,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+; 		if(pos > 0)
+; 			data->list[pos].URN = TRIM(CNVTALIAS(EA.ALIAS, EA.ALIAS_POOL_CD),3)
+; 		endif
+; 	FOOT EA.ENCNTR_ID
+; 		null
+; 	WITH EXPAND = 2
 
 ;GET DATE OF BIRTH (DOB)
 	SELECT INTO "nl:"
