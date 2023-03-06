@@ -113,6 +113,7 @@
 ;ADD JSON PATIENTS TO DATA RECORD
 	set stat = cnvtjsontorec($jsondata)
 
+;ENCOUNTER ID's
 	select into "nl:"
 		encounter = print_options->qual[d1.seq].ENCNTR_ID
 	from
@@ -120,10 +121,8 @@
 	plan d1
 		where size(print_options->qual,5) > 0
 	order by encounter
-
 	head report
 		cnt = 0
-
 	head encounter
 		cnt += 1
 		if(mod(cnt, 20) = 1)
@@ -131,14 +130,11 @@
 		endif
 		data->list[cnt].ENCNTR_ID = print_options->qual[d1.seq].ENCNTR_ID
 		data->list[cnt].PERSON_ID = print_options->qual[d1.seq].PERSON_ID
-
 	foot encounter
 		null
-
 	foot report
 		data->cnt = cnt
 		stat = alterlist(data->list,cnt)
-
 	with nocounter
 
 /*
@@ -281,19 +277,14 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666758, 152031543) ;(BUILD, MOCK) EVENT CODE FOR 'Consultant' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-
-
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].CONSULTANT_NAME = TRIM(CE.RESULT_VAL,3)
 		endif
-
 	FOOT CE.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
 
 
@@ -306,19 +297,14 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666765, 152031535) ; (BUILD, MOCK) EVENT CODE FOR 'Clinical Notes' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-
-
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].CLINICAL_NOTES = TRIM(CE.RESULT_VAL,3)
 		endif
-
 	FOOT CE.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
 
 ;GET IMAGING
@@ -330,19 +316,16 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666811, 152031611) ; EVENT CODE FOR 'IMAGING' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].IMAGING = TRIM(CE.RESULT_VAL,3)
 		endif
-
 	FOOT CE.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
+
 
 ;GET PATHOLOGY
 	SELECT INTO "nl:"
@@ -353,20 +336,16 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666827, 152031413) ; (BUILD, MOCK) EVENT CODE FOR 'PATHOLOGY' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-
-
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].PATHOLOGY = TRIM(CE.RESULT_VAL,3)
 		endif
-
 	FOOT CE.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
+
 
 ;GET MDM QUESTION
 	SELECT INTO "nl:"
@@ -377,20 +356,16 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666841, 152030797) ; (BUILD, MOCK) EVENT CODE FOR 'MDM QUESTION' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-
-
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].MDM_QUESTION = TRIM(CE.RESULT_VAL,3)
 		endif
-
 	FOOT CE.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
+
 
 ;GET MDM DATE
 	SELECT INTO "nl:"
@@ -401,20 +376,16 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666881, 152031995) ; (BUILD, MOCK) EVENT CODE FOR 'MDM DATE' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-
-
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].MDM_DATE = FORMAT(CNVTDATE2(SUBSTRING(3, 8, CE.RESULT_VAL), "YYYYMMDD"), "DD/MMM/YYYY ;;D")
 		endif
-
 	FOOT CE.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
+
 
 ;GET OP DISCUSSION
 	SELECT INTO "nl:"
@@ -425,20 +396,16 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666895, 152031275) ;(BUILD, MOCK) EVENT CODE FOR 'OP DISCUSSION' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-
-
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].OP_DISCUSSION = TRIM(CE.RESULT_VAL,3)
 		endif
-
 	FOOT CE.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
+
 
 ;GET APPOINMENT
 	SELECT INTO "nl:"
@@ -449,20 +416,16 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666935, 152031989) ; (BUILD, MOCK) EVENT CODE FOR 'APPOINTMENT' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-
-
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].APPOINMENT = TRIM(CE.RESULT_VAL,3)
 		endif
-
 	FOOT CE.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
+
 
 ;GET SCOPES
 	SELECT INTO "nl:"
@@ -473,20 +436,16 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134667119, 152032001) ; EVENT CODE FOR 'Scopes' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-
-
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].SCOPES = TRIM(CE.RESULT_VAL,3)
 		endif
-
 	FOOT CE.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
+
 
 ;GET BLOODS
 	SELECT INTO "nl:"
@@ -497,20 +456,16 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666954, 152031285) ; (BUILD, MOCK) EVENT CODE FOR 'BLOODS' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-
-
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].BLOODS = TRIM(CE.RESULT_VAL,3)
 		endif
-
 	FOOT CE.PERSON_ID
 		NULL
-
 	WITH EXPAND = 2
+
 
 ;GET MEETING
 	SELECT INTO "nl:"
@@ -531,12 +486,12 @@
 		NULL
 	WITH EXPAND = 2
 
+
 ;ADD TO 'PATIENTHTML' VARIABLE, A HTML TABLE FOR EACH PATIENT
 	call alterlist(html_log->list,data->cnt)
 	for(x = 1 to data->cnt)
 		set html_log->list[x].start = textlen(trim(patienthtml,3)) + 1
 		set patienthtml = build2(patienthtml
-
         ,"<tr>"
 			,"<td>"
 			,data->list[x].URN
