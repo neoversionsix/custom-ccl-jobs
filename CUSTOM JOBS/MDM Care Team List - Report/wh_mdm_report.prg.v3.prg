@@ -210,7 +210,7 @@
 		data->list[pos].DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
 		data->list[pos].AGE = TRIM(CNVTAGE(P.BIRTH_DT_TM))
 	endif
-	FOOT E.ENCNTR_ID
+	FOOT P.PERSON_ID
 		NULL
 	WITH EXPAND = 2
 
@@ -327,16 +327,13 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666811, 152031611) ; EVENT CODE FOR 'IMAGING' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-	JOIN E
-		WHERE
-			E.PERSON_ID = CE.PERSON_ID
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
 	HEAD CE.PERSON_ID
-		pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].IMAGING = TRIM(CE.RESULT_VAL,3)
 		endif
-	FOOT E.ENCNTR_ID
+	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
 
@@ -350,16 +347,13 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666827, 152031413) ; (BUILD, MOCK) EVENT CODE FOR 'PATHOLOGY' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-	JOIN E
-		WHERE
-			E.PERSON_ID = CE.PERSON_ID
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-	HEAD E.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].PATHOLOGY = TRIM(CE.RESULT_VAL,3)
 		endif
-	FOOT E.ENCNTR_ID
+	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
 
@@ -373,16 +367,13 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666841, 152030797) ; (BUILD, MOCK) EVENT CODE FOR 'MDM QUESTION' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-	JOIN E
-		WHERE
-			E.PERSON_ID = CE.PERSON_ID
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-	HEAD E.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].MDM_QUESTION = TRIM(CE.RESULT_VAL,3)
 		endif
-	FOOT E.ENCNTR_ID
+	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
 
@@ -396,16 +387,13 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666881, 152031995) ; (BUILD, MOCK) EVENT CODE FOR 'MDM DATE' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-	JOIN E
-		WHERE
-			E.PERSON_ID = CE.PERSON_ID
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-	HEAD E.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].MDM_DATE = FORMAT(CNVTDATE2(SUBSTRING(3, 8, CE.RESULT_VAL), "YYYYMMDD"), "DD/MMM/YYYY ;;D")
 		endif
-	FOOT E.ENCNTR_ID
+	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
 
@@ -419,16 +407,13 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666895, 152031275) ;(BUILD, MOCK) EVENT CODE FOR 'OP DISCUSSION' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-	JOIN E
-		WHERE
-			E.PERSON_ID = CE.PERSON_ID
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-	HEAD E.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].OP_DISCUSSION = TRIM(CE.RESULT_VAL,3)
 		endif
-	FOOT E.ENCNTR_ID
+	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
 
@@ -442,16 +427,13 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666935, 152031989) ; (BUILD, MOCK) EVENT CODE FOR 'APPOINTMENT' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-	JOIN E
-		WHERE
-			E.PERSON_ID = CE.PERSON_ID
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-	HEAD E.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].APPOINMENT = TRIM(CE.RESULT_VAL,3)
 		endif
-	FOOT E.ENCNTR_ID
+	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
 
@@ -465,16 +447,13 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134667119, 152032001) ; EVENT CODE FOR 'Scopes' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-	JOIN E
-		WHERE
-			E.PERSON_ID = CE.PERSON_ID
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-	HEAD E.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].SCOPES = TRIM(CE.RESULT_VAL,3)
 		endif
-	FOOT E.ENCNTR_ID
+	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
 
@@ -488,16 +467,13 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666954, 152031285) ; (BUILD, MOCK) EVENT CODE FOR 'BLOODS' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-	JOIN E
-		WHERE
-			E.PERSON_ID = CE.PERSON_ID
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-	HEAD E.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].BLOODS = TRIM(CE.RESULT_VAL,3)
 		endif
-	FOOT E.ENCNTR_ID
+	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
 
@@ -511,16 +487,13 @@
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666960, 152031405) ; (BUILD, MOCK) EVENT CODE FOR 'Cancer MDM or Surgical Meeting' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-	JOIN E
-		WHERE
-			E.PERSON_ID = CE.PERSON_ID
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-	HEAD E.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].MEETING = TRIM(CE.RESULT_VAL,3)
 		endif
-	FOOT E.ENCNTR_ID
+	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
 
@@ -617,7 +590,7 @@
 		    , "PRINTED: "
 		    ,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
 		    ,"</span> </div> </div> </div>"
-		    ,"</div> <div class=print-title> <h2> Cancer MDM Worklist - vz7.0 </h2> </div>"
+		    ,"</div> <div class=print-title> <h2> Cancer MDM Worklist - vz5.0 </h2> </div>"
 		; TABLE OF PATIENT DATA
 			,"<table>"
 			,"<tr>"
