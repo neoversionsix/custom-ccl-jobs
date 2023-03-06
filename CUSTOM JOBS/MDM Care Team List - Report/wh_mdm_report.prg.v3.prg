@@ -186,15 +186,17 @@
 		PERSON   P
 		, (LEFT JOIN PERSON_ALIAS PA ON (P.PERSON_ID = PA.PERSON_ID))
 	PLAN P
+		WHERE
+			EXPAND(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
 	JOIN PA
-	WHERE
-		EXPAND(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
-		AND
-		PA.ALIAS_POOL_CD = 9569589.00 ;319_URN_CD ; 9569589.00 ; this filters for the UR Number
-		AND
-		PA.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
-		AND
-		P.ACTIVE_IND = 1 ; DONT PULL IF THE PERSON IS INACTIVE IN THE DB
+		WHERE
+			;EXPAND(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
+			AND
+			PA.ALIAS_POOL_CD = 9569589.00 ;319_URN_CD ; 9569589.00 ; this filters for the UR Number
+			AND
+			PA.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+			AND
+			P.ACTIVE_IND = 1 ; DONT PULL IF THE PERSON IS INACTIVE IN THE DB
 	HEAD P.PERSON_ID
 	pos = locateval(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
 	if(pos > 0)
@@ -203,7 +205,6 @@
 		data->list[pos].GENDER = TRIM(UAR_GET_CODE_DISPLAY(P.SEX_CD),3)
 		data->list[pos].DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
 		data->list[pos].AGE = TRIM(CNVTAGE(P.BIRTH_DT_TM))
-
 	endif
 	FOOT P.PERSON_ID
 		NULL
@@ -264,7 +265,6 @@
 	WITH
 		EXPAND = 2
 		, MAXCOL=5000
-
 
 
 ;GET CONSULTANT NAME
@@ -579,7 +579,7 @@
 		    , "PRINTED: "
 		    ,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
 		    ,"</span> </div> </div> </div>"
-		    ,"</div> <div class=print-title> <h2> Cancer MDM Worklist - TESTING V1 </h2> </div>"
+		    ,"</div> <div class=print-title> <h2> Cancer MDM Worklist - V2.0 </h2> </div>"
 		; TABLE OF PATIENT DATA
 			,"<table>"
 			,"<tr>"
