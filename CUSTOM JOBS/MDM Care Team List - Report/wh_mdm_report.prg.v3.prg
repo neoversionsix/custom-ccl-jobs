@@ -4,12 +4,9 @@
     Date Created: 27th of October 2022
     Description: Report for MDM Care Team Meeting
     Programmer: Jason Whittle
-
-
     Editing 27th Feb 2023 to include MOCK codes
     This version has CE.EVENT_CD for BUILD, then MOCK
     MOCK CODES
-
     EVENT_CD	C_EVENT_DISP
     152031285	Relevant Bloods
     152031543	Consultant
@@ -22,7 +19,6 @@
     152031989	Clinic Appointment/Follow Up Planned
     152032001	Scopes
     152031405	Cancer MDM or Surgical Meeting
-
     DISPLAY_KEY
      "MDMQUESTION"
     , "PREOPPOSTOPDISCUSSION"
@@ -134,8 +130,6 @@
 		data->cnt = cnt
 		stat = alterlist(data->list,cnt)
 	with nocounter
-
-
 /*
 ;GET PATIENT INFORMATION NAME GENDER
 	SELECT INTO "nl:"
@@ -154,7 +148,6 @@
 		NULL
 	WITH EXPAND = 2
  */
-
 ;GET URN
 	/*
 	SELECT INTO "nl:"
@@ -167,25 +160,20 @@
 		AND EA.END_EFFECTIVE_DT_TM >= CNVTDATETIME(CURDATE,CURTIME)
 		AND EA.ENCNTR_ALIAS_TYPE_CD = 319_URN_CD
 	ORDER BY EA.ENCNTR_ID
-
 	HEAD EA.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].URN = TRIM(CNVTALIAS(EA.ALIAS, EA.ALIAS_POOL_CD),3)
 		endif
-
 	FOOT EA.ENCNTR_ID
 		null
-
 	WITH EXPAND = 2
 	*/
-
-;Get URN name age and gender
+;Get URN name and gender
 	SELECT INTO "nl:"
 	FROM
 		PERSON   P
 		, (LEFT JOIN PERSON_ALIAS PA ON (P.PERSON_ID = PA.PERSON_ID))
-		, (LEFT JOIN ENCOUNTER E ON (E.PERSON_ID = P.PERSON_ID))
 	PLAN P
 		WHERE
 			EXPAND(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
@@ -198,11 +186,8 @@
 			PA.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
 			AND
 			P.ACTIVE_IND = 1 ; DONT PULL IF THE PERSON IS INACTIVE IN THE DB
-	JOIN E
-		WHERE
-			E.ACTIVE_IND = 1
-	HEAD E.ENCNTR_ID
-	pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	HEAD P.PERSON_ID
+	pos = locateval(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
 	if(pos > 0)
 		data->list[pos].URN = TRIM(PA.ALIAS, 3)
 		data->list[pos].PATIENT_NAME = TRIM(P.NAME_FULL_FORMATTED,3)
@@ -213,7 +198,6 @@
 	FOOT P.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
 /*
 ;GET DATE OF BIRTH (DOB)
 	SELECT INTO "nl:"
@@ -234,7 +218,6 @@
 		NULL
 	WITH EXPAND = 2
  */
-
 ;GET TEAM DATA
 	SELECT INTO "nl:"
 	FROM
@@ -269,55 +252,42 @@
 	WITH
 		EXPAND = 2
 		, MAXCOL=5000
-
-
 ;GET CONSULTANT NAME
 	SELECT INTO "nl:"
 	FROM
 		CLINICAL_EVENT CE
-		, ENCOUNTER E
 	PLAN CE
 		WHERE
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666758, 152031543) ;(BUILD, MOCK) EVENT CODE FOR 'Consultant' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-	JOIN E
-		WHERE E.PERSON_ID = CE.PERSON_ID
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-	HEAD E.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].CONSULTANT_NAME = TRIM(CE.RESULT_VAL,3)
 		endif
-	FOOT E.ENCNTR_ID
+	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
-
 ;GET CLINICAL NOTES
 	SELECT INTO "nl:"
 	FROM
 		CLINICAL_EVENT CE
-		, ENCOUNTER E
 	PLAN CE
 		WHERE
 			expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 			AND CE.EVENT_CD IN (134666765, 152031535) ; (BUILD, MOCK) EVENT CODE FOR 'Clinical Notes' in the powerform
 			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
-	JOIN E
-		WHERE
-			E.PERSON_ID = CE.PERSON_ID
 	ORDER BY CE.PERSON_ID, CE.UPDT_DT_TM DESC ; this selects the most recent update from the filtered list
-	HEAD E.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	HEAD CE.PERSON_ID
+		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].CLINICAL_NOTES = TRIM(CE.RESULT_VAL,3)
 		endif
-	FOOT E.ENCNTR_ID
+	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
-
 ;GET IMAGING
 	SELECT INTO "nl:"
 	FROM
@@ -336,8 +306,6 @@
 	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
-
 ;GET PATHOLOGY
 	SELECT INTO "nl:"
 	FROM
@@ -356,8 +324,6 @@
 	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
-
 ;GET MDM QUESTION
 	SELECT INTO "nl:"
 	FROM
@@ -376,8 +342,6 @@
 	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
-
 ;GET MDM DATE
 	SELECT INTO "nl:"
 	FROM
@@ -396,8 +360,6 @@
 	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
-
 ;GET OP DISCUSSION
 	SELECT INTO "nl:"
 	FROM
@@ -416,8 +378,6 @@
 	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
-
 ;GET APPOINMENT
 	SELECT INTO "nl:"
 	FROM
@@ -436,8 +396,6 @@
 	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
-
 ;GET SCOPES
 	SELECT INTO "nl:"
 	FROM
@@ -456,8 +414,6 @@
 	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
-
 ;GET BLOODS
 	SELECT INTO "nl:"
 	FROM
@@ -476,8 +432,6 @@
 	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
-
 ;GET MEETING
 	SELECT INTO "nl:"
 	FROM
@@ -496,8 +450,6 @@
 	FOOT CE.PERSON_ID
 		NULL
 	WITH EXPAND = 2
-
-
 ;ADD TO 'PATIENTHTML' VARIABLE, A HTML TABLE FOR EACH PATIENT
 	call alterlist(html_log->list,data->cnt)
 	for(x = 1 to data->cnt)
@@ -559,7 +511,6 @@
         ,"</tr>"
 		)
     endfor
-
 ;BUILD HTML PAGE AND SUBSTITUTE IN THE PATIENT TABLE
 	set finalhtml = build2(
 		"<!doctype html><html><head>"
@@ -590,7 +541,7 @@
 		    , "PRINTED: "
 		    ,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
 		    ,"</span> </div> </div> </div>"
-		    ,"</div> <div class=print-title> <h2> Cancer MDM Worklist - vz5.0 </h2> </div>"
+		    ,"</div> <div class=print-title> <h2> Cancer MDM Worklist - Vz10 </h2> </div>"
 		; TABLE OF PATIENT DATA
 			,"<table>"
 			,"<tr>"
@@ -613,7 +564,6 @@
 			,"</body>"
 			,"</html>"
 	)
-
 ;SEND HTML STRING BACK TO POWERCHART FOR PRINTING
 	if(validate(_memory_reply_string) = 1)
 		set _memory_reply_string = finalhtml
@@ -638,8 +588,6 @@
 		set putrequest->document_size = size (putrequest->document)
 		execute eks_put_source with replace("REQUEST" ,putrequest), replace("REPLY" ,putreply)
 	endif
-
-
 	#exit_script
 	end
 	go
