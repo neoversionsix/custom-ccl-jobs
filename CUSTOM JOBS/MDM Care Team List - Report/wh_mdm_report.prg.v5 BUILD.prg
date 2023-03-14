@@ -1,12 +1,10 @@
 ;NOTES
-    /*
+/*
     Program: wh_mdm_report
     Date Created: 27th of October 2022
     Description: Report for MDM Care Team Meeting
     Programmer: Jason Whittle
-
 	THIS VERSION ONLY HAS THE BUILD CODES for EVENT_CD
-
     */
 
 ;CREATE PROGRAM AND PROMPT

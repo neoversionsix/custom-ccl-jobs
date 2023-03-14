@@ -5,10 +5,10 @@ Notes
 drop program wh_med_administr_errors:dba go
 create program wh_med_administr_errors:dba
 
-prompt 
+prompt
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
 	, "Start Date and Time" = "CURDATE"
-	, "End Date and Time" = "CURDATE" 
+	, "End Date and Time" = "CURDATE"
 
 with OUTDEV, STA_DATE_TM, END_DATE_TM
 
@@ -54,7 +54,7 @@ HEAD REPORT
 	row +1 "</head>"
 	row +1 "<body>"
 	row +1 "<table width='40%'>"
-    
+
 DETAIL
 	row +1 call print("<tr>")
 	call print(concat('<td style="font-weight: bold">', REASON_DISP, "</td>"))
@@ -67,8 +67,8 @@ FOOT REPORT
 	row +1 "</html>"
 
 WITH TIME = 60,
-	; MAXREC = 5000, 
-	NOCOUNTER,  
+	; MAXREC = 5000,
+	NOCOUNTER,
 	MAXCOL = 5000,
 	FORMAT
 
