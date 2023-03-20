@@ -12,18 +12,19 @@ with OUTDEV
 
 
 SELECT INTO $OUTDEV
-    POWERPLAN = pathway_catalog.description
-    , P_PATHWAY_TYPE_DISP = UAR_GET_CODE_DISPLAY(pathway_catalog.PATHWAY_TYPE_CD)
+    POWERPLAN_NAME = pathway_catalog.description
+    , PATHWAY_TYPE_DISP = UAR_GET_CODE_DISPLAY(pathway_catalog.PATHWAY_TYPE_CD)
+    , POWERPLAN_ID = pathway_catalog.pathway_catalog_id
 
 FROM
 	pathway_catalog
 
-WHERE
-    pathway_catalog.pathway_catalog_id = 124340476
+; WHERE
+;     pathway_catalog.pathway_catalog_id = 124340476
 
-GROUP BY pathway_catalog.description
+; GROUP BY pathway_catalog.pathway_catalog_id
 
-ORDER BY pathway_catalog.description
+ORDER BY pathway_catalog.pathway_catalog_id
 
 HEAD REPORT
     row +1 "<html>"
@@ -44,10 +45,16 @@ HEAD REPORT
 	row +1 "<table width='90%'>"
 
 DETAIL
-	row +1 call print("<tr>")
-	call print(concat('<td style="font-weight: bold">', POWERPLAN, "</td>"))
-    call print(concat("<td>", P_PATHWAY_TYPE_DISP, "</td>"))
-    call print("</tr>")
+	row +1 "<tr>"
+	row +1 '<td style="font-weight: bold">'
+	row +1 "POWERPLAN NAME:"
+	row +1 "</td>"
+	call print(concat('<td style="font-weight: bold">', POWERPLAN_NAME, "</td>"))
+    row +1 "</tr>"
+    row +1 "<tr>"
+    call print(concat("<td>", PATHWAY_TYPE_DISP, "</td>"))
+    row +1 "</tr>"
+    ;call print(concat("<td>", PATHWAY_TYPE_DISP, "</td>"))
 
 FOOT REPORT
 	row +1 "</table>"
