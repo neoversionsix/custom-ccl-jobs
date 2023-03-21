@@ -6,25 +6,37 @@ drop program wh_testing_query_88:dba go
 create program wh_testing_query_88:dba
 
 prompt
-	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	"Output to File/Printer/MINE" = "MINE"
 
-with OUTDEV
+WITH OUTDEV
 
+DECLARE PATHWAY_CATALOG_ID_VAR = F4 WITH CONSTANT(673967.0),PROTECT
 
 SELECT INTO $OUTDEV
-    POWERPLAN_NAME = pathway_catalog.description
-    , PATHWAY_TYPE_DISP = UAR_GET_CODE_DISPLAY(pathway_catalog.PATHWAY_TYPE_CD)
-    , POWERPLAN_ID = pathway_catalog.pathway_catalog_id
+    POWERPLAN_NAME = PATHWAY_CATALOG.DESCRIPTION
+    , PATHWAY_TYPE_DISP = UAR_GET_CODE_DISPLAY(PATHWAY_CATALOG.PATHWAY_TYPE_CD)
+    , POWERPLAN_ID = PATHWAY_CATALOG.PATHWAY_CATALOG_ID
 
 FROM
-	pathway_catalog
+	PATHWAY_CATALOG
+    , PATHWAY_COMP
+    , ORDER_CATALOG_SYNONYM
 
-; WHERE
-;     pathway_catalog.pathway_catalog_id = 124340476
+PLAN PATHWAY_CATALOG
+    WHERE
+        PATHWAY_CATALOG.PATHWAY_CATALOG_ID = PATHWAY_CATALOG_ID_VAR ; Unfractionated Heparin Infusion (Adults > 16 years) EKM
 
-; GROUP BY pathway_catalog.pathway_catalog_id
+JOIN PATHWAY_COMP
+    WHERE PATHWAY_COMP.PATHWAY_CATALOG_ID = OUTERJOIN(P_CAT.PATHWAY_CATALOG_ID)
 
-ORDER BY pathway_catalog.pathway_catalog_id
+JOIN ORDER_CATALOG_SYNONYM
+    WHERE CS.SYNONYM_ID = OUTERJOIN(PATHWAY_COMP.PARENT_ENTITY_ID)
+
+
+
+; GROUP BY PATHWAY_CATALOG.PATHWAY_CATALOG_id
+
+ORDER BY PATHWAY_CATALOG.PATHWAY_CATALOG_ID
 
 HEAD REPORT
     row +1 "<html>"
@@ -43,8 +55,6 @@ HEAD REPORT
 	row +1 "</head>"
 	row +1 "<body>"
 	row +1 "<table width='90%'>"
-
-DETAIL
 	row +1 "<tr>"
 	row +1 '<td style="font-weight: bold">'
 	row +1 "POWERPLAN NAME:"
@@ -52,14 +62,20 @@ DETAIL
 	call print(concat('<td style="font-weight: bold">', POWERPLAN_NAME, "</td>"))
     row +1 "</tr>"
     row +1 "<tr>"
+    row +1 '<td>'
+	row +1 "PATHWAY TYPE:"
+	row +1 "</td>"
     call print(concat("<td>", PATHWAY_TYPE_DISP, "</td>"))
     row +1 "</tr>"
     ;call print(concat("<td>", PATHWAY_TYPE_DISP, "</td>"))
-
-FOOT REPORT
 	row +1 "</table>"
 	row +1 "</body>"
 	row +1 "</html>"
+;DETAIL
+
+
+;FOOT REPORT
+
 
 WITH TIME = 60,
 	; MAXREC = 5000,
