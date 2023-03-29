@@ -1,5 +1,28 @@
 SELECT
-/* For Andrew Woo
+	O.OE_FORMAT_NAME
+	, APPT_TYPE = UAR_GET_CODE_DISPLAY(S.APPT_TYPE_CD)
+
+FROM
+	ORDER_ENTRY_FORMAT   O
+	, SCH_APPT_SYN   S
+
+PLAN O
+	WHERE O.OE_FORMAT_ID > 0
+
+JOIN S
+	WHERE S.OE_FORMAT_ID = O.OE_FORMAT_ID
+
+
+
+WITH TIME = 5
+
+; aBOVE IS WORKING
+
+
+
+SELECT
+/*
+For Andrew Woo
 Need to add appointment type
 appt_type_cd
 
@@ -9,17 +32,19 @@ Audiology New
 Gyno MBR?
 
 Code Set 14230 For appointment type
+APPT_TYPE_ID LINK TO PRIMARY
  */
       ACTIVE = ORDER_CATALOG_SYNONYM.ACTIVE_IND
     , CATALOG_TYPE = UAR_GET_CODE_DISPLAY(ORDER_CATALOG.CATALOG_TYPE_CD)
     , ACTIVITY_TYPE = UAR_GET_CODE_DISPLAY(ORDER_CATALOG.ACTIVITY_TYPE_CD)
     , PRIMARY_NAME = ORDER_CATALOG.PRIMARY_MNEMONIC
     , OE_FORMAT = ORDER_ENTRY_FORMAT.OE_FORMAT_NAME
-
+    , APPT_TYPE = UAR_GET_CODE_DISPLAY(SCH_APPT_SYN.APPT_TYPE_CD)
 FROM
     ORDER_CATALOG
     , ORDER_CATALOG_SYNONYM
     , ORDER_ENTRY_FORMAT
+    , SCH_APPT_SYN
 
 PLAN ORDER_CATALOG
     WHERE
@@ -32,11 +57,20 @@ JOIN ORDER_CATALOG_SYNONYM
         ORDER_CATALOG_SYNONYM.CATALOG_CD = ORDER_CATALOG.CATALOG_CD
         AND
         ORDER_CATALOG_SYNONYM.MNEMONIC_TYPE_CD = 2583 ; Code value for 'primary' from code set 6011
+
 JOIN ORDER_ENTRY_FORMAT
     WHERE ORDER_ENTRY_FORMAT.OE_FORMAT_ID = ORDER_CATALOG.OE_FORMAT_ID
 
+
+JOIN SCH_APPT_SYN;A relation table that relates an appointment type to a list of appointment synonyms.
+    WHERE SCH_APPT_SYN.OE_FORMAT_ID = ORDER_ENTRY_FORMAT.OE_FORMAT_ID
+    AND SCH_APPT_SYN.OE_FORMAT_ID > 0
+
+/*NOT WORKING
 JOIN BR_SCHED_APPT_TYPE
 	WHERE BR_SCHED_APPT_TYPE.CATALOG_TYPE_CD = ORDER_CATALOG.CATALOG_TYPE_CD
+ */
+
 
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME=10
 
@@ -176,3 +210,56 @@ UKRWH_CDE_OP_A9837            APPT_TYPE_REF                 The identifier for a
 UKRWH_CDE_OP_ATTENDANCE       APPT_TYPE_REF                 The identifier for an appointment type.
 
  */
+
+
+/*
+  CODE SET: 14249
+
+TABLE NAME                    COLUMN NAME                   DESCRIPTION
+------------------------------------------------------------------------------------------------------------------------
+
+PC_CLIENT_STAT5938            VISIT_TYPE_CD                 Scheduling Appointment Synonym.
+PC_CLIENT_STATS_ST            VISIT_TYPE_CD                 Scheduling Appointment Synonym.
+PC_REC_PATTERN                VISIT_TYPE_CD                 Visit type code
+PC_REC_PATTERN5219            VISIT_TYPE_CD                 Visit type code
+PM_WAIT_LIST                  APPT_SYNONYM_CD               Synonym used to schedule appointment. What the appointment
+                                                            is for.
+PM_WAIT_LIST3383              APPT_SYNONYM_CD               Synonym used to schedule appointment. What the appointment
+                                                            is for.
+PM_WAIT_LIST3383DRR           APPT_SYNONYM_CD               Shadow table for PM_WAIT_LIST
+PRAC_SITE_REF_APPT_TYPE       APPT_SYNONYM_CD               Code value specifies whether the PRACTICE_SITE has referral
+                                                            appointment type Surgery, Cardiology etc.
+SCH_APPT_ACT8638              CHILD_APPT_SYN_CD             identifier for the associated appointment synonym
+SCH_APPT_ACTION               CHILD_APPT_SYN_CD             identifier for the associated appointment synonym
+SCH_APPT_COMP                 COMP_APPT_SYNONYM_CD          The coded identifier for the component appointment synonym.
+SCH_APPT_COMP3286             COMP_APPT_SYNONYM_CD          The coded identifier for the component appointment synonym.
+SCH_APPT_SYN                  APPT_SYNONYM_CD               The identifier for an appointment type synonym.
+SCH_APPT_SYN1161              APPT_SYNONYM_CD               The identifier for an appointment type synonym.
+SCH_APPT_TYP1784              APPT_REL_SYN_CD               Synonym Related to the Appointment Type
+SCH_APPT_TYPE_SYN_R           APPT_REL_SYN_CD               Synonym Related to the Appointment Type
+SCH_CAB_SERV9194              APPT_SYNONYM_CD               The unique identifier for the scheduling appointment type.
+SCH_CAB_SERVICE               APPT_SYNONYM_CD               The unique identifier for the scheduling appointment type.
+SCH_EVENT                     APPT_SYNONYM_CD               The identifier for an appointment type synonym.
+SCH_EVENT1191                 APPT_SYNONYM_CD               The identifier for an appointment type synonym.
+SCH_EVENT1191DRR              APPT_SYNONYM_CD               Shadow table for SCH_EVENT
+SCH_EVENT_ACTION              APPT_SYNONYM_CD               The identifier for an appointment type synonym.
+SCH_EVENT_ACTION1168DRR       APPT_SYNONYM_CD               The identifier for an appointment type synonym.
+SCH_PEND_APPT                 APPT_SYNONYM_CD               The identifier for an appointment type synonym.
+SCH_PEND_APPT4921DRR          APPT_SYNONYM_CD               Shadow table for SCH_PEND_APPT
+SCH_PEND_EVENT                APPT_SYNONYM_CD               The appointment type synonym
+SCH_PEND_EVENTF423DRR         APPT_SYNONYM_CD               The appointment type synonym
+SCH_WORKLIST                  APPT_SYNONYM_CD               The identifier of the appointment synonym
+SCH_WORKLIST8702              APPT_SYNONYM_CD               The identifier of the appointment synonym
+
+
+
+
+
+OE_FORMAT_NAME
+    OE_FORMAT_ID [LINK 1]
+
+SCH_APPT_SYN
+    OE_FORMAT_ID [LINK 1]
+    APPT_SYNONYM_CD
+    APPT_TYPE_CD [GOAL]
+*/
