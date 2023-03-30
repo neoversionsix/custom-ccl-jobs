@@ -16,7 +16,7 @@ FROM
 
 PLAN O_C
     WHERE
-        O_C.CATALOG_TYPE_CD = 77902618.00 ; Referral
+        O_C.CATALOG_TYPE_CD IN (77902618.00, 2518.00)	 ; Referral, Scheduling
         AND
         O_C.ACTIVE_IND = 1 ; Only Active Primaries
 
