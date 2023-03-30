@@ -1,7 +1,7 @@
-
 SELECT
 /*
 Auditing related to project defects
+This links an order for an appointment to an order entry format and an appointment type
 For Andrew Woo
  */
      CATALOG_TYPE = UAR_GET_CODE_DISPLAY(O_C.CATALOG_TYPE_CD)
