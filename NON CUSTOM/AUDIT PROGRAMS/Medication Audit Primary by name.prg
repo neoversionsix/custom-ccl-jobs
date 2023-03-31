@@ -1,23 +1,28 @@
 /*
-This program is to count the Radiology Order status' for a given time range.
-It is useful for monitoring issues relating to Rad orders. Origionally developed to
-check if 'cancelled' orders were increasing. Rad dept suspected an issue with cancelled
-orders increasing.
 Programmer: Jason Whittle
 */
 
 
-drop program wh_radiology_status_counts:dba go
-create program wh_radiology_status_counts:dba
+drop program wh_testing_query_88:dba go
+create program wh_testing_query_88:dba
 
-prompt
-	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
-	, "Start Date and Time" = "CURDATE"
-	, "End Date and Time" = "CURDATE"
+prompt 
+	"Output to File/Printer/MINE" = "MINE"      ;* Enter or select the printer or file name to send this report to.
+	, "What is the name of the Primary?" = "" 
 
-with OUTDEV, PRIMARY_NAME
+WITH OUTDEV, PRIMARY_NAME
 
-DECLARE PRIMARY_NAME = VC with NoConstant($PRIMARY_NAME),Protect
+DECLARE PRIMARY_NAME_VAR = VC with NoConstant($PRIMARY_NAME),Protect
+
+DECLARE PRIMARY_MNEMONIC_VAR = VC with NoConstant(""),Protect
+DECLARE PRIMARY_DESCRIPTION_VAR = VC with NoConstant(""),Protect
+DECLARE CATALOG_TYPE_VAR = VC with NoConstant(""),Protect
+DECLARE ACTIVITY_TYPE_VAR = VC with NoConstant(""),Protect
+DECLARE ACTIVITY_SUBTYPE_VAR = VC with NoConstant(""),Protect
+DECLARE CATALOG_CD_VAR = F8 with NoConstant(0.00),Protect
+
+DECLARE FINALHTML_VAR = VC with NoConstant(" "),Protect
+DECLARE CSS_VAR = VC with NoConstant(" "),Protect
 
 SELECT INTO "NL:"
       PRIMARY_MNEMONIC = OC.PRIMARY_MNEMONIC
@@ -25,54 +30,95 @@ SELECT INTO "NL:"
     , CATALOG_TYPE = UAR_GET_CODE_DISPLAY(OC.CATALOG_TYPE_CD)
     , ACTIVITY_TYPE = UAR_GET_CODE_DISPLAY(OC.ACTIVITY_TYPE_CD)
     , ACTIVITY_SUBTYPE = UAR_GET_CODE_DISPLAY(OC.ACTIVITY_SUBTYPE_CD)
+    , CATALOG_CD = OC.CATALOG_CD
 FROM
     ORDER_CATALOG   OC
 
 WHERE
-    OC.PRIMARY_MNEMONIC = $PRIMARY_NAME
-
-    
+    OC.PRIMARY_MNEMONIC = PRIMARY_NAME_VAR
 
 HEAD REPORT
-    row +1 "<html>"
-	row +1 "<head>"
-	row +1 "<title>Patient List</title>"
-    row +1 "<style>"
-    row +1 "table, th, td {"
-    row +1 "border: 1px solid black;"
-    row +1 "border-collapse: collapse;"
-    row +1 "}"
-    row +1 "</style>"
-    row +1 "</head>"
-    row +1 "<h1>Radiology Order Status Counts</h1>"
-    row +1 "<h3>Time Range:"
-    row +1 $PRIMARY_NAME
-    row +1 "</h3>"
-    row +1 "<p1>This Report gives you the counts of the Radiology"
-    row +1 "order status' for a chosen time range. It"
-    row +1 "is useful for monitoring issues relating to Rad orders."
-    row +1 " The dates-times represent the time the order was originally made."
-    row +1 "</p1><br><br>"
-	row +1 "</head>"
-	row +1 "<body>"
-	row +1 "<table width='40%'>"
+    PRIMARY_MNEMONIC_VAR =      PRIMARY_MNEMONIC
+    PRIMARY_DESCRIPTION_VAR =   PRIMARY_DESCRIPTION
+    CATALOG_TYPE_VAR =          CATALOG_TYPE
+    ACTIVITY_TYPE_VAR =         ACTIVITY_TYPE
+    ACTIVITY_SUBTYPE_VAR =      ACTIVITY_SUBTYPE
+    CATALOG_CD_VAR =            CATALOG_CD
+    
+SET CSS_VAR = BUILD2(
+      "table, th, td {"
+    , "border: 1px solid black;"
+    , "border-collapse: collapse;"
+    , "}"
+)
 
-DETAIL
-	row +1 call print("<tr>")
-	call print(concat('<td style="font-weight: bold">', PRIMARY_NAME, "</td>"))
-    call print(concat("<td>", PRIMARY_NAME, "</td>"))
-    call print("</tr>")
+SET FINALHTML_VAR = BUILD2(
+    "<html>"
+	, "<head>"
+	, "<title>Medication Audit</title>"
+    , "<style>"
+    , CSS_VAR
+    , "</style>"
+    , "</head>"
+    , "<h1>Medication Audit</h1>"
+    , "<h3>Primary Audit For: "
+    , $PRIMARY_NAME
+    , "</h3>"
+    , "<p1>This Report gives you the information related to a specific pharmacy medication (primary)"
+    , "</p1><br><br>"
+	, "</head>"
+	, "<body>"
+	, "<table width='95%'>"
 
-FOOT REPORT
-	row +1 "</table>"
-	row +1 "</body>"
-	row +1 "</html>"
+	, "<tr>"
+	, '<td style="font-weight: bold; width:150px">'
+    , "PRIMARY MNEMONIC"
+    , "</td>"
+    , "<td>", PRIMARY_MNEMONIC_VAR, "</td>"
+    , "</tr>"
 
-WITH TIME = 30,
-	; MAXREC = 5000,
-	NOCOUNTER,
-	MAXCOL = 5000,
-	FORMAT
+	, "<tr>"
+	, '<td style="font-weight: bold; width:150px">'
+    , "PRIMARY DESCRIPTION"
+    , "</td>"
+    , "<td>", PRIMARY_DESCRIPTION_VAR, "</td>"
+    , "</tr>"
+
+	, "<tr>"
+	, '<td style="font-weight: bold; width:150px">'
+    , "CATALOG TYPE"
+    , "</td>"
+    , "<td>", CATALOG_TYPE_VAR, "</td>"
+    , "</tr>"
+
+	, "<tr>"
+	, '<td style="font-weight: bold; width:150px">'
+    , "ACTIVITY TYPE"
+    , "</td>"
+    , "<td>", ACTIVITY_TYPE_VAR, "</td>"
+    , "</tr>"
+
+	, "<tr>"
+	, '<td style="font-weight: bold; width:150px">'
+    , "ACTIVITY SUBTYPE"
+    , "</td>"
+    , "<td>", ACTIVITY_SUBTYPE_VAR, "</td>"
+    , "</tr>"
+
+	, "<tr>"
+	, '<td style="font-weight: bold; width:150px">'
+    , "CATALOG CODE"
+    , "</td>"
+    , "<td>", CATALOG_CD_VAR, "</td>"
+    , "</tr>" 
+
+	, "</table>"
+	, "</body>"
+	, "</html>"
+)
+
+;Send the html text to the window
+set _memory_reply_string = FINALHTML_VAR
 
 end
 go
