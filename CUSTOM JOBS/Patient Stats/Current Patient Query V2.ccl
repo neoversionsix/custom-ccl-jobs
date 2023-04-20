@@ -70,6 +70,8 @@ JOIN OA
         OA.ORDER_ID = CE.ORDER_ID
         AND
         OA.UPDT_DT_TM > CNVTDATETIME("12-Jan-2023 00:00:00.00")
+        AND
+        OA.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
 
 /*
 JOIN D;DIAGNOSIS
