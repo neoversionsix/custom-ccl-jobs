@@ -1,5 +1,6 @@
 # Path for input data
 path = 'input.xlsx'
+input_data = pd.read_excel(path, dtype= 'str' ) # Read data
 
 # Output code location
 outfilp = r'C:\Users\\whittlj2\\'
@@ -52,21 +53,16 @@ datetime_str = datetime_str.replace(':', '-')
 outputfilename = outfilp + datetime_str + outputfilename + filetype
 outputfilename = str(outputfilename)
 
-
-
-# READ CSV FILE
-input_data = pd.read_excel(path, sheet_name= 'DATA', dtype= 'str' )
-
 # WRITE CODE TO TXT FILE
 for index, row in input_data.iterrows():
-    # Column that has the usernames to put in the code
+    # Column that has the usernames to put in the code. The next two lines need adjusting
     to_switch_1 = str(row['USERNAME'].upper())
     to_switch_2 = str(row['CREDENTIAL'])
     #Write to file
     for a_row in ccl_code:
         # Only generate code where a credential is filled out
         if to_switch_2 != 'nan':
-            # REPLACE SWAPME_1 with the username in each row of the code slab
+            # REPLACE SWAPME_1 with the username in each row of the code slab. The next two lines need adjusting
             new_row = a_row.replace('SWAPME_1', to_switch_1)
             new_row_2 = new_row.replace('SWAPME_2', to_switch_2)
             f = open(outputfilename, "a")
