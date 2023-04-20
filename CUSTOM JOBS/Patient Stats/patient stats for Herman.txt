@@ -1,1 +1,72 @@
 Current inpatients addmitted before January 2023 for Jen and Herman
+
+
+JOIN E
+	WHERE(
+		E.ENCNTR_TYPE_CD = 309308 ; Only inpatient encounters
+
+
+PLAN E
+	WHERE 
+		E.ARRIVE_DT_TM BETWEEN ; FILTER FOR APPOINTMENTS IN THIS TIME RANGE
+       		; CNVTDATETIME("01-JAN-2022 00:00:00.00"); This line is used for query testing purposes
+			CNVTDATETIME($START_DT_ENC)
+			AND
+			; CNVTDATETIME("10-JAN-2022 23:59:59.00"); This line is used for query testing purposes
+			CNVTDATETIME($END_DT_ENC)
+		AND
+		E.MED_SERVICE_CD IN (
+			87625391.00;Orthopaedic Surgery
+  			,
+			86504090.00;Prosthetics & Orthoses
+  			,
+			98636040.00;SP Paed Orthopaedics
+		)
+		AND
+		E.ENCNTR_STATUS_CD IN (
+			854.00 ;ACTIVE
+			,
+			856.00;DISCHARGED
+			,
+			666808.00; PENDING ARRIVAL
+		)
+		AND
+		E.ENCNTR_TYPE_CD IN (309309.00);Outpatient
+
+JOIN P ; PERSON
+	WHERE
+		P.PERSON_ID = E.PERSON_ID
+		AND
+		P.ACTIVE_IND = 1
+
+JOIN PA
+    WHERE
+        P.PERSON_ID = PA.PERSON_ID
+        AND
+        PA.ALIAS_POOL_CD = 9569589.00 ; this filters for the UR Number
+        AND
+        PA.ACTIVE_IND = 1
+		AND
+		PA.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, curtime3)
+
+
+
+        where	ea_visit.alias not in ("IPE*", "EMG*")	; ignore Inpatient and ED results.
+
+
+
+
+    WHERE  
+	    E.MED_SERVICE_CD = 313015 ; 'ONCOLOGY' MED SERVICE PATIENTS
+	    AND (;DEPARTED IN THE FUTURE OR NEVER AT ALL
+		    E.DEPART_DT_TM > CNVTDATETIME(CURDATE, CURTIME3)
+		    OR
+		    E.DISCH_DT_TM > CNVTDATETIME(CURDATE, CURTIME3)
+		OR 
+            (E.DEPART_DT_TM IS NULL AND E.DISCH_DT_TM IS NULL)
+            )
+	    AND (; TURNED UP IN THE PAST
+            E.ARRIVE_DT_TM < CNVTDATETIME(CURDATE, CURTIME3)
+            OR 
+            E.REG_DT_TM < CNVTDATETIME(CURDATE, CURTIME3)
+            )
