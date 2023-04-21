@@ -22,13 +22,15 @@ WITH OUTDEV, PRIMARY_NAME
     DECLARE ACTIVITY_TYPE_VAR = VC with NoConstant(""),Protect
     DECLARE ACTIVITY_SUBTYPE_VAR = VC with NoConstant(""),Protect
     DECLARE CATALOG_CD_VAR = F8 with NoConstant(0.00),Protect
-    DECLARE CATALOG_CKI_VAR = VC255
+    DECLARE CATALOG_CKI_VAR = VC with NoConstant(""),Protect
+    DECLARE ORDERS_COUNT_VAR = F8 with NoConstant(0.00),Protect
+    ;DECLARE RESULTS_COUNT_VAR = F8 with NoConstant(0.00),Protect
 
 ;HTML VARIABLES
     DECLARE FINALHTML_VAR = VC with NoConstant(" "),Protect
     DECLARE CSS_VAR = VC with NoConstant(" "),Protect
 
-; Query from Order_Catalog
+; Query from Order_Catalog TABLE
     SELECT INTO "NL:"
         ACTIVE                = OC.ACTIVE_IND
         , PRIMARY_MNEMONIC      = OC.PRIMARY_MNEMONIC
@@ -55,7 +57,37 @@ WITH OUTDEV, PRIMARY_NAME
         CATALOG_CD_VAR              = CATALOG_CD
         CATALOG_CKI_VAR             = CATALOG_CKI
 
-  
+
+;QUERY FROM ORDERS TABLE
+    SELECT INTO "NL:"
+        ORDERS_COUNT = COUNT(O.CATALOG_CD)
+    
+    FROM
+        ORDERS O
+    
+    WHERE
+        O.CATALOG_CD = CATALOG_CD_VAR
+    
+    HEAD REPORT
+        ORDERS_COUNT_VAR = ORDERS_COUNT
+
+/* 
+;QUERY FROM CLINICAL_EVENT TABLE (DEACTIVATING DUE TO TIME)
+    SELECT INTO "NL:"
+        RESULTS_COUNT = COUNT(CE.CATALOG_CD)
+    
+    FROM
+        CLINICAL_EVENT CE
+    
+    WHERE
+        CE.CATALOG_CD = CATALOG_CD_VAR
+        AND
+        CE.VIEW_LEVEL = 1
+
+    HEAD REPORT
+        RESULTS_COUNT_VAR = RESULTS_COUNT
+ */  
+ 
 ;HTML OUT
     SET CSS_VAR = BUILD2(
         "table, th, td {"
@@ -84,13 +116,6 @@ WITH OUTDEV, PRIMARY_NAME
 
         , "<tr>"
         , '<td style="font-weight: bold; width:150px">'
-        , "ACTIVE (ORDER_CATALOG)?"
-        , "</td>"
-        , "<td>", ACTIVE_VAR, "</td>"
-        , "</tr>"
-
-        , "<tr>"
-        , '<td style="font-weight: bold; width:150px">'
         , "PRIMARY MNEMONIC"
         , "</td>"
         , "<td>", PRIMARY_MNEMONIC_VAR, "</td>"
@@ -102,6 +127,29 @@ WITH OUTDEV, PRIMARY_NAME
         , "</td>"
         , "<td>", PRIMARY_DESCRIPTION_VAR, "</td>"
         , "</tr>"
+
+        , "<tr>"
+        , '<td style="font-weight: bold; width:150px">'
+        , "ACTIVE (ORDER_CATALOG)?"
+        , "</td>"
+        , "<td>", ACTIVE_VAR, "</td>"
+        , "</tr>"
+
+        , "<tr>"
+        , '<td style="font-weight: bold; width:150px">'
+        , "NUMBER OF ORDERS UNDER PRIMARY"
+        , "</td>"
+        , "<td>", ORDERS_COUNT_VAR, "</td>"
+        , "</tr>"
+
+/*
+        , "<tr>"
+        , '<td style="font-weight: bold; width:150px">'
+        , "NUMBER OF RESULTS UNDER PRIMARY"
+        , "</td>"
+        , "<td>", RESULTS_COUNT_VAR, "</td>"
+        , "</tr>"
+ */
 
         , "<tr>"
         , '<td style="font-weight: bold; width:150px">'
