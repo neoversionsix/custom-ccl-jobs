@@ -1,0 +1,28 @@
+/*switch codes in wh_mdm_report.prg
+run this code in prod to find the codes to switch to */
+
+SELECT
+	CV1.CODE_VALUE
+	, CV1.DESCRIPTION
+	, CV1.DISPLAY
+	, CV1.DISPLAY_KEY
+
+FROM
+	CODE_VALUE   CV1
+
+WHERE 
+    CV1.definition IN(
+        "Onc_MDM_Question"
+        , "ONC_MDM_Pre-op/Post-op Discussion"
+        , "Onc_MDM_RelevantBloods"
+        , "Onc_MDM_Cancer MDM or Surgical Meeting"
+        , "Onc_MDM_Pathology"
+        , "Onc_MDM_Clinical Notes"
+        , "Onc_MDM_Consultant"
+        , "Onc_MDM_Imaging"
+        , "Onc_MDM_ClinicAppt/FollowUp"
+        , "Onc_MDM_Date"
+        , "Onc_MDM_Scopes"
+        )
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT
