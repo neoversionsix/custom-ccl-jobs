@@ -37,10 +37,10 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
     , "<h1>"
     , TITLE_VAR
     , "</h1>"
-    , "<h3>Time Range:"
+    , "<h3>Time Range:</h3>"
     , $STA_DATE_TM
+    , "<br>TO<br>"
     , $END_DATE_TM
-    , "</h3>"
     , "<p1>"
     , REPORT_DESC_VAR
     , "</p1><br><br>"
@@ -48,100 +48,213 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
 	, "<body>"
     )
 
-SELECT INTO "NL:"
-    M_A_P_E.REASON_CD
-    , REASON_DISP = UAR_GET_CODE_DISPLAY(M_A_P_E.REASON_CD)
-    , ERROR_COUNT = CNVTSTRING(count(M_A_P_E.MED_ADMIN_PT_ERROR_ID))
-FROM
-	MED_ADMIN_PT_ERROR   M_A_P_E
-WHERE
-        M_A_P_E.UPDT_DT_TM BETWEEN CNVTDATETIME($STA_DATE_TM) AND CNVTDATETIME($END_DATE_TM)
-        AND
-        M_A_P_E.REASON_CD != 0.0
-GROUP BY M_A_P_E.REASON_CD
-ORDER BY M_A_P_E.REASON_CD
-HEAD REPORT
-    FINALHTML_VAR = BUILD2(
-        FINALHTML_VAR
-        , "<table width='40%'>"
+; Medication Administration Errors Totals
+    SELECT INTO "NL:"
+        M_A_P_E.REASON_CD
+        , REASON_DISP = UAR_GET_CODE_DISPLAY(M_A_P_E.REASON_CD)
+        , ERROR_COUNT = CNVTSTRING(count(M_A_P_E.MED_ADMIN_PT_ERROR_ID))
+    FROM
+        MED_ADMIN_PT_ERROR   M_A_P_E
+    WHERE
+            M_A_P_E.UPDT_DT_TM BETWEEN CNVTDATETIME($STA_DATE_TM) AND CNVTDATETIME($END_DATE_TM)
+            AND
+            M_A_P_E.REASON_CD != 0.0
+    GROUP BY M_A_P_E.REASON_CD
+    ORDER BY M_A_P_E.REASON_CD
+    HEAD REPORT
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "<h3>WH Medication Administration Error Totals</h3>"
+            , "<table width='40%'>"
+        )
+    DETAIL
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "<tr>"
+            , '<td style="font-weight: bold">', REASON_DISP, "</td>"
+            , "<td>", ERROR_COUNT, "</td>"
+            , "</tr>"
+        )
+    FOOT REPORT
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "</table>"
+        )
+    WITH TIME = 60
+
+; Footscray Location Totals
+    SELECT INTO "NL:"
+    ; Wristband Scanned?
+	SCANNED = EVALUATE(
+        MAE.POSITIVE_PATIENT_IDENT_IND
+        ,1, "Scanned"
+        ,0, "NOT Scanned"
     )
-DETAIL
-	FINALHTML_VAR = BUILD2(
-        FINALHTML_VAR
-        , "<tr>"
-        , '<td style="font-weight: bold">', REASON_DISP, "</td>"
-        , "<td>", ERROR_COUNT, "</td>"
-        , "</tr>"
+    , NURSE_WARD = UAR_GET_CODE_DISPLAY(MAE.NURSE_UNIT_CD) ; Nurse 'Ward'
+    , WARD_SCAN_TOTAL = COUNT(*)
+    FROM
+        ORDERS   O
+        , MED_ADMIN_EVENT   MAE
+        , ENCOUNTER   E
+    PLAN O
+        WHERE 
+            O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
+            AND 
+            O.ORDER_STATUS_CD = 2543 ; Completed Orders
+            AND
+            O.UPDT_DT_TM  ; Time Restriction
+            BETWEEN
+                CNVTDATETIME($STA_DATE_TM)
+                AND
+                CNVTDATETIME($END_DATE_TM)
+            AND
+            O.ACTIVE_IND = 1
+            AND
+            O.ACTIVE_STATUS_CD = 188; "active"
+    JOIN MAE WHERE MAE.ORDER_ID = O.ORDER_ID
+    JOIN E WHERE E.ENCNTR_ID = O.ENCNTR_ID
+        AND E.LOC_FACILITY_CD = 85758822.00 ; Footscray
+
+    GROUP BY MAE.NURSE_UNIT_CD, MAE.POSITIVE_PATIENT_IDENT_IND
+    ORDER BY MAE.NURSE_UNIT_CD, MAE.POSITIVE_PATIENT_IDENT_IND
+    HEAD REPORT
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "<br>"
+            , "<h3>Footscray Wristband Scan Totals</h3>"
+            , "<table width='40%'>"
+        )
+    DETAIL
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "<tr>"
+            , '<td style="font-weight: bold">', NURSE_WARD, "</td>"
+            , '<td style="font-weight: bold">', SCANNED, "</td>"
+            , "<td>", WARD_SCAN_TOTAL, "</td>"
+            , "</tr>"
+        )
+    FOOT REPORT
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "</table>"
+        )
+    WITH TIME = 60
+
+; Sunshine Location Totals
+    SELECT INTO "NL:"
+    ; Wristband Scanned?
+	SCANNED = EVALUATE(
+        MAE.POSITIVE_PATIENT_IDENT_IND
+        ,1, "Scanned"
+        ,0, "NOT Scanned"
     )
-FOOT REPORT
-    FINALHTML_VAR = BUILD2(
-        FINALHTML_VAR
-        , "</table>"
+    , NURSE_WARD = UAR_GET_CODE_DISPLAY(MAE.NURSE_UNIT_CD) ; Nurse 'Ward'
+    , WARD_SCAN_TOTAL = COUNT(*)
+    FROM
+        ORDERS   O
+        , MED_ADMIN_EVENT   MAE
+        , ENCOUNTER   E
+    PLAN O
+        WHERE 
+            O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
+            AND 
+            O.ORDER_STATUS_CD = 2543 ; Completed Orders
+            AND
+            O.UPDT_DT_TM  ; Time Restriction
+            BETWEEN
+                CNVTDATETIME($STA_DATE_TM)
+                AND
+                CNVTDATETIME($END_DATE_TM)
+            AND
+            O.ACTIVE_IND = 1
+            AND
+            O.ACTIVE_STATUS_CD = 188; "active"
+    JOIN MAE WHERE MAE.ORDER_ID = O.ORDER_ID
+    JOIN E WHERE E.ENCNTR_ID = O.ENCNTR_ID
+        AND E.LOC_FACILITY_CD = 86163400.00; Sunshine
+
+    GROUP BY MAE.NURSE_UNIT_CD, MAE.POSITIVE_PATIENT_IDENT_IND
+    ORDER BY MAE.NURSE_UNIT_CD, MAE.POSITIVE_PATIENT_IDENT_IND
+    HEAD REPORT
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "<br>"
+            , "<h3>Sunshine Wristband Scan Totals</h3>"
+            , "<table width='40%'>"
+        )
+    DETAIL
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "<tr>"
+            , '<td style="font-weight: bold">', NURSE_WARD, "</td>"
+            , '<td style="font-weight: bold">', SCANNED, "</td>"
+            , "<td>", WARD_SCAN_TOTAL, "</td>"
+            , "</tr>"
+        )
+    FOOT REPORT
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "</table>"
+        )
+    WITH TIME = 60
+
+; Williamstown Location Totals
+    SELECT INTO "NL:"
+    ; Wristband Scanned?
+	SCANNED = EVALUATE(
+        MAE.POSITIVE_PATIENT_IDENT_IND
+        ,1, "Scanned"
+        ,0, "NOT Scanned"
     )
-WITH TIME = 60
+    , NURSE_WARD = UAR_GET_CODE_DISPLAY(MAE.NURSE_UNIT_CD) ; Nurse 'Ward'
+    , WARD_SCAN_TOTAL = COUNT(*)
+    FROM
+        ORDERS   O
+        , MED_ADMIN_EVENT   MAE
+        , ENCOUNTER   E
+    PLAN O
+        WHERE 
+            O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
+            AND 
+            O.ORDER_STATUS_CD = 2543 ; Completed Orders
+            AND
+            O.UPDT_DT_TM  ; Time Restriction
+            BETWEEN
+                CNVTDATETIME($STA_DATE_TM)
+                AND
+                CNVTDATETIME($END_DATE_TM)
+            AND
+            O.ACTIVE_IND = 1
+            AND
+            O.ACTIVE_STATUS_CD = 188; "active"
+    JOIN MAE WHERE MAE.ORDER_ID = O.ORDER_ID
+    JOIN E WHERE E.ENCNTR_ID = O.ENCNTR_ID
+        AND E.LOC_FACILITY_CD = 86163477.00; Williamstown
 
-
-SELECT INTO "NL:"
-	, E_LOC_NURSE_UNIT_DISP = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
-	, E_MED_SERVICE_DISP = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
-	, SCANNED = MAE.POSITIVE_PATIENT_IDENT_IND
-;    , MAE_ORDER_ID = MAE.ORDER_ID
-;    , O_ORDER_ID = O.ORDER_ID
-FROM
-	ORDERS   O
-;	, PERSON   P
-;	, PERSON_ALIAS	PA
-	, PRSNL   PR
-	, MED_ADMIN_EVENT   MAE
-	, ENCOUNTER   E
-
-PLAN O
-	WHERE 
-		O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-		AND 
-		O.ORDER_STATUS_CD = 2543 ; Completed Orders
-		AND
-		O.UPDT_DT_TM  ; Time Restriction
-		BETWEEN
-		    CNVTDATETIME($FROMDT)
-		    AND
-		    CNVTDATETIME($ENDDT)
-        	;CNVTDATETIME("01-APR-2022 00:00:00.00")
-        	;AND
-			;CNVTDATETIME("01-AUG-2022 00:00:00.00")
-		AND
-		O.ACTIVE_IND = 1
-		AND
-		O.ACTIVE_STATUS_CD = 188; "active"
-;		AND
-;		O.PERSON_ID = 12921277 ; limit by patient 12921277 is "TESTHTS, Joanne"
-
-;JOIN PA WHERE PA.PERSON_ID = O.PERSON_ID ; To get patients URN
-; 	AND
-; 	PA.ALIAS_POOL_CD = 9569589 ;UR Numbers Only
-
-JOIN MAE WHERE MAE.ORDER_ID = O.ORDER_ID
-;   AND
-;	; Med Admin (MAW) Only (which indicates the MAW)
-;	AND
-;	MAE.SOURCE_APPLICATION_FLAG = 2
-;	AND
-;	MAE.PRSNL_ID = 12876451
-
-
-JOIN E WHERE E.ENCNTR_ID = OUTERJOIN(O.ENCNTR_ID)
-	AND E.LOC_NURSE_UNIT_CD =   103390687.00 ; "S CHILDREN'S W", filtering for paediatric ward
-
-JOIN PR WHERE PR.PERSON_ID = OUTERJOIN(MAE.PRSNL_ID) ; To get completing staff member
-
-
-ORDER BY	
-	O.UPDT_DT_TM   DESC
-	, O.ORDER_ID   DESC
-	, MAE.EVENT_ID   DESC
-;	, 0
-
-
+    GROUP BY MAE.NURSE_UNIT_CD, MAE.POSITIVE_PATIENT_IDENT_IND
+    ORDER BY MAE.NURSE_UNIT_CD, MAE.POSITIVE_PATIENT_IDENT_IND
+    HEAD REPORT
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "<br>"
+            , "<h3>Williamstown Wristband Scan Totals</h3>"
+            , "<table width='40%'>"
+        )
+    DETAIL
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "<tr>"
+            , '<td style="font-weight: bold">', NURSE_WARD, "</td>"
+            , '<td style="font-weight: bold">', SCANNED, "</td>"
+            , "<td>", WARD_SCAN_TOTAL, "</td>"
+            , "</tr>"
+        )
+    FOOT REPORT
+        FINALHTML_VAR = BUILD2(
+            FINALHTML_VAR
+            , "</table>"
+        )
+    WITH TIME = 60
 
 SET FINALHTML_VAR = BUILD2(
     FINALHTML_VAR
@@ -151,8 +264,6 @@ SET FINALHTML_VAR = BUILD2(
 
 ;Send the html text to the window
     SET _memory_reply_string = FINALHTML_VAR
-
-
 
 end
 go
