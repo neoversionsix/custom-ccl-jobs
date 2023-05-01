@@ -11,12 +11,27 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
 ;INITIAL VARIABLES
     DECLARE FINALHTML_VAR = VC with NoConstant(" "),Protect
     DECLARE CSS_VAR = VC with NoConstant(" "),Protect
-    DECLARE TITLE_VAR = VC with Constant("Medication Administration Patient Errors"),Protect
+    DECLARE TITLE_VAR = VC with Constant("Medication Administration Scanner Override Reason"),Protect
     DECLARE REPORT_DESC_VAR = VC with NoConstant(""),Protect
+    DECLARE ACCURACY_NOTES_VAR = VC with NoConstant(""),Protect
     SET REPORT_DESC_VAR = BUILD2(
-        "This Report gives you the counts of the Medication Administration"
-        , " errors for a chosen time range. It is useful for seeing how many"
-        , " times the wristbands were not scanned when administering medications."
+        "This Report gives you the counts of:"
+        ,"<br>&nbsp;&nbsp;&nbsp;&nbsp;"
+        ,"1) Medication Administration errors for a chosen time range."
+        ,"<br>&nbsp;&nbsp;&nbsp;&nbsp;"
+        ,"2) Counts for patient wristband scanning by ward when administering medications"
+        ,"<br>"
+        ,"It is useful for estimating how many"
+        ," times the wristbands were scanned/not-scanned when administering medications."
+    )
+    SET ACCURACY_NOTES_VAR = BUILD2(
+         "These values will not be 100% Accurate."
+        , " Some reasonable assumptions needed to be made when developing this report."
+        ," Testing was conducted but can't be 100% conclusive"
+        ,"<br>Known Limitations:<br>&nbsp;&nbsp;&nbsp;&nbsp;" 
+        ,"- Totals for the first table (WH Medication Administration Error Totals) include fake 'test' patient totals."
+        ,"<br>&nbsp;&nbsp;&nbsp;&nbsp;"
+        ,"- Not all data is recorded. This can depend on clinical workflow."
     )
     SET CSS_VAR = BUILD2(
         "table, th, td {"
@@ -41,7 +56,7 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
     , $STA_DATE_TM
     , "<br>TO<br>"
     , $END_DATE_TM
-    , "<p1>"
+    , "<br><br><p1>"
     , REPORT_DESC_VAR
     , "</p1><br><br>"
 	, "</head>"
@@ -258,6 +273,8 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
 
 SET FINALHTML_VAR = BUILD2(
     FINALHTML_VAR
+    , "<br>"
+    , "<p>",ACCURACY_NOTES_VAR,"</p>"
     , "</body>"
     , "</html>"
 )
