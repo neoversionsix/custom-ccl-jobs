@@ -1,5 +1,5 @@
-drop program wh_testing_query_88:dba go
-create program wh_testing_query_88:dba
+drop program wh_wrist_scan go
+create program wh_wrist_scan
 
 prompt
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
