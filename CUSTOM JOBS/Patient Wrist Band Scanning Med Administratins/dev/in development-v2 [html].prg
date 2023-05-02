@@ -155,8 +155,6 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         )
     WITH TIME = 60
 
-
-
 ; Sunshine Location Totals
     SELECT INTO "NL:"
     ; Wristband Scanned?
