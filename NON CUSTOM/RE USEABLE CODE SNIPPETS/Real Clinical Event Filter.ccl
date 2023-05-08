@@ -1,0 +1,11 @@
+PLAN C;CLINICAL_EVENT
+	WHERE
+		C.RESULT_STATUS_CD = 25; "Auth (Verified)" This removes duplicates
+		AND
+		C.VIEW_LEVEL = 1 ;Viewable not hidden for whatever reason
+		AND
+		C.EVENT_CD IN(
+			7334466;	Body Mass Index Measured ;SWITCH WITH YOUR CODE!!!!!!!!!
+		)
+		AND
+		C.EVENT_START_DT_TM > CNVTLOOKBEHIND("1,M")

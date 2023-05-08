@@ -1,5 +1,5 @@
 JOIN P;PERSON
-	WHERE P.PERSON_ID = E.PERSON_ID
-    AND P.ACTIVE_IND = 1
-    AND P.NAME_LAST_KEY != "*TESTWHS*"
-    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+	WHERE P.PERSON_ID = C.PERSON_ID
+    AND P.ACTIVE_IND = 1; Remove inactive patients
+    AND P.NAME_LAST_KEY != "*TESTWHS*" ; Remove fake 'test' patients
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE ; Remove inactive patients

@@ -1,0 +1,41 @@
+SELECT
+/*NOTES
+Incident 574678
+I am reviewing the WH Care of the bariatric patient PPG and wondered if it is possible to see how often / how many of these patients we see.
+Care of the Bariatric Patient
+Would it be possible to see how many admissions there were where the patients had a BMI  ≥ 40.0 in the past 6 - 12 months?
+ */
+	C.EVENT_START_DT_TM "YYYY-MM-DD HH:MM:SS;;d"
+	, C.RESULT_VAL
+	, P.NAME_FULL_FORMATTED
+FROM
+	CLINICAL_EVENT	C
+	, PERSON		P
+PLAN C;CLINICAL_EVENT
+	WHERE
+		C.RESULT_STATUS_CD = 25; "Auth (Verified)" This removes duplicates
+		AND
+		C.VIEW_LEVEL = 1 ;Viewable not hidden for whatever reason
+		AND
+		C.EVENT_CD IN(
+			7334466;	Body Mass Index Measured
+		)
+		AND
+		C.RESULT_VAL >= 40
+		AND
+		C.EVENT_START_DT_TM > CNVTLOOKBEHIND("1,Y")
+			;BETWEEN 
+			; CNVTDATETIME("01-APR-2021 00:00:00.00")
+			; AND
+			; CNVTDATETIME("31-MAY-2022 00:00:00.00")
+JOIN P;PERSON
+	WHERE P.PERSON_ID = C.PERSON_ID
+    AND P.ACTIVE_IND = 1; Remove inactive patients
+    AND P.NAME_LAST_KEY != "*TESTWHS*" ; Remove fake 'test' patients
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE ; Remove inactive patients
+ORDER BY
+	C.EVENT_START_DT_TM   DESC
+	, C.PERSON_ID
+	, 0
+WITH 
+	MAXREC = 1000000, NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
