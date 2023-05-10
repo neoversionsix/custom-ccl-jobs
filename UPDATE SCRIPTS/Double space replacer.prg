@@ -1,3 +1,9 @@
+declare DEPT_DISP_NAME_VAR = VC with Protect
+
+with OUTDEV
+ 
+;insert update scripts here
+
 /*
 ****IN DEVELOPMENT********
 */
