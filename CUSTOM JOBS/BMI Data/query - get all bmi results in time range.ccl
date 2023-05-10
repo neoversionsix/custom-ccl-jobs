@@ -1,16 +1,15 @@
-SELECT
-/*NOTES
-Incident 574678
-I am reviewing the WH Care of the bariatric patient PPG and wondered if it is possible to see how often / how many of these patients we see.
-Care of the Bariatric Patient
-Would it be possible to see how many admissions there were where the patients had a BMI  ≥ 40.0 in the past 6 - 12 months?
- */
+SELECT DISTINCT
 	C.EVENT_START_DT_TM "YYYY-MM-DD HH:MM:SS;;d"
 	, C.RESULT_VAL
 	, P.NAME_FULL_FORMATTED
+	, E_LOC_NURSE_UNIT_DISP = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+	, E_LOC_FACILITY_DISP = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+
 FROM
-	CLINICAL_EVENT	C
-	, PERSON		P
+	CLINICAL_EVENT   C
+	, PERSON   P
+	, ENCOUNTER   E
+
 PLAN C;CLINICAL_EVENT
 	WHERE
 		C.RESULT_STATUS_CD = 25; "Auth (Verified)" This removes duplicates
@@ -20,8 +19,6 @@ PLAN C;CLINICAL_EVENT
 		C.EVENT_CD IN(
 			7334466;	Body Mass Index Measured
 		)
-		AND
-		C.RESULT_VAL >= 40
 		AND
 		C.EVENT_START_DT_TM > CNVTLOOKBEHIND("1,Y")
 			;BETWEEN 
@@ -33,9 +30,13 @@ JOIN P;PERSON
     AND P.ACTIVE_IND = 1; Remove inactive patients
     AND P.NAME_LAST_KEY != "*TESTWHS*" ; Remove fake 'test' patients
     AND P.END_EFFECTIVE_DT_TM > SYSDATE ; Remove inactive patients
+JOIN E;ENCOUNTER
+	WHERE E.ENCNTR_ID = C.ENCNTR_ID
+	AND
+	E.LOC_FACILITY_CD != 4038465.00 ; "DEMO 1 HOSPITAL" Removes fake data from the demo hospital
+
 ORDER BY
-	C.EVENT_START_DT_TM   DESC
-	, C.PERSON_ID
+	E.ENCNTR_ID
 	, 0
-WITH 
-	MAXREC = 1000000, NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
+
+WITH MAXREC = 1000000, NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
