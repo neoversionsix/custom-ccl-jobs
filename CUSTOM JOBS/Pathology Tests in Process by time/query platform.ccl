@@ -1,0 +1,84 @@
+select distinct	; Not marked 'Collect' totals  extract script	
+	unit_at_time_of_order_action = if(e.disch_dt_tm > 0 and e.disch_dt_tm < o_a_aft.action_dt_tm) "patient already discharged"	
+	else uar_get_code_display(elh.loc_nurse_unit_cd)	
+	endif	
+	, year = year(o_a_aft.updt_dt_tm)	
+	, month = month(o_a_aft.updt_dt_tm)	
+;	, day = day(o_a_aft.updt_dt_tm)	
+	, orders_not_marked_collected = count(*)	
+		
+from		
+	order_action o_a_bef	
+	, (left join prsnl p_o_a_bef on p_o_a_bef.person_id = o_a_bef.updt_id)	
+	, (left join order_action o_a_aft on o_a_aft.order_id = o_a_bef.order_id	
+	and o_a_aft.action_sequence = o_a_bef.action_sequence + 1	
+	)	
+	, (left join prsnl prsnl_o_a_aft on prsnl_o_a_aft.person_id = o_a_aft.action_personnel_id)	
+	, (left join prsnl p_o_a_aft on p_o_a_aft.person_id = o_a_aft.updt_id)	
+	, (left join orders o on o.order_id = o_a_bef.order_id)	
+	, (left join order_container_r o_c_r on o_c_r.order_id = o_a_bef.order_id)	
+	, (left join container c on c.container_id = o_c_r.container_id)	
+	, (left join container_accession c_a on c_a.container_id = o_c_r.container_id)	
+	, (left join task_activity ta on ta.container_id = o_c_r.container_id)	
+	, (left join person p on p.person_id = o.person_id)	
+	, (left join encounter e on e.encntr_id = o.encntr_id)	
+	, (left join encntr_alias ea on ea.encntr_id = o.encntr_id	
+	and ea.encntr_alias_type_cd = 1079	; URN
+	and ea.active_ind = 1 	
+	)	
+	, (left join encntr_loc_hist elh on elh.encntr_id = o.encntr_id	
+	and elh.active_ind = 1	; to remove inactive rows that seem to appear for unknown reason(s)
+	and elh.pm_hist_tracking_id > 0	; to remove duplicate row that seems to occur at discharge
+	and elh.beg_effective_dt_tm < o_a_aft.action_dt_tm 	; encounter location began before action occurred
+	and elh.end_effective_dt_tm > o_a_aft.action_dt_tm 	; encounter location ended after action occurred
+	)	
+	, (left join encntr_loc_hist elh2 on elh2.encntr_id = elh.encntr_id	
+	and elh2.active_ind = 1	; to remove inactive rows that seem to appear for unknown reason(s)
+	and elh2.pm_hist_tracking_id > 0	; to remove duplicate row that seems to occur at discharge
+	and elh2.end_effective_dt_tm  = elh.beg_effective_dt_tm 	; encounter location began before action occurred
+	)	
+		
+plan	o_a_bef	
+where	o_a_bef.dept_status_cd = 9315	; Dispatched
+and	o_a_bef.order_status_cd = 2550	; Ordered
+join	p_o_a_bef	
+join	o_a_aft	
+;where	o_a_aft.dept_status_cd = 9311	; Collected
+where	o_a_aft.order_status_cd = 2548	; InProcess
+;and	o_a_aft.updt_dt_tm > cnvtlookbehind("1,M")	; look back 1 month
+;and	o_a_aft.updt_dt_tm between cnvtdatetime("01-DEC-2018") and cnvtdatetime("01-DEC-2021") 	
+;and	o_a_aft.updt_dt_tm between cnvtdatetime("01-DEC-2021") and cnvtdatetime("01-FEB-2023") 	
+and	o_a_aft.updt_dt_tm between cnvtdatetime("01-FEB-2023") and cnvtdatetime("01-DEC-2023") 	
+join	prsnl_o_a_aft	
+join	p_o_a_aft	
+join	o	
+;where	o.order_id = 12345678	
+join	o_c_r	
+join	c	
+join	c_a	
+;where	c_a.c_a.barcode_accession = "03192751000"	
+join	ta	
+;where	ta.task_id = 12345678	
+join	p	
+join	e	
+where	e.encntr_type_cd in (309308,309310)	;'Inpatient' & 'Emergency' from code set 71
+join	ea	
+;where	ea.alias = "123456"	; enter URN here…
+join	elh	
+where	elh.loc_nurse_unit_cd in (86163603, 86167424)	; F CCU, S CCU
+;where	elh.loc_nurse_unit_cd = 86169725	
+join	elh2	
+		
+group by		
+	elh.loc_nurse_unit_cd	
+	, year(o_a_aft.updt_dt_tm)	
+	, month(o_a_aft.updt_dt_tm)	
+;	, day(o_a_aft.updt_dt_tm)	
+		
+order by		
+	year(o_a_aft.updt_dt_tm)	
+	, month(o_a_aft.updt_dt_tm)	
+;	, day(o_a_aft.updt_dt_tm)	
+	, count(*) desc	
+		
+with	time = 2400	
