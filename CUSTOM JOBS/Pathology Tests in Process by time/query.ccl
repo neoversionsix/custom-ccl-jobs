@@ -1,7 +1,36 @@
 SELECT
-    *
+      TEST = O.ORDERED_AS_MNEMONIC
+    , TIMESTAMP = O_A.EFFECTIVE_DT_TM "YYYY-MM-DD HH:MM:SS;;D"
+    ; , DT_YEAR = O_A.EFFECTIVE_DT_TM "YYYY;;D"
+    ; , DT_MONTH = O_A.EFFECTIVE_DT_TM "MM;;D"
 FROM
-    ORDER_ACTION O_A
-WHERE
-    O_A
-    O_A_AFT.ORDER_STATUS_CD = 2548	; INPROCESS
+      ORDER_ACTION          O_A
+    , ENCOUNTER             E
+    , ORDERS                O
+    , PERSON                P                   
+
+PLAN O_A;ORDER_ACTION
+    WHERE
+    O_A.ORDER_STATUS_CD = 2548 /* 'INPROCESS' Order Status Rows Only */
+    AND O_A.EFFECTIVE_DT_TM > CNVTLOOKBEHIND("10,H")
+
+JOIN O;ORDERS
+    WHERE 
+    O.ORDER_ID = O_A.ORDER_ID
+    AND O.CATALOG_TYPE_CD = 2513 /* 'Laboratory' Orders Only */
+    AND O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-MAY-2023 00:00:00.00") /* Orders after the EMR started at WH */
+
+JOIN P;PERSON
+	WHERE
+    P.PERSON_ID = O.PERSON_ID
+    AND P.ACTIVE_IND = 1 /* Remove Inactive Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*" /* Remove Fake 'Test' Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE /* Remove Inactive Patients */
+
+JOIN E;ENCOUNTER
+    WHERE
+    E.ENCNTR_ID = O.ENCNTR_ID
+    AND E.LOC_FACILITY_CD != 4038465.00 /* "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    AND E.BEG_EFFECTIVE_DT_TM > CNVTDATETIME("01-MAY-2023 00:00:00.00") /* Encounters after the EMR started at WH */
+    AND E.LOC_FACILITY_CD = 86163400.00 /* Sunshine Hospital Only */
+WITH TIME = 10, MAXREC = 10
