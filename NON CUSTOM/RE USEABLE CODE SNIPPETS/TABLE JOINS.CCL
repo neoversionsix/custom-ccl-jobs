@@ -1,21 +1,7 @@
-SELECT
-      TEST = O.ORDERED_AS_MNEMONIC
-    ; , TIMESTAMP = O_A.EFFECTIVE_DT_TM "YYYY-MM-DD HH:MM:SS;;D"
-    , DT_YEAR = O_A.EFFECTIVE_DT_TM "YYYY"
-    , DT_MONTH = O_A.EFFECTIVE_DT_TM "MM"
-    ; , DT_DAY = O_A.EFFECTIVE_DT_TM "DD"
-
-FROM
-      ORDER_ACTION          O_A
-    , ENCOUNTER             E
-    , ORDERS                O
-    , PERSON                P
-
 PLAN O_A;ORDER_ACTION
     WHERE
     O_A.ORDER_STATUS_CD = 2548 /* 'INPROCESS' Order Status Rows Only */
-    AND O_A.ACTION_DT_TM > CNVTLOOKBEHIND("1,H")
-    AND O_A.CONTRIBUTOR_SYSTEM_CD = 86524974.00 /* 'WH_LAB' Laboratory orders only*/
+    AND O_A.EFFECTIVE_DT_TM > CNVTLOOKBEHIND("10,H")
 
 JOIN O;ORDERS
     WHERE
@@ -36,4 +22,3 @@ JOIN E;ENCOUNTER
     AND E.LOC_FACILITY_CD != 4038465.00 /* "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
     AND E.BEG_EFFECTIVE_DT_TM > CNVTDATETIME("01-MAY-2023 00:00:00.00") /* Encounters after the EMR started at WH */
     AND E.LOC_FACILITY_CD = 86163400.00 /* Sunshine Hospital Only */
-WITH TIME = 10, MAXREC = 100
