@@ -9,31 +9,25 @@ FROM
       ORDER_ACTION          O_A
     , ENCOUNTER             E
     , ORDERS                O
-    , PERSON                P
 
 PLAN O_A;ORDER_ACTION
     WHERE
     O_A.ORDER_STATUS_CD = 2548 /* 'INPROCESS' Order Status Rows Only */
-    AND O_A.ACTION_DT_TM > CNVTLOOKBEHIND("1,H")
+    AND O_A.ACTION_DT_TM > CNVTLOOKBEHIND("5,H")
     AND O_A.CONTRIBUTOR_SYSTEM_CD = 86524974.00 /* 'WH_LAB' Laboratory orders only*/
 
 JOIN O;ORDERS
     WHERE
     O.ORDER_ID = O_A.ORDER_ID
     AND O.CATALOG_TYPE_CD = 2513 /* 'Laboratory' Orders Only */
-    AND O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-MAY-2023 00:00:00.00") /* Orders after the EMR started at WH */
-
-JOIN P;PERSON
-	WHERE
-    P.PERSON_ID = O.PERSON_ID
-    AND P.ACTIVE_IND = 1 /* Remove Inactive Patients */
-    AND P.NAME_LAST_KEY != "*TESTWHS*" /* Remove Fake 'Test' Patients */
-    AND P.END_EFFECTIVE_DT_TM > SYSDATE /* Remove Inactive Patients */
+    AND O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-JAN-2018 00:00:00.00") /* Orders after  */
+    AND O.PERSON_ID NOT IN ; REMOVE TEST PATIENTS
+    	(SELECT PERSON_FILTER.PERSON_ID FROM PERSON PERSON_FILTER WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*")
 
 JOIN E;ENCOUNTER
     WHERE
     E.ENCNTR_ID = O.ENCNTR_ID
     AND E.LOC_FACILITY_CD != 4038465.00 /* "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
-    AND E.BEG_EFFECTIVE_DT_TM > CNVTDATETIME("01-MAY-2023 00:00:00.00") /* Encounters after the EMR started at WH */
+    AND E.BEG_EFFECTIVE_DT_TM > CNVTDATETIME("01-JAN-2018 00:00:00.00") /* Encounters after  */
     AND E.LOC_FACILITY_CD = 86163400.00 /* Sunshine Hospital Only */
-WITH TIME = 10, MAXREC = 100
+WITH TIME = 10, MAXREC = 1000
