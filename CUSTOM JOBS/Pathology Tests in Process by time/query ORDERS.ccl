@@ -1,6 +1,7 @@
 SELECT DISTINCT
       O.CATALOG_CD
       , O.ORDER_ID
+      , O.ENCNTR_ID
 FROM
     ORDERS  O
 WHERE
