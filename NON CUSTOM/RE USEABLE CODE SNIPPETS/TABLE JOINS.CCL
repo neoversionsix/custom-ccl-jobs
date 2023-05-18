@@ -1,24 +1,70 @@
-JOIN O_A;ORDER_ACTION
+PLAN O_A;ORDER_ACTION
     WHERE
-    O_A.ORDER_STATUS_CD = 2548 /* 'INPROCESS' Order Status Rows Only */
+    /* 'INPROCESS' Order Status Rows Only */
+    O_A.ORDER_STATUS_CD = 2548
+    /* Orders after  */
     AND O_A.EFFECTIVE_DT_TM > CNVTLOOKBEHIND("10,H")
 
-JOIN O;ORDERS
-    WHERE
-    O.ORDER_ID = O_A.ORDER_ID
-    AND O.CATALOG_TYPE_CD = 2513 /* 'Laboratory' Orders Only */
-    AND O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-MAY-2023 00:00:00.00") /* Orders after the EMR started at WH */
 
-JOIN P;PERSON
+
+PLAN O;ORDERS
+    WHERE
+    /*
+    2516 = Pharmacy
+    2513 = Laboratory
+     */
+    /* 'Pharmacy' Catalog Orders Only */
+    O.CATALOG_TYPE_CD = 2516.00
+    /* Orders after  */
+    AND O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-JAN-2023 00:00:00.00")
+    /* Remove Fake Patients */
+    AND O.PERSON_ID NOT IN (
+    	SELECT PERSON_FILTER.PERSON_ID
+        FROM PERSON PERSON_FILTER
+        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
+        )
+    /*
+    CODE_VALUE	DISPLAY
+       2542.00	Cancelled
+       2543.00	Completed
+       2544.00	Deleted
+       2545.00	Discontinued
+       2546.00	Future
+       2547.00	Incomplete
+       2548.00	InProcess
+       2549.00	On Hold, Med Student
+       2550.00	Ordered
+     643466.00	Pending Complete
+       2551.00	Pending Review
+       2552.00	Suspended
+     614538.00	Transfer/Canceled
+       2553.00	Unscheduled
+     643467.00	Deleted With Results
+
+     */
+     /* Order Status */
+    AND O.ORDER_STATUS_CD = 2543.00
+
+
+
+PLAN P;PERSON
 	WHERE
-    P.PERSON_ID = O.PERSON_ID
-    AND P.ACTIVE_IND = 1 /* Remove Inactive Patients */
-    AND P.NAME_LAST_KEY != "*TESTWHS*" /* Remove Fake 'Test' Patients */
-    AND P.END_EFFECTIVE_DT_TM > SYSDATE /* Remove Inactive Patients */
+    /* Remove Inactive Patients */
+    P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
-JOIN E;ENCOUNTER
+PLAN E;ENCOUNTER
     WHERE
-    E.ENCNTR_ID = O.ENCNTR_ID
-    AND E.LOC_FACILITY_CD != 4038465.00 /* "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
-    AND E.BEG_EFFECTIVE_DT_TM > CNVTDATETIME("01-MAY-2023 00:00:00.00") /* Encounters after the EMR started at WH */
-    AND E.LOC_FACILITY_CD = 86163400.00 /* Sunshine Hospital Only */
+    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    E.LOC_FACILITY_CD != 4038465.00
+    /* Remove Fake 'Test' Patients */
+    AND E.PERSON_ID NOT IN (
+    	SELECT PERSON_FILTER.PERSON_ID
+        FROM PERSON PERSON_FILTER
+        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
+        )
+
+    AND E.BEG_EFFECTIVE_DT_TM > CNVTDATETIME("01-JAN-2018 00:00:00.00")

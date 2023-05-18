@@ -1,0 +1,6 @@
+IMMUNIZATION_IND                                                                                                          
+                                                                                                                                    
+                              INFUSION_BILL_RPT_6304DRR     The indicator used to determine if the order is an                      
+                                                            immunization.                                                           
+                              INFUSION_BILL_RPT_ADMIN       The indicator used to determine if the order is an                      
+                                                            immunization.;                                           

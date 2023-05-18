@@ -12,7 +12,7 @@ FROM
 PLAN O;ORDERS
     WHERE
     /* 'Vaccine's Only */
-    O.CATALOG_CD =
+    O.CATALOG_CD IN
         (
         SELECT C_V_FILTER.CODE_VALUE
         FROM CODE_VALUE C_V_FILTER

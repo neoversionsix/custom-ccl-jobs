@@ -35,12 +35,5 @@ JOIN E;ENCOUNTER
 JOIN P;PERSON
 	WHERE
     P.PERSON_ID = O.PERSON_ID
-    AND
-    /* Remove Inactive Patients */
-    P.ACTIVE_IND = 1
-    /* Remove Fake 'Test' Patients */
-    AND P.NAME_LAST_KEY != "*TESTWHS*"
-    /* Remove Ineffective Patients */
-    AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
 WITH TIME = 10, MAXREC = 1000
