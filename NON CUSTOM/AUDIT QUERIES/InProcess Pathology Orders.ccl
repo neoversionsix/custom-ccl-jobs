@@ -1,0 +1,134 @@
+select	; orders timeline
+	UR_number = ea_URN.alias
+	, patient_name = p.name_full_formatted
+	, patient_id = o.person_id
+	, encntr_dates = concat(format(e_orig.arrive_dt_tm, "dd/mm/yy hh:mm"), " - ", format(e_orig.depart_dt_tm, "dd/mm/yy hh:mm"))
+	, visit_no = ea_visit.alias
+	, o.encntr_id
+	, unit_at_time_of_action =if(elh.loc_nurse_unit_cd > 0) uar_get_code_display(elh.loc_nurse_unit_cd)
+	else uar_get_code_display(e_orig.loc_nurse_unit_cd)
+	endif
+	, encntr_rank = dense_rank() over (partition by 0
+	order by
+	o_a.action_dt_tm
+	, o_a.order_id
+	)
+	, order_mnemonic = o.ordered_as_mnemonic
+	, specimen_type = o_d8.oe_field_display_value
+	, o.order_id
+	, action_type = uar_get_code_display(o_a.action_type_cd)
+	, order_status_after_action = uar_get_code_display(o_a.order_status_cd)
+	, dept_status_after_action = uar_get_code_display(o_a.dept_status_cd)
+	, accession = build(
+	c_a.barcode_accession
+	, evaluate(c_a.accession_container_nbr
+	, 1, "A"
+	, 2, "B"
+	, 3, "C"
+	, 4, "D"
+	, 5, "E"
+	, 6, "F"
+	, 7, "G"
+	, 8, "H"
+	, 9, "I"
+	, 10, "J"
+	, 11, "K"
+	, 12, "L"
+	, 13, "M"
+	, 14, "N"
+	, 15, "O"
+	, 16, "P"
+	, 17, "Q"
+	, 18, "R"
+	, 19, "S"
+	, 20, "T"
+	, 21, "U"
+	, 22, "V"
+	, 23, "W"
+	, 24, "X"
+	, 25, "Y"
+	, 26, "Z"
+	)
+	)
+	, action_date = format(o_a.action_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, action_system = uar_get_code_display(o_a.contributor_system_cd)
+	, actioner = p_o_a.name_full_formatted
+	, order_rank = dense_rank() over (partition by 0
+	order by
+	o_a.action_dt_tm
+	, o_a.order_id
+	)
+
+from
+	orders o
+	, (left join prsnl p_o_stat on p_o_stat.person_id = o.status_prsnl_id)	; order status updater
+	, (left join person p on p.person_id = o.person_id)	; patient
+	, (left join order_detail o_d8 on o_d8.order_id = o.order_id
+	and o_d8.oe_field_id = 12584	; 'Specimen Type' oef field
+	)
+	, (left join order_action o_a on o_a.order_id = o.order_id)
+	, (left join prsnl p_o_a on p_o_a.person_id = o_a.action_personnel_id)
+	, (left join order_container_r o_c_r on o_c_r.order_id = o.order_id)
+	, (left join container c on c.container_id = o_c_r.container_id)
+	, (left join container_accession c_a on c_a.container_id = o_c_r.container_id)
+	, (left join encounter e_orig on e_orig.encntr_id = o.encntr_id)
+	, (left join encntr_alias ea_URN on ea_URN.encntr_id = o.encntr_id
+	and ea_URN.encntr_alias_type_cd = 1079	; 'URN' from code set 319
+	and ea_URN.active_ind = 1	; active URNs only
+	and ea_URN.end_effective_dt_tm > sysdate	; effective URNs only
+	)
+	, (left join encntr_alias ea_visit on ea_visit.encntr_id = o.encntr_id
+	and ea_visit.encntr_alias_type_cd = 1077	; 'FIN NBR' from code set 319
+	and ea_visit.active_ind = 1	; active FIN NBRs only
+	and ea_visit.end_effective_dt_tm > sysdate	; effective FIN NBRs only
+	)
+	, (left join encntr_loc_hist elh on elh.encntr_id = o.encntr_id
+	and elh.active_ind = 1	; to remove inactive rows that seem to appear for unknown reason(s)
+	and elh.pm_hist_tracking_id > 0	; to remove duplicate row that seems to occur at discharge
+	and elh.beg_effective_dt_tm < o_a.action_dt_tm	; encounter location began before order action occured
+	and elh.end_effective_dt_tm >  o_a.action_dt_tm	; encounter location ended after order action occured
+	)
+
+plan	o
+where	o.order_status_cd = 2548	; 'InProcess'
+;and	o.orig_order_dt_tm between cnvtdatetime("01-OCT-2018") and cnvtdatetime("01-MAR-2019")	; list of relevent dates only
+;and	o.catalog_type_cd not in (2513, 2516, 2517, 0)	; code values for 'Laboratory', 'Pharmacy' and 'Radiology' from code set 6000.
+and	o.catalog_type_cd = 2513 	; code value for 'Laboratory' from code set 6000
+;and	o.catalog_type_cd = 2515	; code value for 'Patient Care' from code set 6000
+;and	o.catalog_type_cd = 2516	; code value for 'Pharmacy' from code set 6000
+;and	o.catalog_type_cd = 2517 	; code value for 'Radiology' from code set 6000
+;and	o.catalog_type_cd in (2519, 84871493)	; code values for 'Surgery' and 'CMBS Code - SN' from code set 6000
+;and	o.catalog_cd in ()	; list of relevent orderables only
+;and	o.synonym_id in ()	; list of relevent synonyms only
+;and	o.ordered_as_mnemonic in ("")	; list of relevent synonyms only
+join	p_o_stat	; order status updater
+join	o_d8	; 'Specimen Type' oef field
+join	p	; patient
+join	o_a
+where	o_a.order_status_cd = 2548	; 'InProcess'
+;and	o_a.action_dt_tm between cnvtdatetime("01-OCT-2018") and cnvtdatetime("01-FEB-2019")	; list of relevent dates only
+;and	o_a.action_dt_tm between cnvtdatetime("01-FEB-2019") and cnvtdatetime("01-JUN-2019")
+;and	o_a.action_dt_tm between cnvtdatetime("01-JUN-2019") and cnvtdatetime("01-OCT-2019")
+;and	o_a.action_dt_tm between cnvtdatetime("01-OCT-2019") and cnvtdatetime("01-JAN-2020")
+;and	o_a.action_dt_tm between cnvtdatetime("01-JAN-2020") and cnvtdatetime("01-APR-2020")
+;and	o_a.action_dt_tm between cnvtdatetime("01-APR-2020") and cnvtdatetime("01-JUL-2020")
+;and	o_a.action_dt_tm between cnvtdatetime("01-JUL-2020") and cnvtdatetime("01-OCT-2020")
+and	o_a.action_dt_tm between cnvtdatetime("01-OCT-2020") and cnvtlookbehind("1,w")	; don't return preceeding week, as these samples may legitamately still be in the lab
+join	p_o_a	; order action personnel
+join	o_c_r
+join	c
+join	c_a
+join	e_orig
+join	ea_URN
+;where	ea_URN.alias = "123456"	; enter patient number here
+join	ea_visit
+;where	ea_visit.alias = "IPE123456"	; enter visit number here
+join	elh
+
+order by
+	o_a.action_dt_tm
+	, o_a.order_id
+	, 0
+
+with
+	time = 2400
