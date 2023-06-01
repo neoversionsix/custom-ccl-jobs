@@ -5,9 +5,9 @@ Programmer: Jason Whittle
 drop program wh_testing_query_88:dba go
 create program wh_testing_query_88:dba
 
-prompt 
+prompt
 	"Output to File/Printer/MINE" = "MINE"      ;* Enter or select the printer or file name to send this report to.
-	, "What is the name of the Primary?" = "" 
+	, "What is the name of the Primary?" = ""
 
 WITH OUTDEV, PRIMARY_NAME
 
@@ -29,6 +29,7 @@ WITH OUTDEV, PRIMARY_NAME
 ;HTML VARIABLES
     DECLARE FINALHTML_VAR = VC with NoConstant(" "),Protect
     DECLARE CSS_VAR = VC with NoConstant(" "),Protect
+    DECLARE ACTIVE_STYLE_VAR = VC with NoConstant(""),Protect
 
 ; Query from Order_Catalog TABLE
     SELECT INTO "NL:"
@@ -61,30 +62,33 @@ WITH OUTDEV, PRIMARY_NAME
 ;QUERY FROM ORDERS TABLE
     SELECT INTO "NL:"
         ORDERS_COUNT = COUNT(O.CATALOG_CD)
-    
+
     FROM
         ORDERS O
-    
+
     WHERE
         O.CATALOG_CD = CATALOG_CD_VAR
-    
+
     HEAD REPORT
         ORDERS_COUNT_VAR = ORDERS_COUNT
 
-/* QUERY FROM V500_EVENT_SET_EXPLODE ESE_0 FOR EVENT SET*/
-    SELECT
-    FROM
-    WHERE
-    HEAD
+    WITH TIME = 5
 
-/* 
+/* QUERY FROM V500_EVENT_SET_EXPLODE ESE_0 FOR EVENT SET*/
+
+    ; SELECT
+    ; FROM
+    ; WHERE
+    ; HEAD
+
+/*
 ;QUERY FROM CLINICAL_EVENT TABLE (DEACTIVATING DUE TO TIME)
     SELECT INTO "NL:"
         RESULTS_COUNT = COUNT(CE.CATALOG_CD)
-    
+
     FROM
         CLINICAL_EVENT CE
-    
+
     WHERE
         CE.CATALOG_CD = CATALOG_CD_VAR
         AND
@@ -92,8 +96,15 @@ WITH OUTDEV, PRIMARY_NAME
 
     HEAD REPORT
         RESULTS_COUNT_VAR = RESULTS_COUNT
- */  
- 
+ */
+
+;CELL BACKGROUNDS
+IF (ACTIVE_VAR = 1)
+    SET ACTIVE_STYLE_VAR = ' style="background-color: lightgreen;"'
+ELSE
+    SET ACTIVE_STYLE_VAR = ' style="background-color: grey;"'
+ENDIF
+
 ;HTML OUT
     SET CSS_VAR = BUILD2(
         "table, th, td {"
@@ -121,28 +132,27 @@ WITH OUTDEV, PRIMARY_NAME
         , "<table width='95%'>"
 
         , "<tr>"
-        , '<td style="font-weight: bold; width:150px">'
+        , '<td style="font-weight: bold; width: 25%">'
         , "PRIMARY MNEMONIC"
         , "</td>"
         , "<td>", PRIMARY_MNEMONIC_VAR, "</td>"
         , "</tr>"
 
         , "<tr>"
-        , '<td style="font-weight: bold; width:150px">'
+        , '<td style="font-weight: bold; width: 25%">'
         , "PRIMARY DESCRIPTION"
         , "</td>"
         , "<td>", PRIMARY_DESCRIPTION_VAR, "</td>"
         , "</tr>"
 
         , "<tr>"
-        , '<td style="font-weight: bold; width:150px">'
+        , '<td style="font-weight: bold; width: 25%">'
         , "ACTIVE (ORDER_CATALOG)?"
         , "</td>"
-        , "<td>", ACTIVE_VAR, "</td>"
+        , "<td", ACTIVE_STYLE_VAR, ">", ACTIVE_VAR, "</td>"
         , "</tr>"
-
         , "<tr>"
-        , '<td style="font-weight: bold; width:150px">'
+        , '<td style="font-weight: bold; width: 25%">'
         , "NUMBER OF ORDERS UNDER PRIMARY"
         , "</td>"
         , "<td>", ORDERS_COUNT_VAR, "</td>"
@@ -150,7 +160,7 @@ WITH OUTDEV, PRIMARY_NAME
 
 /*
         , "<tr>"
-        , '<td style="font-weight: bold; width:150px">'
+        , '<td style="font-weight: bold; width: 25%">'
         , "NUMBER OF RESULTS UNDER PRIMARY"
         , "</td>"
         , "<td>", RESULTS_COUNT_VAR, "</td>"
@@ -158,39 +168,39 @@ WITH OUTDEV, PRIMARY_NAME
  */
 
         , "<tr>"
-        , '<td style="font-weight: bold; width:150px">'
+        , '<td style="font-weight: bold; width: 25%">'
         , "CATALOG TYPE"
         , "</td>"
         , "<td>", CATALOG_TYPE_VAR, "</td>"
         , "</tr>"
 
         , "<tr>"
-        , '<td style="font-weight: bold; width:150px">'
+        , '<td style="font-weight: bold; width: 25%">'
         , "ACTIVITY TYPE"
         , "</td>"
         , "<td>", ACTIVITY_TYPE_VAR, "</td>"
         , "</tr>"
 
         , "<tr>"
-        , '<td style="font-weight: bold; width:150px">'
+        , '<td style="font-weight: bold; width: 25%">'
         , "ACTIVITY SUBTYPE"
         , "</td>"
         , "<td>", ACTIVITY_SUBTYPE_VAR, "</td>"
         , "</tr>"
 
         , "<tr>"
-        , '<td style="font-weight: bold; width:150px">'
+        , '<td style="font-weight: bold; width: 25%">'
         , "CATALOG CODE"
         , "</td>"
         , "<td>", CATALOG_CD_VAR, "</td>"
-        , "</tr>" 
+        , "</tr>"
 
         , "<tr>"
-        , '<td style="font-weight: bold; width:150px">'
+        , '<td style="font-weight: bold; width: 25%">'
         , "CATALOG CKI"
         , "</td>"
         , "<td>", CATALOG_CKI_VAR, "</td>"
-        , "</tr>" 
+        , "</tr>"
 
         , "</table>"
         , "</body>"
