@@ -1,4 +1,15 @@
-SELECT
+drop program WH_IMMUNISATIONS go
+create program WH_IMMUNISATIONS
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "Filter start date time" = "SYSDATE"
+	, "Filter end date time" = "SYSDATE"
+
+with OUTDEV, STA_DATE_TM, END_DATE_TM
+
+
+SELECT INTO $OUTDEV
         PATIENT = P.NAME_FULL_FORMATTED
     ,   PATIENT_URN = P_A.ALIAS
     ,   ADMINISTERED = UAR_GET_CODE_DISPLAY(C_E.CATALOG_CD)
@@ -13,8 +24,7 @@ SELECT
 	,   SITE = UAR_GET_CODE_DISPLAY(C_M_R.ADMIN_SITE_CD)
     ,   DOSAGE = C_M_R.ADMIN_DOSAGE
     ,   DOSAGE_UNIT = UAR_GET_CODE_DISPLAY(C_M_R.DOSAGE_UNIT_CD)
-	,   INFUSED_VOLUME = C_M_R.INFUSED_VOLUME
-	,   INFUSED_VOLUME_UNIT = UAR_GET_CODE_DISPLAY(C_M_R.INFUSED_VOLUME_UNIT_CD)
+
 
 FROM
         CLINICAL_EVENT      C_E
@@ -31,7 +41,7 @@ PLAN C_E;
     /* Viewable (not reverted etc) */
     AND C_E.VIEW_LEVEL = 1
     /* Time Filter */
-    AND C_E.PERFORMED_DT_TM > CNVTDATETIME("27-MAY-2023 00:00:00.00")
+    AND C_E.PERFORMED_DT_TM BETWEEN CNVTDATETIME($STA_DATE_TM) AND CNVTDATETIME($END_DATE_TM)
     /* Determines whether the event record has been authenticated (removes duplicates) and 'patient refused rows*/
     AND C_E.AUTHENTIC_FLAG = 1
     /* "Auth (Verified)" Result Status, This effectively removes duplictes*/
@@ -78,4 +88,9 @@ JOIN E_A;ENCNTR_ALIAS;
 	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE	; effective FIN NBRs only
 
 
-WITH TIME = 5
+WITH
+    TIME = 30
+    , FORMAT
+
+end
+go
