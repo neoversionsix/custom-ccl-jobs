@@ -18,19 +18,40 @@ FROM
 	, DIAGNOSIS   D
 	, PERSON_ALIAS   P_A
 	, PERSON   P
-PLAN E
-	WHERE
-	E.LOC_NURSE_UNIT_CD = 114893271 ; S GC ;  GC GEM at Sunshine Hospital (ground floor)
-	AND E.ARRIVE_DT_TM
-	BETWEEN
-		CNVTDATETIME("01-JUN-2021 00:00:00.00")
-		AND
-		CNVTDATETIME("01-JAN-2022 00:00:00.00")
-;	AND E.ENCNTR_ID = XXXXXX ; Input your encounter id
+
+PLAN E;ENCOUNTER
+    WHERE
+    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    E.LOC_FACILITY_CD != 4038465.00
+    /* Remove Fake 'Test' Patients */
+    AND E.PERSON_ID NOT IN (
+    	SELECT PERSON_FILTER.PERSON_ID
+        FROM PERSON PERSON_FILTER
+        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
+        )
+
+    AND E.BEG_EFFECTIVE_DT_TM > CNVTLOOKBEHIND("3,Y")
 JOIN D
 	WHERE D.PERSON_ID = E.PERSON_ID
 	AND
-	CNVTUPPER(D.DIAGNOSIS_DISPLAY) = "*DELIRIUM*"
+	D.NOMENCLATURE_ID IN (
+    , 10256011.00; Cardiac ascites
+    , 10256012.00; Hepatic ascites
+    , 10256013.00; Malignant ascites
+    , 10427226.00; Chylous ascites
+    , 10431170.00; Pancreatic ascites
+    , 10441075.00; Ovarian-ascites-pleural effusion syndrome
+    , 10452903.00; T3 (III): Endometrial tumour with local and/or regional spread as specified in T3a, b, N1 and FIGO IIIA, B, and C below or adnexa (direct extension or metastasis) and/or cancer cells in ascites or peritoneal washings
+    , 10501055.00; Ascites
+    , 10587341.00; Fetal ascites
+    , 23679887.00; Tense ascites
+    , 23768613.00; Refractory ascites
+    , 28040733.00; Ascites due to alcoholic cirrhosis
+    , 28062731.00; Hepatic ascites due to chronic alcoholic hepatitis
+    , 28113507.00; Ascites due to alcoholic hepatitis
+    , 32333679.00; Ascites co-occurrent and due to hepatic disorder
+
+    )
 JOIN P_A
 	WHERE P_A.PERSON_ID = E.PERSON_ID
 	AND
@@ -44,4 +65,4 @@ JOIN P
 ORDER BY
 	PATIENT_URN   DESC
 	, 0
-WITH MAXREC = 1000000, NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 100
+WITH MAXREC = 1000000, NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
