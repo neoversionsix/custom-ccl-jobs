@@ -35,7 +35,7 @@ JOIN D
 	WHERE D.PERSON_ID = E.PERSON_ID
 	AND
 	D.NOMENCLATURE_ID IN (
-    , 10256011.00; Cardiac ascites
+     10256011.00; Cardiac ascites
     , 10256012.00; Hepatic ascites
     , 10256013.00; Malignant ascites
     , 10427226.00; Chylous ascites
