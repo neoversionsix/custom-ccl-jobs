@@ -25,7 +25,8 @@ WITH OUTDEV, PRIMARY_NAME
     DECLARE CATALOG_CKI_VAR = VC with NoConstant(""),Protect
     DECLARE ORDERS_COUNT_VAR = F8 with NoConstant(0.00),Protect
     DECLARE DCP_CLIN_CAT_VAR = VC with NoConstant(""),Protect
-    ;DECLARE RESULTS_COUNT_VAR = F8 with NoConstant(0.00),Protect
+    DECLARE PRINT_REQ_IND_VAR = I2 with NoConstant(0),Protect
+    DECLARE REQUISITION_FORMAT_VAR = VC with NoConstant(""),Protect
 
 ;HTML VARIABLES
     DECLARE FINALHTML_VAR = VC with NoConstant(" "),Protect
@@ -34,7 +35,7 @@ WITH OUTDEV, PRIMARY_NAME
 
 ; Query from Order_Catalog TABLE
     SELECT INTO "NL:"
-        ACTIVE                = OC.ACTIVE_IND
+        ACTIVE                  = OC.ACTIVE_IND
         , PRIMARY_MNEMONIC      = OC.PRIMARY_MNEMONIC
         , PRIMARY_DESCRIPTION   = OC.DESCRIPTION
         , CATALOG_TYPE          = UAR_GET_CODE_DISPLAY(OC.CATALOG_TYPE_CD)
@@ -42,7 +43,9 @@ WITH OUTDEV, PRIMARY_NAME
         , ACTIVITY_SUBTYPE      = UAR_GET_CODE_DISPLAY(OC.ACTIVITY_SUBTYPE_CD)
         , CATALOG_CD            = OC.CATALOG_CD
         , CATALOG_CKI           = OC.CKI
-        , DCP_CLIN_CAT         = UAR_GET_CODE_DISPLAY(OC.DCP_CLIN_CAT_CD)
+        , DCP_CLIN_CAT          = UAR_GET_CODE_DISPLAY(OC.DCP_CLIN_CAT_CD)
+        , PRINT_REQ_IND         = OC.PRINT_REQ_IND
+        , REQUISITION_FORMAT    = UAR_GET_CODE_DISPLAY(OC.REQUISITION_FORMAT_CD)
 
     FROM
         ORDER_CATALOG   OC
@@ -59,7 +62,9 @@ WITH OUTDEV, PRIMARY_NAME
         ACTIVITY_SUBTYPE_VAR        = ACTIVITY_SUBTYPE
         CATALOG_CD_VAR              = CATALOG_CD
         CATALOG_CKI_VAR             = CATALOG_CKI
-        DCP_CLIN_CAT_VAR           = DCP_CLIN_CAT
+        DCP_CLIN_CAT_VAR            = DCP_CLIN_CAT
+        PRINT_REQ_IND_VAR           = PRINT_REQ_IND
+        REQUISITION_FORMAT_VAR      = REQUISITION_FORMAT
 
 
 ;QUERY FROM ORDERS TABLE
@@ -87,19 +92,31 @@ ENDIF
 IF (CATALOG_TYPE_VAR = "Pharmacy")
     SET CATALOG_TYPE_VAR_STYLE = ' style="background-color: lightgreen;"'
 ELSE
-    SET CATALOG_TYPE_VAR_STYLE = ' style="background-color: grey;"'
+    SET CATALOG_TYPE_VAR_STYLE = ' style="background-color: red;"'
 ENDIF
 
 IF (ACTIVITY_TYPE_VAR = "Pharmacy")
     SET ACTIVITY_TYPE_VAR_STYLE = ' style="background-color: lightgreen;"'
 ELSE
-    SET ACTIVITY_TYPE_VAR_STYLE = ' style="background-color: grey;"'
+    SET ACTIVITY_TYPE_VAR_STYLE = ' style="background-color: red;"'
 ENDIF
 
 IF (DCP_CLIN_CAT_VAR = "Medications")
     SET DCP_CLIN_CAT_VAR_STYLE = ' style="background-color: lightgreen;"'
 ELSE
-    SET DCP_CLIN_CAT_VAR_STYLE = ' style="background-color: grey;"'
+    SET DCP_CLIN_CAT_VAR_STYLE = ' style="background-color: red;"'
+ENDIF
+
+IF (PRINT_REQ_IND_VAR = 1)
+    SET PRINT_REQ_IND_VAR_STYLE = ' style="background-color: lightgreen;"'
+ELSE
+    SET PRINT_REQ_IND_VAR_STYLE = ' style="background-color: red;"'
+ENDIF
+
+IF (REQUISITION_FORMAT_VAR = "VIC Standard Prescription")
+    SET REQUISITION_FORMAT_VAR_STYLE = ' style="background-color: lightgreen;"'
+ELSE
+    SET REQUISITION_FORMAT_VAR_STYLE = ' style="background-color: red;"'
 ENDIF
 
 ;HTML OUT
@@ -113,19 +130,21 @@ ENDIF
     SET FINALHTML_VAR = BUILD2(
         "<html>"
         , "<head>"
-        , "<title>Medication Audit</title>"
+        , "<title>Pharmacy Medication Audit</title>"
         , "<style>"
         , CSS_VAR
         , "</style>"
         , "</head>"
         , "<h1>Medication Audit</h1>"
-        , "<h3>Primary Audit For: "
+        , "<h2>Primary Audit For: "
         , $PRIMARY_NAME
-        , "</h3>"
+        , "</h2>"
         , "<p1>This Report gives you the information related to a specific pharmacy medication (primary)"
         , "</p1><br><br>"
         , "</head>"
         , "<body>"
+
+        , "<h3>Main Tab</h3>"
         , "<table width='95%'>"
 
         , "<tr>"
@@ -165,13 +184,6 @@ ENDIF
 
         , "<tr>"
         , '<td style="font-weight: bold; width: 25%">'
-        , "DCP CLINICAL CATEGORY"
-        , "</td>"
-        , "<td", DCP_CLIN_CAT_VAR_STYLE, ">", DCP_CLIN_CAT_VAR, "</td>"
-        , "</tr>"
-
-        , "<tr>"
-        , '<td style="font-weight: bold; width: 25%">'
         , "ACTIVITY TYPE"
         , "</td>"
         , "<td", ACTIVITY_TYPE_VAR_STYLE, ">", ACTIVITY_TYPE_VAR, "</td>"
@@ -184,12 +196,43 @@ ENDIF
         , "<td>", ACTIVITY_SUBTYPE_VAR, "</td>"
         , "</tr>"
 
+        , "</table>"
+
+        , "<h3>Misc Tab</h3>"
+        , "<table width='95%'>"
+
         , "<tr>"
         , '<td style="font-weight: bold; width: 25%">'
-        , "CATALOG CODE"
+        , "DCP CLINICAL CATEGORY"
         , "</td>"
-        , "<td>", CATALOG_CD_VAR, "</td>"
+        , "<td", DCP_CLIN_CAT_VAR_STYLE, ">", DCP_CLIN_CAT_VAR, "</td>"
         , "</tr>"
+
+        , "</table>"
+
+
+        , "<h3>Print/Misc. Tab</h3>"
+        , "<table width='95%'>"
+
+        , "<tr>"
+        , '<td style="font-weight: bold; width: 25%">'
+        , "REQUISITION FORMAT CHECKBOX"
+        , "</td>"
+        , "<td", PRINT_REQ_IND_VAR_STYLE, ">", PRINT_REQ_IND_VAR, "</td>"
+        , "</tr>"
+
+        , "<tr>"
+        , '<td style="font-weight: bold; width: 25%">'
+        , "REQUISITION FORMAT?"
+        , "</td>"
+        , "<td", REQUISITION_FORMAT_VAR_STYLE, ">", REQUISITION_FORMAT_VAR, "</td>"
+        , "</tr>"
+
+        , "</table>"
+
+
+        , "<h3>Multum</h3>"
+        , "<table width='95%'>"
 
         , "<tr>"
         , '<td style="font-weight: bold; width: 25%">'
@@ -199,6 +242,22 @@ ENDIF
         , "</tr>"
 
         , "</table>"
+
+
+        , "<h3>Other</h3>"
+        , "<table width='95%'>"
+
+        , "<tr>"
+        , '<td style="font-weight: bold; width: 25%">'
+        , "CATALOG CODE"
+        , "</td>"
+        , "<td>", CATALOG_CD_VAR, "</td>"
+        , "</tr>"
+
+        , "</table>"
+
+
+
         , "</body>"
         , "</html>"
     )
