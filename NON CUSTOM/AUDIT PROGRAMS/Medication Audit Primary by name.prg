@@ -24,12 +24,13 @@ WITH OUTDEV, PRIMARY_NAME
     DECLARE CATALOG_CD_VAR = F8 with NoConstant(0.00),Protect
     DECLARE CATALOG_CKI_VAR = VC with NoConstant(""),Protect
     DECLARE ORDERS_COUNT_VAR = F8 with NoConstant(0.00),Protect
+    DECLARE DCP_CLIN_CAT_VAR = VC with NoConstant(""),Protect
     ;DECLARE RESULTS_COUNT_VAR = F8 with NoConstant(0.00),Protect
 
 ;HTML VARIABLES
     DECLARE FINALHTML_VAR = VC with NoConstant(" "),Protect
     DECLARE CSS_VAR = VC with NoConstant(" "),Protect
-    DECLARE ACTIVE_STYLE_VAR = VC with NoConstant(""),Protect
+    DECLARE ACTIVE_VAR_STYLE = VC with NoConstant(""),Protect
 
 ; Query from Order_Catalog TABLE
     SELECT INTO "NL:"
@@ -41,6 +42,7 @@ WITH OUTDEV, PRIMARY_NAME
         , ACTIVITY_SUBTYPE      = UAR_GET_CODE_DISPLAY(OC.ACTIVITY_SUBTYPE_CD)
         , CATALOG_CD            = OC.CATALOG_CD
         , CATALOG_CKI           = OC.CKI
+        , DCP_CLIN_CAT         = UAR_GET_CODE_DISPLAY(OC.DCP_CLIN_CAT_CD)
 
     FROM
         ORDER_CATALOG   OC
@@ -57,6 +59,7 @@ WITH OUTDEV, PRIMARY_NAME
         ACTIVITY_SUBTYPE_VAR        = ACTIVITY_SUBTYPE
         CATALOG_CD_VAR              = CATALOG_CD
         CATALOG_CKI_VAR             = CATALOG_CKI
+        DCP_CLIN_CAT_VAR           = DCP_CLIN_CAT
 
 
 ;QUERY FROM ORDERS TABLE
@@ -74,35 +77,29 @@ WITH OUTDEV, PRIMARY_NAME
 
     WITH TIME = 5
 
-/* QUERY FROM V500_EVENT_SET_EXPLODE ESE_0 FOR EVENT SET*/
-
-    ; SELECT
-    ; FROM
-    ; WHERE
-    ; HEAD
-
-/*
-;QUERY FROM CLINICAL_EVENT TABLE (DEACTIVATING DUE TO TIME)
-    SELECT INTO "NL:"
-        RESULTS_COUNT = COUNT(CE.CATALOG_CD)
-
-    FROM
-        CLINICAL_EVENT CE
-
-    WHERE
-        CE.CATALOG_CD = CATALOG_CD_VAR
-        AND
-        CE.VIEW_LEVEL = 1
-
-    HEAD REPORT
-        RESULTS_COUNT_VAR = RESULTS_COUNT
- */
-
 ;CELL BACKGROUNDS
 IF (ACTIVE_VAR = 1)
-    SET ACTIVE_STYLE_VAR = ' style="background-color: lightgreen;"'
+    SET ACTIVE_VAR_STYLE = ' style="background-color: lightgreen;"'
 ELSE
-    SET ACTIVE_STYLE_VAR = ' style="background-color: grey;"'
+    SET ACTIVE_VAR_STYLE = ' style="background-color: grey;"'
+ENDIF
+
+IF (CATALOG_TYPE_VAR = "Pharmacy")
+    SET CATALOG_TYPE_VAR_STYLE = ' style="background-color: lightgreen;"'
+ELSE
+    SET CATALOG_TYPE_VAR_STYLE = ' style="background-color: grey;"'
+ENDIF
+
+IF (ACTIVITY_TYPE_VAR = "Pharmacy")
+    SET ACTIVITY_TYPE_VAR_STYLE = ' style="background-color: lightgreen;"'
+ELSE
+    SET ACTIVITY_TYPE_VAR_STYLE = ' style="background-color: grey;"'
+ENDIF
+
+IF (DCP_CLIN_CAT_VAR = "Medications")
+    SET DCP_CLIN_CAT_VAR_STYLE = ' style="background-color: lightgreen;"'
+ELSE
+    SET DCP_CLIN_CAT_VAR_STYLE = ' style="background-color: grey;"'
 ENDIF
 
 ;HTML OUT
@@ -149,8 +146,9 @@ ENDIF
         , '<td style="font-weight: bold; width: 25%">'
         , "ACTIVE (ORDER_CATALOG)?"
         , "</td>"
-        , "<td", ACTIVE_STYLE_VAR, ">", ACTIVE_VAR, "</td>"
+        , "<td", ACTIVE_VAR_STYLE, ">", ACTIVE_VAR, "</td>"
         , "</tr>"
+
         , "<tr>"
         , '<td style="font-weight: bold; width: 25%">'
         , "NUMBER OF ORDERS UNDER PRIMARY"
@@ -158,27 +156,25 @@ ENDIF
         , "<td>", ORDERS_COUNT_VAR, "</td>"
         , "</tr>"
 
-/*
-        , "<tr>"
-        , '<td style="font-weight: bold; width: 25%">'
-        , "NUMBER OF RESULTS UNDER PRIMARY"
-        , "</td>"
-        , "<td>", RESULTS_COUNT_VAR, "</td>"
-        , "</tr>"
- */
-
         , "<tr>"
         , '<td style="font-weight: bold; width: 25%">'
         , "CATALOG TYPE"
         , "</td>"
-        , "<td>", CATALOG_TYPE_VAR, "</td>"
+        , "<td", CATALOG_TYPE_VAR_STYLE, ">", CATALOG_TYPE_VAR, "</td>"
+        , "</tr>"
+
+        , "<tr>"
+        , '<td style="font-weight: bold; width: 25%">'
+        , "DCP CLINICAL CATEGORY"
+        , "</td>"
+        , "<td", DCP_CLIN_CAT_VAR_STYLE, ">", DCP_CLIN_CAT_VAR, "</td>"
         , "</tr>"
 
         , "<tr>"
         , '<td style="font-weight: bold; width: 25%">'
         , "ACTIVITY TYPE"
         , "</td>"
-        , "<td>", ACTIVITY_TYPE_VAR, "</td>"
+        , "<td", ACTIVITY_TYPE_VAR_STYLE, ">", ACTIVITY_TYPE_VAR, "</td>"
         , "</tr>"
 
         , "<tr>"
