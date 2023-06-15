@@ -1,0 +1,206 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SNOMED CT Concept ID: 197380007
+Description: Liver cirrhosis (disorder)
+
+SNOMED CT Concept ID: 235893003
+Description: Alcoholic liver cirrhosis (disorder)
+
+SNOMED CT Concept ID: 65363002
+Description: Biliary cirrhosis (disorder)
+
+SNOMED CT Concept ID: 26649000
+Description: Postnecrotic cirrhosis (disorder)
+
+SNOMED CT Concept ID: 19943007
+Description: Primary biliary cirrhosis (disorder)
+
+SNOMED CT Concept ID: 16386004
+Description: Secondary biliary cirrhosis (disorder)
+
+
+
+
+
+197380007 ; Liver cirrhosis (disorder)
+235893003 ; Alcoholic liver cirrhosis (disorder)
+65363002 ; Biliary cirrhosis (disorder)
+26649000 ; Postnecrotic cirrhosis (disorder)
+19943007 ; Primary biliary cirrhosis (disorder)
+16386004 ; Secondary biliary cirrhosis (disorder)
+
+
+
+
+
+197309008; (Liver cirrhosis: [named variants] or [NOS]) or (hepatic fibrosis)   
+, 155809006; (Cirrhosis &/or chronic liver dis) or (alcoholic liver disease)   
+, 266537000; (Cirrhosis &/or chronic liver dis) or (alcoholic liver disease)   
+, 235894003; Portal cirrhosis   
+, 197292008; Cirrhosis of liver: [multilobular portal] or [postnecrotic]   
+, 197280008; Cirrhosis: [florid] or [alcoholic]   
+, 19943007; Cirrhosis of liver  
+, 266467008; Alcoholic cirrhosis of liver   
+, 420054005; Alcoholic cirrhosis   
+, 266468003; Cirrhosis - non-alcoholic   
+, 399126000; Bronze cirrhosis   
+, 308129003; Esophageal varices in cirrhosis of the liver   
+, 309783001; Esophageal varices in alcoholic cirrhosis of the liver   
+, 735733008; Cirrhosis of liver with primary sclerosing cholangitis   
+, 195477006; Esophageal varices in cirrhosis of the liver   
+, 195478001; Esophageal varices in alcoholic cirrhosis of the liver   
+, 425413006; Drug-induced cirrhosis of liver   
+, 5780001000004109; Family history of cirrhosis of liver   
+, 716203000; Decompensated cirrhosis of liver   
+, 197362001; Toxic liver disease with fibrosis and cirrhosis of liver   
+, 103611000119102; Cirrhosis of liver due to hepatitis B   
+, 111370006; Cirrhosis of liver not due to alcohol   
+, 197279005; Cirrhosis and chronic liver disease   
+, 197553002; [X]Other and unspecified cirrhosis of liver   
+, 230364000; Progressive neuronal degeneration without liver cirrhosis   
+, 235891006; Cirrhosis of liver NOS   
+, 725416005; Cirrhotic cardiomyopathy   
+, 725938001; Cirrhosis of liver caused by methotrexate   
+, 725939009; Cirrhosis of liver caused by amiodarone   
+, 725940006; Cirrhosis of liver caused by methyldopa   
+, 831000119103; Cirrhosis of liver due to chronic hepatitis C   
+, 155811002; Alcoholic cirrhosis of liver   
+, 75393009; Alcoholic cirrhosis of liver  
+, 86454000; Postnecrotic cirrhosis  
+, 86781004; Hemochromatosis  
+, 20415001; Progressive sclerosing poliodystrophy  
+, 715864007; Idiopathic copper associated cirrhosis of liver   
+
+
+
+
+SNOMED CODES
+Code: 19943007 - Name: Cirrhosis of liver (disorder)
+Code: 716203000 - Name: Decompensated cirrhosis of liver (disorder)
+Code: 420054005 - Name: Alcoholic cirrhosis (disorder)
+Code: 425413006 - Name: Drug-induced cirrhosis of liver (disorder)
+Code: 725939009 - Name: Cirrhosis of liver caused by amiodarone (disorder)
+Code: 725938001 - Name: Cirrhosis of liver caused by methotrexate (disorder)
+Code: 725940006 - Name: Cirrhosis of liver caused by methyldopa (disorder)
+Code: 715864007 - Name: Idiopathic copper associated cirrhosis of liver (disorder)
+Code: 230364000 - Name: Progressive neuronal degeneration without liver cirrhosis (disorder)
+Code: 78208005 - Name: Pigment cirrhosis (disorder)
+Code: 103611000119102 - Name: Cirrhosis of liver due to hepatitis B (disorder)
+Code: 1010616001 - Name: Liver cirrhosis due to classical cystic fibrosis (disorder)
+Code: 897004000 - Name: Oesophageal varices due to cirrhosis of liver (disorder)
+Code: 831000119103 - Name: Cirrhosis of liver due to chronic hepatitis C (disorder)
+Code: 871619002 - Name: Cirrhosis of liver due to and following cardiac procedure (disorder)
+Code: 725416005 - Name: Cirrhotic cardiomyopathy (disorder)
+Code: 897005004 - Name: Oesophageal varices due to cirrhosis of liver caused by alcohol (disorder)
+Code: 20415001 - Name: Progressive sclerosing poliodystrophy (disorder)
+Code: 735733008 - Name: Cirrhosis of liver co-occurrent and due to primary sclerosing cholangitis (disorder)
+Code: 266468003 - Name: Cirrhosis - non-alcoholic (disorder)
+Code: 1332971000168108 - Name: Cirrhosis co-occurent and due to haemochromatosis (disorder)
+Code: 266467008 - Name: Alcoholic cirrhosis of liver (disorder)
+Code: 75393009 - Name: Alcoholic cirrhosis of liver (disorder)
+Code: 155811002 - Name: Alcoholic cirrhosis of liver (disorder)
+Code: 235891006 - Name: Cirrhosis of liver NOS (disorder)
+Code: 197279005 - Name: Cirrhosis and chronic liver disease (disorder)
+Code: 155809006 - Name: (Cirrhosis &/or chronic liver dis) or (alcoholic liver disease) (disorder)
+Code: 266537000 - Name: (Cirrhosis &/or chronic liver dis) or (alcoholic liver disease) (disorder)
+Code: 197309008 - Name: (Liver cirrhosis: [named variants] or [NOS]) or (hepatic fibrosis) (disorder)
+Code: 399126000 - Name: Bronze cirrhosis (disorder)
+Code: 197292008 - Name: Cirrhosis of liver: [multilobular portal] or [postnecrotic] (disorder)
+Code: 197280008 - Name: Cirrhosis: [florid] or [alcoholic] (disorder)
+Code: 86781004 - Name: Haemochromatosis (disorder)
+Code: 235894003 - Name: Portal cirrhosis (disorder)
+Code: 197553002 - Name: [X]Other and unspecified cirrhosis of liver (disorder)
+Code: 111370006 - Name: Cirrhosis of liver not due to alcohol (disorder)
+Code: 308129003 - Name: Oesophageal varices in cirrhosis of the liver (disorder)
+Code: 195477006 - Name: Oesophageal varices in cirrhosis of the liver (disorder)
+Code: 195478001 - Name: Oesophageal varices in alcoholic cirrhosis of the liver (disorder)
+Code: 309783001 - Name: Oesophageal varices in alcoholic cirrhosis of the liver (disorder)
+Code: 197362001 - Name: Toxic liver disease with fibrosis and cirrhosis of liver (disorder)
+
+
+
+
+19943007; Cirrhosis of liver (disorder)
+716203000; Decompensated cirrhosis of liver (disorder)
+420054005; Alcoholic cirrhosis (disorder)
+425413006; Drug-induced cirrhosis of liver (disorder)
+725939009; Cirrhosis of liver caused by amiodarone (disorder)
+725938001; Cirrhosis of liver caused by methotrexate (disorder)
+725940006; Cirrhosis of liver caused by methyldopa (disorder)
+715864007; Idiopathic copper associated cirrhosis of liver (disorder)
+230364000; Progressive neuronal degeneration without liver cirrhosis (disorder)
+78208005; Pigment cirrhosis (disorder)
+103611000119102; Cirrhosis of liver due to hepatitis B (disorder)
+1010616001; Liver cirrhosis due to classical cystic fibrosis (disorder)
+897004000; Oesophageal varices due to cirrhosis of liver (disorder)
+831000119103; Cirrhosis of liver due to chronic hepatitis C (disorder)
+871619002; Cirrhosis of liver due to and following cardiac procedure (disorder)
+725416005; Cirrhotic cardiomyopathy (disorder)
+897005004; Oesophageal varices due to cirrhosis of liver caused by alcohol (disorder)
+20415001; Progressive sclerosing poliodystrophy (disorder)
+735733008; Cirrhosis of liver co-occurrent and due to primary sclerosing cholangitis (disorder)
+266468003; Cirrhosis - non-alcoholic (disorder)
+1332971000168108; Cirrhosis co-occurent and due to haemochromatosis (disorder)
+266467008; Alcoholic cirrhosis of liver (disorder)
+75393009; Alcoholic cirrhosis of liver (disorder)
+155811002; Alcoholic cirrhosis of liver (disorder)
+235891006; Cirrhosis of liver NOS (disorder)
+197279005; Cirrhosis and chronic liver disease (disorder)
+155809006; (Cirrhosis &/or chronic liver dis) or (alcoholic liver disease) (disorder)
+266537000; (Cirrhosis &/or chronic liver dis) or (alcoholic liver disease) (disorder)
+197309008; (Liver cirrhosis: [named variants] or [NOS]) or (hepatic fibrosis) (disorder)
+399126000; Bronze cirrhosis (disorder)
+197292008; Cirrhosis of liver: [multilobular portal] or [postnecrotic] (disorder)
+197280008; Cirrhosis: [florid] or [alcoholic] (disorder)
+86781004; Haemochromatosis (disorder)
+235894003; Portal cirrhosis (disorder)
+197553002; [X]Other and unspecified cirrhosis of liver (disorder)
+
+
+"SNOMED!19943007; Cirrhosis of liver (disorder)
+"SNOMED!716203000; Decompensated cirrhosis of liver (disorder)
+"SNOMED!420054005; Alcoholic cirrhosis (disorder)
+"SNOMED!425413006; Drug-induced cirrhosis of liver (disorder)
+"SNOMED!725939009; Cirrhosis of liver caused by amiodarone (disorder)
+"SNOMED!725938001; Cirrhosis of liver caused by methotrexate (disorder)
+"SNOMED!725940006; Cirrhosis of liver caused by methyldopa (disorder)
+"SNOMED!715864007; Idiopathic copper associated cirrhosis of liver (disorder)
+"SNOMED!230364000; Progressive neuronal degeneration without liver cirrhosis (disorder)
+"SNOMED!78208005; Pigment cirrhosis (disorder)
+"SNOMED!103611000119102; Cirrhosis of liver due to hepatitis B (disorder)
+"SNOMED!1010616001; Liver cirrhosis due to classical cystic fibrosis (disorder)
+"SNOMED!897004000; Oesophageal varices due to cirrhosis of liver (disorder)
+"SNOMED!831000119103; Cirrhosis of liver due to chronic hepatitis C (disorder)
+"SNOMED!871619002; Cirrhosis of liver due to and following cardiac procedure (disorder)
+"SNOMED!725416005; Cirrhotic cardiomyopathy (disorder)
+"SNOMED!897005004; Oesophageal varices due to cirrhosis of liver caused by alcohol (disorder)
+"SNOMED!20415001; Progressive sclerosing poliodystrophy (disorder)
+"SNOMED!735733008; Cirrhosis of liver co-occurrent and due to primary sclerosing cholangitis (disorder)
+"SNOMED!266468003; Cirrhosis - non-alcoholic (disorder)
+"SNOMED!1332971000168108; Cirrhosis co-occurent and due to haemochromatosis (disorder)
+"SNOMED!266467008; Alcoholic cirrhosis of liver (disorder)
+"SNOMED!75393009; Alcoholic cirrhosis of liver (disorder)
+"SNOMED!155811002; Alcoholic cirrhosis of liver (disorder)
+"SNOMED!235891006; Cirrhosis of liver NOS (disorder)
+"SNOMED!197279005; Cirrhosis and chronic liver disease (disorder)
+"SNOMED!155809006; (Cirrhosis &/or chronic liver dis) or (alcoholic liver disease) (disorder)
+"SNOMED!266537000; (Cirrhosis &/or chronic liver dis) or (alcoholic liver disease) (disorder)
+"SNOMED!197309008; (Liver cirrhosis: [named variants] or [NOS]) or (hepatic fibrosis) (disorder)
+"SNOMED!399126000; Bronze cirrhosis (disorder)
+"SNOMED!197292008; Cirrhosis of liver: [multilobular portal] or [postnecrotic] (disorder)
+"SNOMED!197280008; Cirrhosis: [florid] or [alcoholic] (disorder)
+"SNOMED!86781004; Haemochromatosis (disorder)
+"SNOMED!235894003; Portal cirrhosis (disorder)
+"SNOMED!197553002; [X]Other and unspecified cirrhosis of liver (disorder)
