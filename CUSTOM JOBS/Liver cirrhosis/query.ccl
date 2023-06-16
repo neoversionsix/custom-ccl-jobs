@@ -24,24 +24,58 @@ PLAN E;ENCOUNTER
     /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
     E.LOC_FACILITY_CD != 4038465.00
     /* Remove Fake 'Test' Patients */
-    AND E.PERSON_ID NOT IN (
+    AND
+        E.PERSON_ID NOT IN (
     	SELECT PERSON_FILTER.PERSON_ID
         FROM PERSON PERSON_FILTER
         WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
         )
 
-    AND E.BEG_EFFECTIVE_DT_TM > CNVTLOOKBEHIND("3,Y")
+    AND E.BEG_EFFECTIVE_DT_TM > CNVTLOOKBEHIND("6,Y")
 JOIN D
 	WHERE D.PERSON_ID = E.PERSON_ID
 	AND
-	D.NOMENCLATURE_ID IN (
-        , 197380007 ; Liver cirrhosis (disorder)
-        , 235893003 ; Alcoholic liver cirrhosis (disorder)
-        , 65363002 ; Biliary cirrhosis (disorder)
-        , 26649000 ; Postnecrotic cirrhosis (disorder)
-        , 19943007 ; Primary biliary cirrhosis (disorder)
-        , 16386004 ; Secondary biliary cirrhosis (disorder)
-    )
+	D.NOMENCLATURE_ID IN
+	(
+		SELECT N.NOMENCLATURE_ID FROM NOMENCLATURE N WHERE N.CONCEPT_CKI IN
+			(
+			"SNOMED!19943007"; Cirrhosis of liver (disorder)
+			, "SNOMED!716203000"; Decompensated cirrhosis of liver (disorder)
+			, "SNOMED!420054005"; Alcoholic cirrhosis (disorder)
+			, "SNOMED!425413006"; Drug-induced cirrhosis of liver (disorder)
+			, "SNOMED!725939009"; Cirrhosis of liver caused by amiodarone (disorder)
+			, "SNOMED!725938001"; Cirrhosis of liver caused by methotrexate (disorder)
+			, "SNOMED!725940006"; Cirrhosis of liver caused by methyldopa (disorder)
+			, "SNOMED!715864007"; Idiopathic copper associated cirrhosis of liver (disorder)
+			, "SNOMED!230364000"; Progressive neuronal degeneration without liver cirrhosis (disorder)
+			, "SNOMED!78208005"; Pigment cirrhosis (disorder)
+			, "SNOMED!103611000119102"; Cirrhosis of liver due to hepatitis B (disorder)
+			, "SNOMED!1010616001"; Liver cirrhosis due to classical cystic fibrosis (disorder)
+			, "SNOMED!897004000"; Oesophageal varices due to cirrhosis of liver (disorder)
+			, "SNOMED!831000119103"; Cirrhosis of liver due to chronic hepatitis C (disorder)
+			, "SNOMED!871619002"; Cirrhosis of liver due to and following cardiac procedure (disorder)
+			, "SNOMED!725416005"; Cirrhotic cardiomyopathy (disorder)
+			, "SNOMED!897005004"; Oesophageal varices due to cirrhosis of liver caused by alcohol (disorder)
+			, "SNOMED!20415001"; Progressive sclerosing poliodystrophy (disorder)
+			, "SNOMED!735733008"; Cirrhosis of liver co-occurrent and due to primary sclerosing cholangitis (disorder)
+			, "SNOMED!266468003"; Cirrhosis - non-alcoholic (disorder)
+			, "SNOMED!1332971000168108"; Cirrhosis co-occurent and due to haemochromatosis (disorder)
+			, "SNOMED!266467008"; Alcoholic cirrhosis of liver (disorder)
+			, "SNOMED!75393009"; Alcoholic cirrhosis of liver (disorder)
+			, "SNOMED!155811002"; Alcoholic cirrhosis of liver (disorder)
+			, "SNOMED!235891006"; Cirrhosis of liver NOS (disorder)
+			, "SNOMED!197279005"; Cirrhosis and chronic liver disease (disorder)
+			, "SNOMED!155809006"; (Cirrhosis &/or chronic liver dis) or (alcoholic liver disease) (disorder)
+			, "SNOMED!266537000"; (Cirrhosis &/or chronic liver dis) or (alcoholic liver disease) (disorder)
+			, "SNOMED!197309008"; (Liver cirrhosis: [named variants] or [NOS]) or (hepatic fibrosis) (disorder)
+			, "SNOMED!399126000"; Bronze cirrhosis (disorder)
+			, "SNOMED!197292008"; Cirrhosis of liver: [multilobular portal] or [postnecrotic] (disorder)
+			, "SNOMED!197280008"; Cirrhosis: [florid] or [alcoholic] (disorder)
+			, "SNOMED!86781004"; Haemochromatosis (disorder)
+			, "SNOMED!235894003"; Portal cirrhosis (disorder)
+			, "SNOMED!197553002"; [X]Other and unspecified cirrhosis of liver (disorder)
+    		)
+	)
 JOIN P_A
 	WHERE P_A.PERSON_ID = E.PERSON_ID
 	AND
