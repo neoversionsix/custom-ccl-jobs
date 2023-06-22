@@ -1,5 +1,5 @@
-DROP PROGRAM TESTING_QUERY_88 GO
-CREATE PROGRAM TESTING_QUERY_88
+DROP PROGRAM WH_PHARM_DCR GO
+CREATE PROGRAM WH_PHARM_DCR
 
 PROMPT
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
@@ -72,7 +72,7 @@ JOIN PR;PRSNL
 ORDER BY
  C_E.PERFORMED_DT_TM
 WITH
-    TIME = 120
+    TIME = 300
     , FORMAT
     , SEPERATOR = " "
 
