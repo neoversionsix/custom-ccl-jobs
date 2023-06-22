@@ -1,0 +1,69 @@
+SELECT
+        ACTION_TIME = O_A.ACTION_INITIATED_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+    ,   ORDER_TIME = O_A.ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+    ,   ACTION = UAR_GET_CODE_DISPLAY(O_A.ORDER_STATUS_CD)
+    ,   PATIENT = P.NAME_FULL_FORMATTED
+    ,   PATIENT_URN = P_A.ALIAS
+    ,   ENCOUNTER_NO = E_A.ALIAS
+    ,   LAST_HOSPITAL_FOR_ENCOUNTER = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+    ,   LAST_WARD_FOR_ENCOUNTER = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+
+FROM
+        ORDERS                  O
+    ,   ORDER_ACTION            O_A
+    ,   ENCOUNTER               E
+    ,   PERSON                  P
+    ,   PERSON_ALIAS            P_A
+    ,   ENCNTR_ALIAS            E_A
+
+PLAN O;ORDERS
+    WHERE
+    /* 'Daily Pharmacy Review Only */
+    O.CATALOG_CD = 87786086
+    /* Orders after  */
+    ; AND O.ORIG_ORDER_DT_TM > CNVTDATETIME("10-JUN-2023 00:00:00.00")
+
+JOIN O_A;ORDER_ACTION
+    WHERE O_A.ORDER_ID = O.ORDER_ID
+    AND O_A.ACTION_DT_TM > CNVTLOOKBEHIND ("3,D")
+    AND O_A.ORDER_STATUS_CD !=        2545.00; Discontinued
+
+JOIN E;ENCOUNTER
+    WHERE E.ENCNTR_ID = O.ENCNTR_ID
+
+JOIN E_A;ENCNTR_ALIAS;
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077	; 'FIN NBR' from code set 319
+	AND E_A.ACTIVE_IND = 1	; active FIN NBRs only
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE	; effective FIN NBRs only
+
+JOIN P;PERSON
+	WHERE
+    P.PERSON_ID = O.PERSON_ID
+    /* Removes Fake Test Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+
+JOIN P_A;PERSON_ALIAS
+    WHERE P_A.PERSON_ID = O.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
+
+
+
+WITH
+    TIME = 10
+    , MAXREC = 1000
+    , FORMAT
+    , SEPERATOR = " "
+
+/*  CODES
+Daily Pharmacy Review Cat code= 87786086
+Daily Pharmacy Review Synonym ID = 87786089.00
+*/

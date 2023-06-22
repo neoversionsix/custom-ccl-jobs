@@ -1,3 +1,4 @@
+/*Actions Related to Orders */
 PLAN O_A;ORDER_ACTION
     WHERE
     /* 'INPROCESS' Order Status Rows Only */
@@ -6,7 +7,7 @@ PLAN O_A;ORDER_ACTION
     AND O_A.EFFECTIVE_DT_TM > CNVTLOOKBEHIND("10,H")
 
 
-
+/* All orders */
 PLAN O;ORDERS
     WHERE
     /*
@@ -45,8 +46,7 @@ PLAN O;ORDERS
      /* Order Status */
     AND O.ORDER_STATUS_CD = 2543.00
 
-
-
+/* Patients */
 PLAN P;PERSON
 	WHERE
     /* Remove Inactive Patients */
@@ -56,6 +56,7 @@ PLAN P;PERSON
     /* Remove Ineffective Patients */
     AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
+/* Patient Encounters */
 PLAN E;ENCOUNTER
     WHERE
     /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
@@ -66,10 +67,9 @@ PLAN E;ENCOUNTER
         FROM PERSON PERSON_FILTER
         WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
         )
-
     AND E.BEG_EFFECTIVE_DT_TM > CNVTDATETIME("01-JAN-2018 00:00:00.00")
 
-
+/* Patient Identifiers such as URN Medicare no etc */
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P.ALIAS
     WHERE P_A.PERSON_ID = E.PERSON_ID
     AND
@@ -82,7 +82,7 @@ JOIN P_A;PERSON_ALIAS; PATIENT_URN = P.ALIAS
     /* Active Only */
     P_A.ACTIVE_IND = 1
 
-
+/* Encounter Identifiers such as the Financial Number */
 JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
     WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
 	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077	; 'FIN/ENCOUNTER/VISIT NBR' from code set 319
