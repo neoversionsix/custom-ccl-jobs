@@ -1,3 +1,11 @@
+/*
+Title: Pharmacy Daily Chart Review's Done
+Description: An extract of Pharmacy Daily Chart Review's Done over the users chosen date-time range
+Programmer: Jason Whittle
+Customer: Charis.L
+Ticket ID; Incident 575139
+ */
+
 DROP PROGRAM WH_PHARM_DCR GO
 CREATE PROGRAM WH_PHARM_DCR
 
