@@ -1,21 +1,21 @@
 SELECT
-        O_CATALOG_DISP = UAR_GET_CODE_DISPLAY(O.CATALOG_CD)
-    ,   O_A.ACTION_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+        PRIMARY = UAR_GET_CODE_DISPLAY(O.CATALOG_CD)
+    ,   ACTION_TIME = O_A.ACTION_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
     ,   ACTIONER = PR.NAME_FULL_FORMATTED
     ,   PATIENT = P.NAME_FULL_FORMATTED
     ,   PATIENT_URN = P_A.ALIAS
+    ,   ENCOUNTER_NO = E_A.ALIAS
     ,   O_A.SIMPLIFIED_DISPLAY_LINE
     ,   O_A.ORDER_DETAIL_DISPLAY_LINE
     ,   O_A.CLINICAL_DISPLAY_LINE
-    ,   O_ORDER_STATUS_DISP = UAR_GET_CODE_DISPLAY(O_A.ORDER_STATUS_CD)
-
+    ,   STATUS = UAR_GET_CODE_DISPLAY(O_A.ORDER_STATUS_CD)
 FROM
         ORDER_ACTION    O_A
     ,   ORDERS          O
     ,   PRSNL           PR
     ,   PERSON          P
     ,   PERSON_ALIAS    P_A
-
+    ,   ENCNTR_ALIAS    E_A
 PLAN O_A;ORDER_ACTION
     WHERE
         /* modified */
@@ -28,19 +28,16 @@ PLAN O_A;ORDER_ACTION
             AND
             CNVTDATETIME("10-MAY-2023 06:00:00.00")
         )
-
 JOIN O;ORDERS
     WHERE
         O.ORDER_ID = O_A.ORDER_ID
         /* PHARMACY */
         AND O.CATALOG_TYPE_CD = 2516
-
 JOIN PR;PRSNL
     WHERE PR.PERSON_ID = O_A.ACTION_PERSONNEL_ID
-
 /* Patients */
 JOIN P;PERSON
-	WHERE
+    WHERE
     P.PERSON_ID = O.PERSON_ID
     /* Remove Inactive Patients */
     AND P.ACTIVE_IND = 1
@@ -48,18 +45,25 @@ JOIN P;PERSON
     AND P.NAME_LAST_KEY != "*TESTWHS*"
     /* Remove Ineffective Patients */
     AND P.END_EFFECTIVE_DT_TM > SYSDATE
-
 /* Patient Identifiers such as URN Medicare no etc */
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
     WHERE P_A.PERSON_ID = O.PERSON_ID
     AND
     /* this filters for the UR Number Alias' only */
-   	P_A.ALIAS_POOL_CD = 9569589.00
-	AND
+    P_A.ALIAS_POOL_CD = 9569589.00
+    AND
     /* Effective Only */
-	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
     AND
     /* Active Only */
     P_A.ACTIVE_IND = 1
-
+/* Encounter Identifiers such as the Financial Number */
+JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
+    WHERE E_A.ENCNTR_ID = O.ENCNTR_ID
+    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+    AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+    /* active FIN NBRs only */
+    AND E_A.ACTIVE_IND = 1
+    /* effective FIN NBRs only */
+    AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 30

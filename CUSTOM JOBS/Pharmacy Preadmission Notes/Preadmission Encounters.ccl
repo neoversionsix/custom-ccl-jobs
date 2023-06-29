@@ -1,0 +1,13 @@
+SELECT
+	COUNT(*)
+
+FROM
+	ENCOUNTER   E
+
+WHERE
+/* Preadmit : Encounter Status filter*/
+E.ENCNTR_STATUS_CD = 858
+/* PreAdmit : Encounter Type filter */
+AND E.ENCNTR_TYPE_CD = 309313
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 5
