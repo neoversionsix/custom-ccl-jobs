@@ -1,0 +1,47 @@
+SELECT
+	C_E.EVENT_TITLE_TEXT
+	, C_E.PERFORMED_DT_TM "YYYY-DD-MM HH:MM:SS;;D"
+    , E.NAME_FULL_FORMATTED
+	, STATUS = UAR_GET_CODE_DISPLAY(E.ENCNTR_STATUS_CD)
+	; , C_E.PERSON_ID
+	;, C_E.PERFORMED_PRSNL_ID
+
+FROM
+    ENCOUNTER           E
+    ,
+	CLINICAL_EVENT      C_E
+
+PLAN C_E
+    WHERE
+
+    /* Code = "Pharmacy Admission Note" */
+    C_E.EVENT_CD = 87783484
+    AND
+    /* Subtype is "PAC Pharmacy Note" */
+    C_E.EVENT_TITLE_TEXT = "*PAC*"
+    AND
+    /* Seems to filter duplicate rows without C_E.VERIFIED_PRSNL_ID */
+    C_E.AUTHENTIC_FLAG = 1
+
+JOIN E;ENCOUNTER
+    WHERE C_E.ENCNTR_ID = E.ENCNTR_ID
+    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    AND E.LOC_FACILITY_CD != 4038465.00
+    /* Remove Fake 'Test' Patients */
+    AND E.PERSON_ID NOT IN (
+    	SELECT PERSON_FILTER.PERSON_ID
+        FROM PERSON PERSON_FILTER
+        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
+        )
+    /* Preadmit : Encounter Status filter*/
+    ; AND E.ENCNTR_STATUS_CD = 858
+    /* PreAdmit : Encounter Type filter */
+    ; AND E.ENCNTR_TYPE_CD = 309313
+
+
+
+ORDER BY
+	C_E.PERFORMED_DT_TM   DESC
+
+WITH MAXREC = 1000, NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 5
+/*PAC Pharmacy Note */

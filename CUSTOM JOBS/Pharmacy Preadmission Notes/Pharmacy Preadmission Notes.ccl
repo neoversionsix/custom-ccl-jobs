@@ -1,21 +1,24 @@
 SELECT
-    C_EVENT_DISP = UAR_GET_CODE_DISPLAY(C_E.EVENT_CD)
-    , C_EVENT_CLASS_DISP = UAR_GET_CODE_DISPLAY(C_E.EVENT_CLASS_CD)
-    , C_E.PERFORMED_DT_TM "YYYY-DD-MM HH:MM:SS;;D"
-    , C_E.PERSON_ID
+	C_E.EVENT_TITLE_TEXT
+	, C_E.PERFORMED_DT_TM "YYYY-DD-MM HH:MM:SS;;D"
+	, C_E.PERSON_ID
+	, C_E.PERFORMED_PRSNL_ID
 
 FROM
-    CLINICAL_EVENT C_E
+	CLINICAL_EVENT      C_E
 
 WHERE
-    /* URN 9999999 */
-    C_E.PERSON_ID =    13312354.00
-    AND
     /* Code = "Pharmacy Admission Note" */
     C_E.EVENT_CD = 87783484
     AND
     /* Subtype is "PAC Pharmacy Note" */
-    C_E.EVENT_TITLE_TEXT = "PAC Pharmacy Note"
+    C_E.EVENT_TITLE_TEXT = "*PAC*"
+    AND
+    /* Seems to filter duplicate rows without C_E.VERIFIED_PRSNL_ID */
+    C_E.AUTHENTIC_FLAG = 1
+
+ORDER BY
+	C_E.PERFORMED_DT_TM   DESC
 
 WITH MAXREC = 1000, NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 5
 /*PAC Pharmacy Note */
