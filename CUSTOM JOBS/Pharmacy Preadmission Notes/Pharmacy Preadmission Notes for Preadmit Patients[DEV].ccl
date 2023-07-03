@@ -1,47 +1,95 @@
 SELECT
-	C_E.EVENT_TITLE_TEXT
-	, C_E.PERFORMED_DT_TM "YYYY-DD-MM HH:MM:SS;;D"
-    , E.NAME_FULL_FORMATTED
-	, STATUS = UAR_GET_CODE_DISPLAY(E.ENCNTR_STATUS_CD)
-	; , C_E.PERSON_ID
-	;, C_E.PERFORMED_PRSNL_ID
+	PHARMACY_NOTE_TITLE = C_E.EVENT_TITLE_TEXT
+	, PHARMACY_NOTE_DATE = C_E.PERFORMED_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+    , STAFF_NOTE_BY = PR.NAME_FULL_FORMATTED
+    , PATIENT = P.NAME_FULL_FORMATTED
+    , PATIENT_URN = P_A.ALIAS
+    , ENCOUNTER_NO = E_A.ALIAS
+	, ENCOUNTER_STATUS = UAR_GET_CODE_DISPLAY(E.ENCNTR_STATUS_CD)
+    , ENCOUNTER_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
+    , LAST_FACILITY = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+    , LAST_NURSE_UNIT = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+    , LAST_ROOM = UAR_GET_CODE_DISPLAY(E.LOC_ROOM_CD)
+    , MED_SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
 
 FROM
     ENCOUNTER           E
     ,
 	CLINICAL_EVENT      C_E
+    ,
+    PERSON              P
+    ,
+    PERSON_ALIAS        P_A
+    ,
+    ENCNTR_ALIAS        E_A
+    ,
+    PRSNL               PR
 
-PLAN C_E
+PLAN E;ENCOUNTER
     WHERE
-
-    /* Code = "Pharmacy Admission Note" */
-    C_E.EVENT_CD = 87783484
-    AND
-    /* Subtype is "PAC Pharmacy Note" */
-    C_E.EVENT_TITLE_TEXT = "*PAC*"
-    AND
-    /* Seems to filter duplicate rows without C_E.VERIFIED_PRSNL_ID */
-    C_E.AUTHENTIC_FLAG = 1
-
-JOIN E;ENCOUNTER
-    WHERE C_E.ENCNTR_ID = E.ENCNTR_ID
     /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
-    AND E.LOC_FACILITY_CD != 4038465.00
-    /* Remove Fake 'Test' Patients */
-    AND E.PERSON_ID NOT IN (
-    	SELECT PERSON_FILTER.PERSON_ID
-        FROM PERSON PERSON_FILTER
-        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
-        )
-    /* Preadmit : Encounter Status filter*/
+    E.LOC_FACILITY_CD != 4038465.00
+    /* "Preadmit" : Encounter Status filter*/
     ; AND E.ENCNTR_STATUS_CD = 858
-    /* PreAdmit : Encounter Type filter */
+    /* Just look at Encounters created or updated in the last 150 days */
+    AND E.UPDT_DT_TM > cnvtlookbehind("150,D")
+        /* Encounter Status filter does not = "Discharged etc*/
+    AND E.ENCNTR_STATUS_CD NOT IN
+        (
+        855.00;	Cancelled
+        , 666807.00;	Cancelled Pending Arrival
+        , 856.00;	Discharged
+        )
+
+JOIN C_E
+    WHERE C_E.ENCNTR_ID = E.ENCNTR_ID
+    /* Code = "Pharmacy Admission Note" */
+    AND C_E.EVENT_CD = 87783484
+    /* Subtype has PAC in the title (wide filter for "PAC Pharmacy Note") */
+    AND C_E.EVENT_TITLE_TEXT = "*PAC*"
+    /* Seems to filter duplicate rows without C_E.VERIFIED_PRSNL_ID */
+    AND C_E.AUTHENTIC_FLAG = 1
+    /* "PreAdmit" : Encounter Type filter this get's zero results in combination*/
     ; AND E.ENCNTR_TYPE_CD = 309313
 
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = E.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
+/* Patient Identifiers such as URN Medicare no etc */
+JOIN P_A;PERSON_ALIAS
+    WHERE P_A.PERSON_ID = E.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
+
+/* Encounter Identifiers such as the Financial Number */
+JOIN E_A;ENCNTR_ALIAS
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+	/* active FIN NBRs only */
+    AND E_A.ACTIVE_IND = 1
+    /* effective FIN NBRs only */
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+
+JOIN PR;PRSNL
+    WHERE PR.PERSON_ID = C_E.PERFORMED_PRSNL_ID
 
 ORDER BY
 	C_E.PERFORMED_DT_TM   DESC
 
-WITH MAXREC = 1000, NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 5
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 30
 /*PAC Pharmacy Note */

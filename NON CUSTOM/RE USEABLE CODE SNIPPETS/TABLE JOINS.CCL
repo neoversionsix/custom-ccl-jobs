@@ -50,7 +50,7 @@ PLAN O;ORDERS
 JOIN P;PERSON
 	WHERE P.PERSON_ID = X.PERSON_ID
     /* Remove Inactive Patients */
-    P.ACTIVE_IND = 1
+    AND P.ACTIVE_IND = 1
     /* Remove Fake 'Test' Patients */
     AND P.NAME_LAST_KEY != "*TESTWHS*"
     /* Remove Ineffective Patients */
