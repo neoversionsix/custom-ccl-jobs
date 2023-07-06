@@ -1,0 +1,73 @@
+SELECT DISTINCT
+	NURSE_UNIT = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+	, PATIENT_URN = P_A.ALIAS
+	, PATIENT_NAME = P.NAME_FULL_FORMATTED
+	, GENDER = UAR_GET_CODE_DISPLAY(P.SEX_CD)
+	, ENCOUNTER_ID = E.ENCNTR_ID
+	, DIAGNOSIS = D.DIAGNOSIS_DISPLAY
+	, DIAGNOSIS_TYPE = UAR_GET_CODE_DISPLAY(D.DIAG_TYPE_CD)
+	, MED_SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+	, ARRIVE_TIME = E.ARRIVE_DT_TM "DD-MM-YYYY HH:MM;;d"
+	, E.BEG_EFFECTIVE_DT_TM "DD-MM-YYYY HH:MM;;d"
+	, LOCATION = UAR_GET_CODE_DISPLAY(E.LOCATION_CD)
+	, BUILDING = UAR_GET_CODE_DISPLAY(E.LOC_BUILDING_CD)
+	, FACILITY = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+	, ROOM = UAR_GET_CODE_DISPLAY(E.LOC_ROOM_CD)
+	, BED = UAR_GET_CODE_DISPLAY(E.LOC_BED_CD)
+
+FROM
+	ENCOUNTER   E
+	, DIAGNOSIS   D
+	, PERSON_ALIAS   P_A
+	, PERSON   P
+
+PLAN E
+	WHERE
+    E.ARRIVE_DT_TM
+	BETWEEN
+		CNVTDATETIME("01-JUL-2022 00:00:00.00")
+		AND
+		CNVTDATETIME("30-JUN-2023 00:00:00.00")
+
+JOIN D
+	WHERE D.PERSON_ID = E.PERSON_ID
+	AND
+	CNVTUPPER(D.DIAGNOSIS_DISPLAY) = "*FRACTURE*"
+	AND
+    (
+	CNVTUPPER(D.DIAGNOSIS_DISPLAY) IN
+        (
+         "*foot*"
+        , "*ankle*"
+        , "*leg*"
+        , "*Femur*"
+        , "*Patella*"
+        , "*kneecap*"
+        , "*Tibia*"
+        , "*Fibula*"
+        , "*Tarsus/Tarsals*"
+        , "*Calcaneus*"
+        , "*heel*"
+        , "*Talus*"
+        , "*Navicular*"
+        , "*Medial cuneiform*"
+        , "*Intermediate cuneiform*"
+        , "*Lateral cuneiform*"
+        , "*Cuboid*"
+        , "*Metatarsals*"
+        , "*Phalanges*"
+        , "*Proximal phalanges*"
+        , "*Intermediate phalanges*"
+        , "*Distal phalanges*"
+        )
+    )
+
+JOIN P_A
+	WHERE P_A.PERSON_ID = E.PERSON_ID
+	AND
+	P_A.ALIAS_POOL_CD = 9569589 ; URN ALIAS ONLY
+
+JOIN P
+	WHERE P.PERSON_ID = E.PERSON_ID
+
+WITH MAXREC = 100, NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 5
