@@ -1,3 +1,7 @@
+
+/*(DATE) */
+ "DD-MMM-YYYY HH:MM:SS;;D"
+
 /* Clinical Events */
 PLAN C_E;CLINICAL_EVENT
     WHERE
