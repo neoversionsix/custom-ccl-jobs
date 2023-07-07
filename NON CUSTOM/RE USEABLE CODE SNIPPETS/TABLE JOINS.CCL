@@ -1,6 +1,16 @@
 /* Clinical Events */
 PLAN C_E;CLINICAL_EVENT
     WHERE
+    /* Removes Update rows effectively grabs the row with the latest update*/
+    C_E.VALID_UNTIL_DT_TM > SYSDATE
+    /* Test Patient filter out */
+    AND C_E.PERSON_ID NOT IN
+        (
+    	SELECT PERSON_FILTER.PERSON_ID
+        FROM PERSON PERSON_FILTER
+        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
+        )
+    AND
     /* Code = "Pharmacy Admission Note" */
     C_E.EVENT_CD = 87783484
     /* Subtype has PAC in the title (wide filter for "PAC Pharmacy Note") */
@@ -13,13 +23,6 @@ PLAN C_E;CLINICAL_EVENT
         CNVTDATETIME("01-JAN-2023")
         AND
         CNVTDATETIME("10-JAN-2023")
-        )
-    /* Test Patient filter out */
-    AND C_E.PERSON_ID NOT IN
-        (
-    	SELECT PERSON_FILTER.PERSON_ID
-        FROM PERSON PERSON_FILTER
-        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
         )
 
 /*Actions Related to Orders */

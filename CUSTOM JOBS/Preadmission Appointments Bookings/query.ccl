@@ -80,10 +80,21 @@ SELECT
 	, S_A.WARN_BIT_MASK
 
 FROM
-	SCH_APPT    S_A
+	SCH_APPT    S_A,
+    ,
     CODE_VALUE  C_V
 
 PLAN S_A;SCH_APPT
+
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = S_A.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
 JOIN C_V;CODE_VALUE
      WHERE

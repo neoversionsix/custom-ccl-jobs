@@ -2,13 +2,13 @@ DROP PROGRAM WH_PAC_NOTE GO
 CREATE PROGRAM WH_PAC_NOTE
 
 prompt
-	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
-	, "START TIME" = "SYSDATE"
-	, "END TIME" = "SYSDATE"
+	"Output to File/Printer/MINE" = "MINE"                   ;* Enter or select the printer or file name to send this report to.
+	, "Filter notes between this time (begin)" = "SYSDATE"
+	, "Filter notes between this time (end)" = "SYSDATE"
 
-WITH OUTDEV, START_DATE_TIME, END_DATE_TIME
+with OUTDEV, START_DATE_TIME, END_DATE_TIME
 
-SELECT INTO $OUTDEV
+SELECT DISTINCT INTO $OUTDEV
 	PHARMACY_NOTE_TITLE = C_E.EVENT_TITLE_TEXT
 	, PHARMACY_NOTE_DATE = C_E.PERFORMED_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
     , STAFF_NOTE_BY = PR.NAME_FULL_FORMATTED
@@ -101,7 +101,8 @@ JOIN PR;PRSNL
     WHERE PR.PERSON_ID = C_E.PERFORMED_PRSNL_ID
 
 ORDER BY
-	C_E.PERFORMED_DT_TM   DESC
+	C_E.PARENT_EVENT_ID
+	, 0
 
 WITH
 	NOCOUNTER
