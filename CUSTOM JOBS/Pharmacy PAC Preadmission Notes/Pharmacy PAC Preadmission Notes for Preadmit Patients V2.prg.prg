@@ -1,0 +1,113 @@
+DROP PROGRAM WH_PAC_NOTE GO
+CREATE PROGRAM WH_PAC_NOTE
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	, "START TIME" = "SYSDATE"
+	, "END TIME" = "SYSDATE"
+
+WITH OUTDEV, START_DATE_TIME, END_DATE_TIME
+
+SELECT INTO $OUTDEV
+	PHARMACY_NOTE_TITLE = C_E.EVENT_TITLE_TEXT
+	, PHARMACY_NOTE_DATE = C_E.PERFORMED_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+    , STAFF_NOTE_BY = PR.NAME_FULL_FORMATTED
+    , PATIENT = P.NAME_FULL_FORMATTED
+    , PATIENT_URN = P_A.ALIAS
+    , ENCOUNTER_NO = E_A.ALIAS
+	, ENCOUNTER_STATUS = UAR_GET_CODE_DISPLAY(E.ENCNTR_STATUS_CD)
+    , ENCOUNTER_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
+    , LAST_FACILITY = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+    , LAST_NURSE_UNIT = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+    , LAST_ROOM = UAR_GET_CODE_DISPLAY(E.LOC_ROOM_CD)
+    , MED_SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+
+FROM
+    ENCOUNTER           E
+    ,
+	CLINICAL_EVENT      C_E
+    ,
+    PERSON              P
+    ,
+    PERSON_ALIAS        P_A
+    ,
+    ENCNTR_ALIAS        E_A
+    ,
+    PRSNL               PR
+
+PLAN C_E;CLINICAL_EVENT
+    WHERE
+    /* Code = "Pharmacy Admission Note" */
+    C_E.EVENT_CD = 87783484
+    /* Subtype has PAC in the title (wide filter for "PAC Pharmacy Note") */
+    AND C_E.EVENT_TITLE_TEXT = "*PAC*"
+    /* Seems to filter duplicate rows without C_E.VERIFIED_PRSNL_ID */
+    AND C_E.AUTHENTIC_FLAG = 1
+    /* Time Filter for when the clinical event was performed*/
+    AND (
+        C_E.PERFORMED_DT_TM BETWEEN
+        CNVTDATETIME($START_DATE_TIME)
+        AND
+        CNVTDATETIME($END_DATE_TIME)
+        )
+    /* Test Patient filter out */
+    AND C_E.PERSON_ID NOT IN
+        (
+    	SELECT PERSON_FILTER.PERSON_ID
+        FROM PERSON PERSON_FILTER
+        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
+        )
+
+JOIN E;ENCOUNTER
+    WHERE C_E.ENCNTR_ID = E.ENCNTR_ID
+    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    AND E.LOC_FACILITY_CD != 4038465.00
+    /* Just look at Encounters created or updated in the last 150 days */
+    AND E.UPDT_DT_TM > CNVTDATETIME("01-JAN-2019")
+        /* Encounter Status filter does not = "Discharged etc*/
+
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = E.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+/* Patient Identifiers such as URN Medicare no etc */
+JOIN P_A;PERSON_ALIAS
+    WHERE P_A.PERSON_ID = E.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
+
+/* Encounter Identifiers such as the Financial Number */
+JOIN E_A;ENCNTR_ALIAS
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+	/* active FIN NBRs only */
+    AND E_A.ACTIVE_IND = 1
+    /* effective FIN NBRs only */
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+
+JOIN PR;PRSNL
+    WHERE PR.PERSON_ID = C_E.PERFORMED_PRSNL_ID
+
+ORDER BY
+	C_E.PERFORMED_DT_TM   DESC
+
+WITH
+	NOCOUNTER
+	, SEPARATOR=" "
+	, FORMAT
+	, TIME = 60
+
+END
+GO

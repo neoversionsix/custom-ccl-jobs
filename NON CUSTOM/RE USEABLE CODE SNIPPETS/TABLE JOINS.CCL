@@ -1,3 +1,27 @@
+/* Clinical Events */
+PLAN C_E;CLINICAL_EVENT
+    WHERE
+    /* Code = "Pharmacy Admission Note" */
+    C_E.EVENT_CD = 87783484
+    /* Subtype has PAC in the title (wide filter for "PAC Pharmacy Note") */
+    AND C_E.EVENT_TITLE_TEXT = "*PAC*"
+    /* Seems to filter duplicate rows without C_E.VERIFIED_PRSNL_ID */
+    AND C_E.AUTHENTIC_FLAG = 1
+    /* Time Filter for when the clinical event was performed*/
+    AND (
+        C_E.PERFORMED_DT_TM BETWEEN
+        CNVTDATETIME("01-JAN-2023")
+        AND
+        CNVTDATETIME("10-JAN-2023")
+        )
+    /* Test Patient filter out */
+    AND C_E.PERSON_ID NOT IN
+        (
+    	SELECT PERSON_FILTER.PERSON_ID
+        FROM PERSON PERSON_FILTER
+        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
+        )
+
 /*Actions Related to Orders */
 PLAN O_A;ORDER_ACTION
     WHERE
@@ -95,6 +119,27 @@ JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
 JOIN PR;PRSNL
     WHERE PR.PERSON_ID = O_A.ACTION_PERSONNEL_ID;O.UPDT_ID
 
+
+SELECT
+	, C_V.CODE_VALUE
+
+FROM
+	CODE_VALUE   C_V
+
+WHERE
+	C_V.ACTIVE_IND = 1
+	AND
+	C_V.CODE_SET = 220
+	AND
+	(
+		C_V.DESCRIPTION = "*Preadmission*"
+		OR
+		C_V.DESCRIPTION = "*S PAC*"
+		OR
+		C_V.DESCRIPTION = "*F PAC*"
+	)
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT
 
 /*TABLES */
 ACCESSION

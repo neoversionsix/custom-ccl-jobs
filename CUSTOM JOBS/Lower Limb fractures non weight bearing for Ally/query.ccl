@@ -35,30 +35,58 @@ JOIN D
 	CNVTUPPER(D.DIAGNOSIS_DISPLAY) = "*FRACTURE*"
 	AND
     (
-	CNVTUPPER(D.DIAGNOSIS_DISPLAY) IN
+		CNVTUPPER(D.DIAGNOSIS_DISPLAY) IN
         (
          "*FOOT*"
         , "*ANKLE*"
         , "*LEG*"
-        , "*FEMUR*"
+		)
+		OR
+		CNVTUPPER(D.DIAGNOSIS_DISPLAY) IN
+		(
+        "*FEMUR*"
         , "*PATELLA*"
         , "*KNEECAP*"
-        , "*TIBIA*"
+		)
+		OR
+		CNVTUPPER(D.DIAGNOSIS_DISPLAY) IN
+		(
+		"*TIBIA*"
         , "*FIBULA*"
         , "*TARSUS/TARSALS*"
-        , "*CALCANEUS*"
+		)
+		OR
+		CNVTUPPER(D.DIAGNOSIS_DISPLAY) IN
+		(
+        "*CALCANEUS*"
         , "*HEEL*"
         , "*TALUS*"
-        , "*NAVICULAR*"
+		)
+		OR
+		CNVTUPPER(D.DIAGNOSIS_DISPLAY) IN
+		(
+        "*NAVICULAR*"
         , "*MEDIAL CUNEIFORM*"
         , "*INTERMEDIATE CUNEIFORM*"
-        , "*LATERAL CUNEIFORM*"
+		)
+		OR
+		CNVTUPPER(D.DIAGNOSIS_DISPLAY) IN
+		(
+        "*LATERAL CUNEIFORM*"
         , "*CUBOID*"
         , "*METATARSALS*"
-        , "*PHALANGES*"
+		)
+		OR
+		CNVTUPPER(D.DIAGNOSIS_DISPLAY) IN
+		(
+        "*PHALANGES*"
         , "*PROXIMAL PHALANGES*"
         , "*INTERMEDIATE PHALANGES*"
-        , "*DISTAL PHALANGES*"
+		)
+		OR
+		CNVTUPPER(D.DIAGNOSIS_DISPLAY) IN
+		(
+        "*DISTAL PHALANGES*"
         )
     )
 
