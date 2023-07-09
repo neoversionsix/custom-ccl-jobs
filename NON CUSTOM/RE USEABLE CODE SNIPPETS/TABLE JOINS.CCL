@@ -127,26 +127,26 @@ JOIN PR;PRSNL
     WHERE PR.PERSON_ID = O_A.ACTION_PERSONNEL_ID;O.UPDT_ID
 
 
-SELECT
-	, C_V.CODE_VALUE
+/* Code value filter */
+    (
+        SELECT
+            ,  C_V_TEMP.CODE_VALUE
+        FROM
+            CODE_VALUE   C_V_TEMP
+        WHERE
+             C_V_TEMP.ACTIVE_IND = 1
+            AND
+             C_V_TEMP.CODE_SET = 220
+            AND
+            (
+                 C_V_TEMP.DESCRIPTION = "*Preadmission*"
+                OR
+                 C_V_TEMP.DESCRIPTION = "*S PAC*"
+                OR
+                 C_V_TEMP.DESCRIPTION = "*F PAC*"
+            )
+    )
 
-FROM
-	CODE_VALUE   C_V
-
-WHERE
-	C_V.ACTIVE_IND = 1
-	AND
-	C_V.CODE_SET = 220
-	AND
-	(
-		C_V.DESCRIPTION = "*Preadmission*"
-		OR
-		C_V.DESCRIPTION = "*S PAC*"
-		OR
-		C_V.DESCRIPTION = "*F PAC*"
-	)
-
-WITH NOCOUNTER, SEPARATOR=" ", FORMAT
 
 /*TABLES */
 ACCESSION

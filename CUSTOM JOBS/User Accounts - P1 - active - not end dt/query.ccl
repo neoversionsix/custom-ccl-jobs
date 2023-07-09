@@ -1,0 +1,30 @@
+SELECT
+	P.PERSON_ID
+	, P.USERNAME
+	, P_POSITION_DISP = UAR_GET_CODE_DISPLAY(P.POSITION_CD)
+	, P.NAME_FULL_FORMATTED
+
+FROM
+	PRSNL   P
+
+WHERE 
+    P.POSITION_CD IN
+        (
+            SELECT
+                C_V_TEMP.CODE_VALUE
+            FROM
+                CODE_VALUE   C_V_TEMP
+            WHERE
+                C_V_TEMP.ACTIVE_IND = 1
+                AND
+                C_V_TEMP.CODE_SET = 88; Position codes
+                AND
+                (
+                    C_V_TEMP.DESCRIPTION = "* P1*"
+                )
+        )
+    AND 
+    P.END_EFFECTIVE_DT_TM > SYSDATE
+
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 30

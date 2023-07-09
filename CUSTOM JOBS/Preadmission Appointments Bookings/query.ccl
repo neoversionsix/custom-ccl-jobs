@@ -1,31 +1,41 @@
 SELECT
-    S_APPT_LOCATION_DISP = UAR_GET_CODE_DISPLAY(S_A.APPT_LOCATION_CD) ; Location display
-	, S_SCH_ROLE_DISP = UAR_GET_CODE_DISPLAY(S_A.SCH_ROLE_CD)
+    APPT_LOCATION_DISPLAY = UAR_GET_CODE_DISPLAY(S_A.APPT_LOCATION_CD) ; Location display
+    , APPT_LOCATION_DESCRIPTION = C_V.DESCRIPTION ; Location Description
 	, S_SCH_STATE_DISP = UAR_GET_CODE_DISPLAY(S_A.SCH_STATE_CD); Booked, Resheduled etc
-	, S_A.TIME_TYPE_FLAG ; seems to communicate: confirmed, rechedule etc
 	, S_A.UPDT_CNT
-	, S_A.UPDT_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D" ; last updated
-	, S_A.VERSION_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D"
-	, S_A.VIS_BEG_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D"
-	, S_A.VIS_END_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D"
+	, APPT_START_TIME = S_A.BEG_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+    , APPT_END_TIME = S_A.END_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+    , PATIENT = P.NAME_FULL_FORMATTED
+    , PATIENT_URN = P_A.ALIAS
+    , ENCOUNTER_NO = E_A.ALIAS
+    , LAST_UPDATE = S_A.UPDT_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D" ; last updated
 
 FROM
-	SCH_APPT    S_A
+	SCH_APPT        S_A
     ,
-    CODE_VALUE  C_V
+    CODE_VALUE      C_V
     ,
-    PERSON      P
+    PERSON          P
+    ,
+    PERSON_ALIAS    P_A
+    ,
+    ENCNTR_ALIAS    E_A
 
 PLAN S_A;SCH_APPT
     WHERE
-    /*Filter for patients (not doctors or objects) */
+    /*Filter for patients (not scheduling of doctors or objects) */
     S_A.SCH_ROLE_CD = 4572.00
     /*Still visible filter */
     AND S_A.VIS_END_DT_TM > SYSDATE
     /*Still active */
     AND S_A.ACTIVE_IND = 1
+    /* Appointment Start Time filter */
+    AND S_A.BEG_DT_TM BETWEEN
+        CNVTDATETIME("10-JUL-2023 05:00")
+        AND
+        CNVTDATETIME("12-JUL-2023 17:00")
     /* Last updated filter */
-    AND S_A.UPDT_DT_TM > CNVTLOOKBEHIND("1,H")
+    ;AND S_A.UPDT_DT_TM > CNVTLOOKBEHIND("10,H")
 
 /* Patients */
 JOIN P;PERSON
@@ -51,5 +61,31 @@ JOIN C_V;CODE_VALUE
 		OR
 		C_V.DESCRIPTION = "*F PAC*"
 	)
+
+JOIN P_A;PERSON_ALIAS; 
+    WHERE P_A.PERSON_ID = P.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
+
+/* Encounter Identifiers such as the Financial Number */
+JOIN E_A;ENCNTR_ALIAS; 
+    WHERE E_A.ENCNTR_ID = S_A.ENCNTR_ID
+    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+	/* active FIN NBRs only */
+    AND E_A.ACTIVE_IND = 1
+    /* effective FIN NBRs only */
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+
+ORDER BY
+    S_A.BEG_DT_TM,
+    S_A.LOC_FACILITY_CD
 
 WITH MAXREC = 1000, NOCOUNTER, SEPARATOR=" ", FORMAT, time = 5
