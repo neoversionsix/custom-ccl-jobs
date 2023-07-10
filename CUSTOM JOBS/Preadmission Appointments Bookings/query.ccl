@@ -1,15 +1,15 @@
 SELECT
-    APPT_LOCATION_DISPLAY = UAR_GET_CODE_DISPLAY(S_A.APPT_LOCATION_CD) ; Location display
-    , APPT_LOCATION_DESCRIPTION = C_V.DESCRIPTION ; Location Description
-	, S_SCH_STATE_DISP = UAR_GET_CODE_DISPLAY(S_A.SCH_STATE_CD); Booked, Resheduled etc
-	, APPT_START_TIME = S_A.BEG_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
-    , APPT_END_TIME = S_A.END_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
-    , S_A.DURATION
-    , PATIENT = P.NAME_FULL_FORMATTED
-    , PATIENT_URN = P_A.ALIAS
-    , ENCOUNTER_NO = E_A.ALIAS
-    , LAST_UPDATE = S_A.UPDT_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D" ; last updated
-    , UPDATER = PR.NAME_FULL_FORMATTED
+    APPT_LOCATION_DISPLAY = UAR_GET_CODE_DISPLAY(S_A.APPT_LOCATION_CD)  ; Location display
+    , APPT_LOCATION_DESCRIPTION = C_V.DESCRIPTION                       ; Location Description
+	, S_SCH_STATE_DISP = UAR_GET_CODE_DISPLAY(S_A.SCH_STATE_CD)         ; Booked, Resheduled etc
+	, APPT_START_TIME = S_A.BEG_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"         ; APPT START
+    , APPT_END_TIME = S_A.END_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"           ; APPT END
+    , S_A.DURATION                                                      ; APPOINTMENT DURATION
+    , PATIENT = P.NAME_FULL_FORMATTED                                   ; PATIENT NAME
+    , PATIENT_URN = P_A.ALIAS                                           ; URN
+    , ENCOUNTER_NO = E_A.ALIAS                                          ; ENCOUNTER NO
+    , LAST_UPDATE = S_A.UPDT_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D"           ; last updated
+    , UPDATER = PR.NAME_FULL_FORMATTED                                  ; STAFF UPDATER
 
 FROM
 	SCH_APPT        S_A
