@@ -2,6 +2,40 @@
 /*(DATE) */
  "DD-MMM-YYYY HH:MM:SS;;D"
 
+/* ENCOUNTER    E*/
+PLAN E;ENCOUNTER
+    WHERE
+    /*Filter for test patients */
+    E.PERSON_ID =
+    (
+        SELECT P_TEMP.PERSON_ID
+        WHERE P.NAME_LAST_KEY = "*TESTWHS"
+    )
+    /* Filter for Nurse Unit */
+    E.LOC_NURSE_UNIT_CD IN
+    (
+        SELECT
+            ,  C_V_TEMP.CODE_VALUE
+        FROM
+            CODE_VALUE   C_V_TEMP
+        WHERE
+             C_V_TEMP.ACTIVE_IND = 1
+            AND
+             C_V_TEMP.CODE_SET = 220
+            AND
+            (
+                 C_V_TEMP.DISPLAY = "W ED"
+                OR
+                 C_V_TEMP.DISPLAY = "S ED"
+                OR
+                 C_V_TEMP.DISPLAY = "F ED"
+                OR
+                 C_V_TEMP.DISPLAY = "S SSU"
+            )
+    )
+
+
+
 /* Clinical Events */
 PLAN C_E;CLINICAL_EVENT
     WHERE
@@ -124,13 +158,13 @@ JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
 	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
 
 JOIN PR;PRSNL
-    WHERE PR.PERSON_ID = O_A.ACTION_PERSONNEL_ID;O.UPDT_ID
+    WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID);X.UPDT_ID
 
 
 /* Code value filter */
     (
         SELECT
-            ,  C_V_TEMP.CODE_VALUE
+            C_V_TEMP.CODE_VALUE
         FROM
             CODE_VALUE   C_V_TEMP
         WHERE

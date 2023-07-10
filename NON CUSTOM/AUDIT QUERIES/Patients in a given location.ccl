@@ -1,0 +1,76 @@
+SELECT
+    LOCATION_NRSE_DPY = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+    , ENCOUNTER_NO = E_A.ALIAS
+    , PATIENT_URN = P_A.ALIAS
+    , PATIENT_NAME = P.NAME_FULL_FORMATTED
+FROM
+    ENCOUNTER       E
+    , ENCNTR_ALIAS  E_A
+    , PERSON_ALIAS  P_A
+    , PERSON        P
+
+/* ENCOUNTER    E*/
+PLAN E;ENCOUNTER
+    WHERE
+    /*Filter for test patients */
+    E.PERSON_ID IN
+    (
+        SELECT P_TEMP.PERSON_ID
+        FROM PERSON P_TEMP
+        WHERE P_TEMP.NAME_LAST_KEY = "*TESTWHS*"
+    )
+    /* Filter for Nurse Unit */
+    AND E.LOC_NURSE_UNIT_CD IN
+    (
+        SELECT
+            C_V_TEMP.CODE_VALUE
+        FROM
+            CODE_VALUE   C_V_TEMP
+        WHERE
+             C_V_TEMP.ACTIVE_IND = 1
+            AND
+             C_V_TEMP.CODE_SET = 220
+            AND
+            (
+                C_V_TEMP.DISPLAY = "W ED"
+                OR
+                C_V_TEMP.DISPLAY = "S ED"
+                OR
+                C_V_TEMP.DISPLAY = "F ED"
+                OR
+                C_V_TEMP.DISPLAY = "S SSU"
+                OR
+                C_V_TEMP.DISPLAY = "F SSU"
+                OR
+                C_V_TEMP.DISPLAY = "F ICU"
+            )
+    )
+
+/* Encounter Identifiers such as the Financial Number */
+JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+	/* active FIN NBRs only */
+    AND E_A.ACTIVE_IND = 1
+    /* effective FIN NBRs only */
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+
+/* Patient Identifiers such as URN Medicare no etc */
+JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
+    WHERE P_A.PERSON_ID = E.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
+
+JOIN P;PERSON
+    WHERE P.PERSON_ID = E.PERSON_ID
+    AND P.ACTIVE_IND = 1
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 5

@@ -1,8 +1,7 @@
-SELECT; DISTINCT ON SCH_EVENT_ID MAX UPDT time
+SELECT
     APPT_LOCATION_DISPLAY = UAR_GET_CODE_DISPLAY(S_A.APPT_LOCATION_CD) ; Location display
     , APPT_LOCATION_DESCRIPTION = C_V.DESCRIPTION ; Location Description
 	, S_SCH_STATE_DISP = UAR_GET_CODE_DISPLAY(S_A.SCH_STATE_CD); Booked, Resheduled etc
-	, S_A.UPDT_CNT
 	, APPT_START_TIME = S_A.BEG_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
     , APPT_END_TIME = S_A.END_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
     , S_A.DURATION
@@ -10,6 +9,7 @@ SELECT; DISTINCT ON SCH_EVENT_ID MAX UPDT time
     , PATIENT_URN = P_A.ALIAS
     , ENCOUNTER_NO = E_A.ALIAS
     , LAST_UPDATE = S_A.UPDT_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D" ; last updated
+    , UPDATER = PR.NAME_FULL_FORMATTED
 
 FROM
 	SCH_APPT        S_A
@@ -21,6 +21,8 @@ FROM
     PERSON_ALIAS    P_A
     ,
     ENCNTR_ALIAS    E_A
+    ,
+    PRSNL           PR
 
 PLAN S_A;SCH_APPT
     WHERE
@@ -30,20 +32,33 @@ PLAN S_A;SCH_APPT
     AND S_A.VIS_END_DT_TM > SYSDATE
     /*Still active */
     AND S_A.ACTIVE_IND = 1
+    /* Remove zero duration; seems to remove duplicates*/
+    AND S_A.DURATION != 0
     /* Appointment Start Time filter */
     AND S_A.BEG_DT_TM BETWEEN
         CNVTDATETIME("10-JUL-2023 05:00")
         AND
         CNVTDATETIME("12-JUL-2023 17:00")
-    /* Last updated filter */
-    ;AND S_A.UPDT_DT_TM > CNVTLOOKBEHIND("10,H")
-
-    AND S_A.UPDT_DT_TM =
+    /* Filter out duplicate appointments for for most recent in the sequence*/
+    AND S_A.SCHEDULE_SEQ =
         (
-            SELECT MAX(S_A_TEMP_1.UPDT_DT_TM)
+            SELECT MAX(S_A_TEMP_1.SCHEDULE_SEQ)
             FROM SCH_APPT S_A_TEMP_1
-            WHERE S_A.SCH_EVENT_ID = S_A_TEMP_1.SCH_EVENT_ID
-        )
+            WHERE S_A_TEMP_1.SCH_EVENT_ID = S_A.SCH_EVENT_ID
+                /*Filter for patients (not scheduling of doctors or objects) */
+                AND S_A.SCH_ROLE_CD = 4572.00
+                /*Still visible filter */
+                AND S_A.VIS_END_DT_TM > SYSDATE
+                /*Still active */
+                AND S_A.ACTIVE_IND = 1
+                /* Remove zero duration; seems to remove duplicates*/
+                AND S_A.DURATION != 0
+                /* Appointment Start Time filter */
+                AND S_A.BEG_DT_TM BETWEEN
+                    CNVTDATETIME("10-JUL-2023 05:00")
+                    AND
+                    CNVTDATETIME("12-JUL-2023 17:00")
+                    )
 
 /* Patients */
 JOIN P;PERSON
@@ -64,10 +79,14 @@ JOIN C_V;CODE_VALUE
 	AND
 	(
 		C_V.DESCRIPTION = "*Preadmission*"
+        OR
+		C_V.DESCRIPTION = "*Pre-admission*"
 		OR
 		C_V.DESCRIPTION = "*S PAC*"
 		OR
 		C_V.DESCRIPTION = "*F PAC*"
+        OR
+        C_V.DISPLAY_KEY = "*PREADMISSION*"
 	)
 
 JOIN P_A;PERSON_ALIAS; 
@@ -92,9 +111,12 @@ JOIN E_A;ENCNTR_ALIAS;
     /* effective FIN NBRs only */
 	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
 
+JOIN PR;PRSNL
+    WHERE PR.PERSON_ID = OUTERJOIN(S_A.UPDT_ID);X.UPDT_ID
+
 ORDER BY
     S_A.BEG_DT_TM,
     S_A.PERSON_ID,
     S_A.APPT_LOCATION_CD
 
-WITH MAXREC = 1000, NOCOUNTER, SEPARATOR=" ", FORMAT, time = 5
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 5
