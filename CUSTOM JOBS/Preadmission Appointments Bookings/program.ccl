@@ -1,12 +1,20 @@
-SELECT
+drop program wh_preadmission_appt go
+create program wh_preadmission_appt
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"           ;* Enter or select the printer or file name to send this report to.
+	, "Appointment Begin Times (from)" = "CNVTDATETIME(CURDATE, curtime3)"
+	, "Appointment Begin Times (from)" = "CNVTDATETIME(CURDATE, curtime3)" 
+
+with OUTDEV, START_DATE_TM, END_DATE_TM
+
+SELECT INTO $OUTDEV
     APPT_LOCATION_DISPLAY = UAR_GET_CODE_DISPLAY(S_A.APPT_LOCATION_CD)  ; LOCATION DISPLAY
-    , APPT_LOCATION_DESCRIPTION = C_V.DESCRIPTION  ; LOCATION DESCRIPTION
-    
-    , PHONE = 
+    , APPT_LOCATION_DESCRIPTION = C_V.DESCRIPTION                       ; LOCATION DESCRIPTION
+    , PHONE =                                                           ; "PHONE" IN DESCRIPTION?
         IF (CNVTUPPER(C_V.DESCRIPTION)="*PHONE*") "Y"
         ELSE "N"
         ENDIF
-                         
 	, S_SCH_STATE_DISP = UAR_GET_CODE_DISPLAY(S_A.SCH_STATE_CD)         ; BOOKED, RESHEDULED ETC
 	, APPT_START_TIME = S_A.BEG_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"         ; APPT START
     , APPT_END_TIME = S_A.END_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"           ; APPT END
@@ -16,7 +24,6 @@ SELECT
     , ENCOUNTER_NO = E_A.ALIAS                                          ; ENCOUNTER NO
     , LAST_UPDATE = S_A.UPDT_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D"           ; LAST UPDATED
     , UPDATER = PR.NAME_FULL_FORMATTED                                  ; STAFF UPDATER
-    
 
 FROM
 	SCH_APPT        S_A
@@ -36,16 +43,16 @@ PLAN S_A;SCH_APPT
     /*Filter for patients (not scheduling of doctors or objects) */
     S_A.SCH_ROLE_CD = 4572.00
     /*Still visible filter */
-    AND S_A.VIS_END_DT_TM > SYSDATE
+    AND S_A.VIS_END_DT_TM > CNVTDATETIME(CURDATE, curtime3)
     /*Still active */
     AND S_A.ACTIVE_IND = 1
     /* Remove zero duration; seems to remove duplicates*/
-    AND S_A.DURATION != 0
+    AND S_A.DURATION > 0
     /* Appointment Start Time filter */
     AND S_A.BEG_DT_TM BETWEEN
-        CNVTDATETIME("10-JUL-2023 05:00")
+        CNVTDATETIME($START_DATE_TM)
         AND
-        CNVTDATETIME("12-JUL-2023 17:00")
+        CNVTDATETIME($END_DATE_TM)
     /* Filter out duplicate appointments for for most recent in the sequence*/
     AND S_A.SCHEDULE_SEQ =
         (
@@ -55,16 +62,16 @@ PLAN S_A;SCH_APPT
                 /*Filter for patients (not scheduling of doctors or objects) */
                 AND S_A.SCH_ROLE_CD = 4572.00
                 /*Still visible filter */
-                AND S_A.VIS_END_DT_TM > SYSDATE
+                AND S_A.VIS_END_DT_TM > CNVTDATETIME(CURDATE, curtime3)
                 /*Still active */
                 AND S_A.ACTIVE_IND = 1
                 /* Remove zero duration; seems to remove duplicates*/
-                AND S_A.DURATION != 0
+                AND S_A.DURATION > 0
                 /* Appointment Start Time filter */
                 AND S_A.BEG_DT_TM BETWEEN
-                    CNVTDATETIME("10-JUL-2023 05:00")
+                    CNVTDATETIME($START_DATE_TM)
                     AND
-                    CNVTDATETIME("12-JUL-2023 17:00")
+                    CNVTDATETIME($END_DATE_TM)
                     )
 
 /* Patients */
@@ -75,7 +82,7 @@ JOIN P;PERSON
     /* Remove Fake 'Test' Patients */
     AND P.NAME_LAST_KEY != "*TESTWHS*"
     /* Remove Ineffective Patients */
-    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+    AND P.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, curtime3)
 
 JOIN C_V;CODE_VALUE
     WHERE C_V.CODE_VALUE = S_A.APPT_LOCATION_CD
@@ -103,7 +110,7 @@ JOIN P_A;PERSON_ALIAS;
    	P_A.ALIAS_POOL_CD = 9569589.00
 	AND
     /* Effective Only */
-	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+	P_A.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, curtime3)
     AND
     /* Active Only */
     P_A.ACTIVE_IND = 1
@@ -116,7 +123,7 @@ JOIN E_A;ENCNTR_ALIAS;
 	/* active FIN NBRs only */
     AND E_A.ACTIVE_IND = 1
     /* effective FIN NBRs only */
-	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+	AND E_A.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, curtime3)
 
 JOIN PR;PRSNL
     WHERE PR.PERSON_ID = OUTERJOIN(S_A.UPDT_ID);X.UPDT_ID
@@ -126,4 +133,7 @@ ORDER BY
     S_A.PERSON_ID,
     S_A.APPT_LOCATION_CD
 
-WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 5
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 30
+
+END
+GO
