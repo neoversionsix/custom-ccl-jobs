@@ -1,24 +1,24 @@
 drop program wh_preadmission_appt go
 create program wh_preadmission_appt
 
-prompt 
-	"Output to File/Printer/MINE" = "MINE"           ;* Enter or select the printer or file name to send this report to.
-	, "Appointment Begin Times (from)" = "CNVTDATETIME(CURDATE, curtime3)"
-	, "Appointment Begin Times (from)" = "CNVTDATETIME(CURDATE, curtime3)" 
+prompt
+	"Output to File/Printer/MINE" = "MINE"
+	, "Appointment Begin Times (filter from)" = "CNVTDATETIME(CURDATE, curtime3)"
+	, "Appointment Begin Times (filter to)" = "CNVTDATETIME(CURDATE, curtime3)" 
 
 with OUTDEV, START_DATE_TM, END_DATE_TM
 
 SELECT INTO $OUTDEV
-    APPT_LOCATION_DISPLAY = UAR_GET_CODE_DISPLAY(S_A.APPT_LOCATION_CD)  ; LOCATION DISPLAY
-    , APPT_LOCATION_DESCRIPTION = C_V.DESCRIPTION                       ; LOCATION DESCRIPTION
+    LOCATION = UAR_GET_CODE_DISPLAY(S_A.APPT_LOCATION_CD)               ; LOCATION DISPLAY
+    , LOCATION_DESC = C_V.DESCRIPTION                                   ; LOCATION DESCRIPTION
     , PHONE =                                                           ; "PHONE" IN DESCRIPTION?
         IF (CNVTUPPER(C_V.DESCRIPTION)="*PHONE*") "Y"
         ELSE "N"
         ENDIF
-	, S_SCH_STATE_DISP = UAR_GET_CODE_DISPLAY(S_A.SCH_STATE_CD)         ; BOOKED, RESHEDULED ETC
+	, STATE = UAR_GET_CODE_DISPLAY(S_A.SCH_STATE_CD)                    ; BOOKED, RESHEDULED ETC
 	, APPT_START_TIME = S_A.BEG_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"         ; APPT START
     , APPT_END_TIME = S_A.END_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"           ; APPT END
-    , S_A.DURATION                                                      ; APPOINTMENT DURATION
+    , APPT_DURATION = S_A.DURATION                                      ; APPOINTMENT DURATION
     , PATIENT = P.NAME_FULL_FORMATTED                                   ; PATIENT NAME
     , PATIENT_URN = P_A.ALIAS                                           ; URN
     , ENCOUNTER_NO = E_A.ALIAS                                          ; ENCOUNTER NO
