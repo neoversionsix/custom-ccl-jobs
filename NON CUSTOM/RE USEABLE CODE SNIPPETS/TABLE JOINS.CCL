@@ -5,13 +5,16 @@
  /* Patient Encounters */
 PLAN E;ENCOUNTER
     WHERE
+    /* ACTIVE */
+    E.ACTIVE_IND = 1
     /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
     E.LOC_FACILITY_CD != 4038465.00
     /* Remove Fake 'Test' Patients */
-    AND E.PERSON_ID NOT IN (
-    	SELECT PERSON_FILTER.PERSON_ID
-        FROM PERSON PERSON_FILTER
-        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
+    AND E.PERSON_ID NOT IN 
+        (
+            SELECT PERSON_FILTER.PERSON_ID
+            FROM PERSON PERSON_FILTER
+            WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
         )
     /* Encounter Start time filter */
     AND E.BEG_EFFECTIVE_DT_TM > CNVTDATETIME("01-JAN-2018 00:00:00.00")
