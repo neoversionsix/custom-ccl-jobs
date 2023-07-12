@@ -2,6 +2,20 @@
 /*(DATE) */
  "DD-MMM-YYYY HH:MM:SS;;D"
 
+ /* Patient Encounters */
+PLAN E;ENCOUNTER
+    WHERE
+    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    E.LOC_FACILITY_CD != 4038465.00
+    /* Remove Fake 'Test' Patients */
+    AND E.PERSON_ID NOT IN (
+    	SELECT PERSON_FILTER.PERSON_ID
+        FROM PERSON PERSON_FILTER
+        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
+        )
+    /* Encounter Start time filter */
+    AND E.BEG_EFFECTIVE_DT_TM > CNVTDATETIME("01-JAN-2018 00:00:00.00")
+
 /* ENCOUNTER    E*/
 PLAN E;ENCOUNTER
     WHERE
@@ -121,18 +135,7 @@ JOIN P;PERSON
     /* Remove Ineffective Patients */
     AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
-/* Patient Encounters */
-PLAN E;ENCOUNTER
-    WHERE
-    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
-    E.LOC_FACILITY_CD != 4038465.00
-    /* Remove Fake 'Test' Patients */
-    AND E.PERSON_ID NOT IN (
-    	SELECT PERSON_FILTER.PERSON_ID
-        FROM PERSON PERSON_FILTER
-        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
-        )
-    AND E.BEG_EFFECTIVE_DT_TM > CNVTDATETIME("01-JAN-2018 00:00:00.00")
+
 
 /* Patient Identifiers such as URN Medicare no etc */
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
