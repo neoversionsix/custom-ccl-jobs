@@ -72,7 +72,7 @@ PLAN S_A;SCH_APPT
                     CNVTDATETIME($START_DATE_TM)
                     AND
                     CNVTDATETIME($END_DATE_TM)
-                    )
+        )
 
 /* Patients */
 JOIN P;PERSON
