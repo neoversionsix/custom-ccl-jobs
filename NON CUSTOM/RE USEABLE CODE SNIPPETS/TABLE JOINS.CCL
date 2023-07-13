@@ -176,14 +176,10 @@ JOIN PR;PRSNL
         WHERE
              C_V_TEMP.ACTIVE_IND = 1
             AND
-             C_V_TEMP.CODE_SET = 220
+             C_V_TEMP.CODE_SET = 6000;CATALOG_TYPE_CD
             AND
             (
-                 C_V_TEMP.DESCRIPTION = "*Preadmission*"
-                OR
-                 C_V_TEMP.DESCRIPTION = "*S PAC*"
-                OR
-                 C_V_TEMP.DESCRIPTION = "*F PAC*"
+                 C_V_TEMP.DISPLAY_KEY = "RADIOLOGY"
             )
     )
 
