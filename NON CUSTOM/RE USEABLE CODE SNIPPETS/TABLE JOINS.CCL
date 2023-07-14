@@ -184,7 +184,7 @@ JOIN PR;PRSNL
     )
 
 SELECT
-    C_B.BLOB_C
+    C_B.BLOB_CONTENTS
 FROM 
     CE_BLOB         C_B
 JOIN    C_B
