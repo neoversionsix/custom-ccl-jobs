@@ -1,6 +1,7 @@
 select	
 ; Brings Back users from a given list of usernames
 	p.username
+	, e_u.directory_ind
 	, p.name_last	
 	, p.name_first	
 	, p.name_full_formatted
@@ -140,7 +141,8 @@ from
 	from OMF_APP_CTX_DAY_ST p_act 	
 	group by p_act.person_id	
 	) p_activity on p_activity.person_id = p.person_id	
-	)	
+	)
+	, (left join ea_user e_u on e_u.person_id = p_p.person_id)	
 plan	p	
 where	p.person_id > 0	; ignore '0' database row
 		and 
@@ -170,7 +172,8 @@ join	p_a_Foots_pn
 join	p_a_Sunb_pn	
 join	p_a_Suns_pn	
 join	p_a_Will_pn	
-join	p_activity	
+join	p_activity
+join	e_u
 order by		
 ;	p.active_status_dt_tm	; use one of these switches as the first sort option
 	p.updt_dt_tm desc	; use one of these switches as the first sort option
