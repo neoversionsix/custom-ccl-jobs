@@ -2,6 +2,7 @@ select
 ; Brings Back users from a given list of usernames
 	p.username
 	, e_u.directory_ind
+	, e_u.updt_dt_tm
 	, p.name_last	
 	, p.name_first	
 	, p.name_full_formatted
@@ -142,7 +143,7 @@ from
 	group by p_act.person_id	
 	) p_activity on p_activity.person_id = p.person_id	
 	)
-	, (left join ea_user e_u on e_u.person_id = p_p.person_id)	
+	, (left join ea_user e_u on e_u.username = p_p.username)
 plan	p	
 where	p.person_id > 0	; ignore '0' database row
 		and 
