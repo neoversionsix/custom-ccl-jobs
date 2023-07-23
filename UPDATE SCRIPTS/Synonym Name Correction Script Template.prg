@@ -102,3 +102,6 @@ update into order_catalog oc
 where 
     oc.catalog_cd = <CATALOG_CD>
 ;-------------------------------------------------------------------------------
+
+
+;
