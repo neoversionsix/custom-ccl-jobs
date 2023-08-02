@@ -1,0 +1,30 @@
+SELECT
+    PR.NAME_FULL_FORMATTED
+    , PR.USERNAME
+    , POSITION = UAR_GET_CODE_DISPLAY(PR.POSITION_CD)
+    , PR.ACTIVE_IND
+    , PR.END_EFFECTIVE_DT_TM "DD-MMM-YYYY"
+    , PR.PERSON_ID
+
+FROM
+    PRSNL       PR
+
+WHERE
+    PR.END_EFFECTIVE_DT_TM > SYSDATE
+    AND
+    PR.POSITION_CD IN
+        (
+            SELECT
+            C_V.CODE_VALUE
+            FROM
+                CODE_VALUE   C_V
+
+            WHERE
+                C_V.CODE_SET = 88; POSITIONS
+                AND C_V.DISPLAY_KEY IN ("AGENCY*", "DBA*")
+                AND C_V.ACTIVE_IND = 1; ACTIVE ONLY
+        )
+
+
+WITH
+    TIME = 10, FORMAT, SEPARATOR = " "
