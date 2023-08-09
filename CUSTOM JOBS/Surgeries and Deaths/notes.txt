@@ -1,0 +1,23 @@
+C_E.EVENT_CD
+3017055	Surgery Start
+3017056.00	Surgery Stop
+3017043	Anesthesia Start Time
+3017044.00	Anesthesia Stop Time
+
+152025125	SH Anaesthesia Final Record
+
+
+
+tables
+SURGICAL_CASE
+    duration = SCHED_DUR
+    scheduled location = SCHED_OP_LOC
+    surgeon = surgeon_prsnl_id
+
+SURG_CASE_PROCEDURE
+SHED_SURG_PROC = surgical
+SURG_CASE_ID
+Anaesthesia type = anesth_type
+
+SURG_PROC_DETAIL
+/* Contains the default attributes associated with a surgical procedure for a specific surgical area. */
