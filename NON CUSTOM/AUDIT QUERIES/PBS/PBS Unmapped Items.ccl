@@ -48,6 +48,12 @@ FROM
 PLAN P_D;PBS_DRUG
     WHERE
     P_D.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)	; CURRENT PRODUCTS ONLY
+    AND ; effective recently or soon in the future
+    (
+        P_D.P_D.BEG_EFFECTIVE_DT_TM > cnvtlookbehind("10,D")
+        OR
+        P_D.P_D.BEG_EFFECTIVE_DT_TM > cnvtlookahead("30,D")
+    )
     AND ; UNMAPPED
         P_D.PBS_DRUG_ID NOT IN
             (
