@@ -1,5 +1,5 @@
-drop program wh_sctb_report:group1 go
-create program wh_sctb_report:group1
+drop program wh_sctb_report go
+create program wh_sctb_report
 
 /*************************************************************************************************
  * REPORT NAME: Specialist Clinic Tracking Board
@@ -181,6 +181,7 @@ JOIN se
 	WHERE se.sch_event_id 							= sa.sch_event_id
 JOIN sed
 	WHERE se.sch_event_id 							= sed.sch_event_id
+	AND sed.version_dt_tm							> sysdate
 	AND sed.oe_field_id 							= value(uar_get_code_by("DISPLAYKEY",16449,"SCHEDULINGDELIVERYMODE"))
 	AND EXPAND(expand_cntr, 1, appointment_types->cnt, se.appt_type_cd, appointment_types->qual[expand_cntr]->code_value)
 	AND EXPAND(expand_cntr, 1, modes_of_contact->cnt, sed.oe_field_value, modes_of_contact->qual[expand_cntr]->code_value)
