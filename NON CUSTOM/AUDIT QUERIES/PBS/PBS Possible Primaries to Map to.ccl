@@ -1,8 +1,8 @@
     SELECT
         O.SYNONYM_ID
-        , PRIMARY = O.CATALOG_CD
+        ;, PRIMARY = UAR_GET_CODE_DISPLAY(O.CATALOG_CD)
         , O.MNEMONIC
-        , O_MNEMONIC_TYPE_DISP = UAR_GET_CODE_DISPLAY(O.MNEMONIC_TYPE_CD)
+        ;, O_MNEMONIC_TYPE_DISP = UAR_GET_CODE_DISPLAY(O.MNEMONIC_TYPE_CD)
 
     FROM
         ORDER_CATALOG_SYNONYM   O
@@ -19,7 +19,7 @@
             ; , 614549.00;	Z - Trade Products
             ; , 614545.00;	N - Trade Miscellaneous Products
             ; , 2580; Brand Name
-            , 2583.00;	Primary
+             2583.00;	Primary
             )
 
     WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10
