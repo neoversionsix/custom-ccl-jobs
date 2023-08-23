@@ -1,45 +1,40 @@
-;************************************************************************************************
+;********************************************************************************************************************************
 ;					GENERATED MODIFICATION CONTROL LOG
-;************************************************************************************************
+;********************************************************************************************************************************
 ;
 ; Mod Date			Engineer			Comment
 ; --- ----------	-------------------	---------------------------------------------------------
-; xxx xx/xx/xxxx	Stephen Mattes		New extract.
+; n/a 21/06/2023	Stephen Mattes		New extract.
+; 001 08/08/2023	Stephen Mattes		Changed HFNP calcs per CR001. Replaced echo with decho which can be deactivated.
 ;
-;************************************************************************************************
-;
-; TODO
-; BEFORE FIRST DELIVERY FOR TESTING
-; - nothing
-; AFTER FIRST DELIVERY FOR TESTING
-; - decide whether to in-scope business rules if the same DTA has the same event date/time (assuming eMR allows this).
-; - if so document and code those rules.
-;************************************************************************************************
+;********************************************************************************************************************************
 ; Purpose - This program reports ICU Ventilation clinical information such as ventilation hours.
 ; The information is derived from the encounter transfers to and from ICU and Clinical Events
 ; recorded in iView.
-;************************************************************************************************
+;********************************************************************************************************************************
 
 drop program wh_icu_ventilation_report go
 create program wh_icu_ventilation_report
 
 prompt
 	"Output to File/Printer/MINE" = "MINE"
-	, "ICU" = VALUE(     86164365.00,      86170172.00)
+	, "ICU" = VALUE(86164365.00, 86170172.00)
 	, "First ICU Admission Date" = "CURDATE"
 	, "Last ICU Admission Date" = "CURDATE"
 
 with OUTDEV, ICU_CD_LIST, SDATE, EDATE
-; execute xxx_icu_ventilation_report_dev 0, -2, "01-MAY-2023", "31-MAY-2023" go
-; execute xxx_icu_ventilation_report_dev 0, -2, "23-FEB-2023", "23-FEB-2023" go
-; execute xxx_icu_ventilation_report_dev 0, -2, "01-JAN-2023", "27-MAY-2023" go
-; execute xxx_icu_ventilation_report_dev 0, -2, "13-FEB-2023", "13-FEB-2023" go
+; execute wh_icu_ventilation_report 0, -2, "01-MAY-2023", "31-MAY-2023" go
+; execute wh_icu_ventilation_report 0, -2, "23-FEB-2023", "23-FEB-2023" go
+; execute wh_icu_ventilation_report 0, -2, "01-JAN-2023", "27-MAY-2023" go
+; execute wh_icu_ventilation_report 0, -2, "13-FEB-2023", "13-FEB-2023" go
 
 ;************************************************************************************************
 ; Initialisations
 ;************************************************************************************************
 declare ce_date_qual								= c40 with protect, constant("ce.event_end_dt_tm")
 ; other option is ce.performed_dt_tm
+declare decho(msg = vc)								= null
+declare debug										= i1 with constant(1) ; 0 = don't write 1 = write
 ;************************************************************************************************
 ; Subroutine decleration
 ;************************************************************************************************
@@ -69,6 +64,7 @@ declare oxygen_delivery_tracheostomy_mask			= c40 with protect, constant("Trache
 declare oxygen_delivery_cpap						= c40 with protect, constant("CPAP")
 declare oxygen_delivery_bipap						= c40 with protect, constant("BiPAP")
 declare oxygen_delivery_nasal_prongs				= c40 with protect, constant("Nasal prongs")
+declare oxygen_delivery_humidified_nasal_prongs		= c40 with protect, constant("Humidified nasal prongs")
 declare oxygen_delivery_unknown						= c40 with protect, constant("Unknown")
 declare oxygen_delivery_empty						= c40 with protect, constant("Empty")
 declare	ventilator_activity_initiate				= c40 with protect, constant("Initiate")
@@ -538,7 +534,7 @@ go to exit_script
 ; These have performed_dt_tm between icu_admission_dt_tm and icu_disch_dt_tm / SYSDATE depending on whether the encounter
 ; is discharged when the report is run.
 ;************************************************************************************************
-call echo(concat("Starting iView query at ",format(cnvtdatetime(curdate,curtime3),"dd/mm/yyyy hh:mm;;d")))
+call decho(concat("Starting iView query at ",format(cnvtdatetime(curdate,curtime3),"dd/mm/yyyy hh:mm;;d")))
 SELECT INTO "NL:"
 FROM
 	(dummyt 															d1 with seq = value(icu_stay->cnt))
@@ -621,7 +617,7 @@ FOOT d1.seq
 	icu_stay->qual[d1.seq]->iview_col_cnt									= iview_col_cnt
 	stat																	= alterlist(icu_stay->qual[d1.seq]->iview_col, iview_col_cnt)
 WITH format;, maxrec=100, time=60
-call echo(concat("Ending iView query at ", format(cnvtdatetime(curdate,curtime3),"dd/mm/yyyy hh:mm;;d"), "."))
+call decho(concat("Ending iView query at ", format(cnvtdatetime(curdate,curtime3),"dd/mm/yyyy hh:mm;;d"), "."))
  /* Test icu_stay array of records data items
 SELECT INTO $OUTDEV
 	debug								= trim(icu_stay->qual[d1.seq]->debug)
@@ -661,46 +657,46 @@ go to exit_script
 ; in the Detailed Requirements. For coding simplicity do so in two groups: 1. INV and NIV 2. CPAP, BiPAP and HFNP.
 ;**********************************************************************************************
 for (i = 1 to size(icu_stay->qual, 5))
-call echo(concat("Calculating action codes for encntr_id ", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
-" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
+	call decho(concat("Calculating action codes for encntr_id ", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
+	" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 	for (j = 1 to size(icu_stay->qual[i]->iview_col, 5))
-call echo(concat("Calculating action codes for event_end_dt_tm ", \
-format(icu_stay->qual[i]->iview_col[j]->event_end_dt_tm, ";;Q"), " OD=", icu_stay->qual[i]->iview_col[j]->od_type, "."))
+		call decho(concat("Calculating action codes for event_end_dt_tm ", \
+		format(icu_stay->qual[i]->iview_col[j]->event_end_dt_tm, ";;Q"), " OD=", icu_stay->qual[i]->iview_col[j]->od_type, "."))
 		case (icu_stay->qual[i]->iview_col[j]->va_activity)
 		of value(ventilator_activity_initiate, ventilator_activity_ongoing, ventilator_activity_empty):
 			case (icu_stay->qual[i]->iview_col[j]->vt_type)
 			of value(ventilation_type_invasive):
-call echo(concat("I,N Calc: starting inv."))
+				call decho(concat("I,N Calc: starting inv."))
 				set icu_stay->qual[i]->iview_col[j]->inv_hours_action = hours_action_start
 				set icu_stay->qual[i]->iview_col[j]->niv_hours_action = hours_action_stop
 			of value(ventilation_type_noninvasive):
-call echo(concat("I,N Calc: starting niv."))
+				call decho(concat("I,N Calc: starting niv."))
 				set icu_stay->qual[i]->iview_col[j]->inv_hours_action = hours_action_stop
 				set icu_stay->qual[i]->iview_col[j]->niv_hours_action = hours_action_start
 			of value(ventilation_type_highflow):
 				if ((0 < findstring(trim(oxygen_delivery_t_piece), icu_stay->qual[i]->iview_col[j]->od_type))
 					or (0 < findstring(trim(oxygen_delivery_tracheostomy_mask), icu_stay->qual[i]->iview_col[j]->od_type)))
-call echo(concat("I,N Calc: starting inv."))
+					call decho(concat("I,N Calc: starting inv."))
 					set icu_stay->qual[i]->iview_col[j]->inv_hours_action = hours_action_start
 					set icu_stay->qual[i]->iview_col[j]->niv_hours_action = hours_action_stop
 				else
-call echo(concat("I,N Calc: stopping all."))
+					call decho(concat("I,N Calc: stopping all."))
 					set icu_stay->qual[i]->iview_col[j]->inv_hours_action = hours_action_stop
 					set icu_stay->qual[i]->iview_col[j]->niv_hours_action = hours_action_stop
 				endif
 			of value(ventilation_type_empty):
 				if (ventilator_activity_empty = icu_stay->qual[i]->iview_col[j]->va_activity)
 					if (oxygen_delivery_empty = icu_stay->qual[i]->iview_col[j]->od_type)
-call echo(concat("I,N Calc: continuing all."))
+						call decho(concat("I,N Calc: continuing all."))
 						set icu_stay->qual[i]->iview_col[j]->inv_hours_action = hours_action_continue
 						set icu_stay->qual[i]->iview_col[j]->niv_hours_action = hours_action_continue
 					else
-call echo(concat("I,N Calc: stopping all."))
+						call decho(concat("I,N Calc: stopping all."))
 						set icu_stay->qual[i]->iview_col[j]->inv_hours_action = hours_action_stop
 						set icu_stay->qual[i]->iview_col[j]->niv_hours_action = hours_action_stop
 					endif
 				else
-call echo(concat("I,N Calc: continuing all."))
+					call decho(concat("I,N Calc: continuing all."))
 					set icu_stay->qual[i]->iview_col[j]->inv_hours_action = hours_action_continue
 					set icu_stay->qual[i]->iview_col[j]->niv_hours_action = hours_action_continue
 				endif
@@ -711,37 +707,37 @@ call echo(concat("I,N Calc: continuing all."))
 			endcase
 			if ((0 < findstring(trim(oxygen_delivery_cpap), icu_stay->qual[i]->iview_col[j]->od_type))
 				and (0 < findstring(trim(oxygen_delivery_bipap), icu_stay->qual[i]->iview_col[j]->od_type)))
-call echo(concat("C,B,N Calc: starting cpap and starting bipap."))
+				call decho(concat("C,B,N Calc: starting cpap and starting bipap."))
 				set icu_stay->qual[i]->iview_col[j]->cpap_hours_action = hours_action_start
 				set icu_stay->qual[i]->iview_col[j]->bipap_hours_action = hours_action_start
 			endif
 			if ((0 < findstring(trim(oxygen_delivery_cpap), icu_stay->qual[i]->iview_col[j]->od_type))
 				and (0 = findstring(trim(oxygen_delivery_bipap), icu_stay->qual[i]->iview_col[j]->od_type)))
-call echo(concat("C,B,N Calc: starting cpap and stopping bipap."))
+				call decho(concat("C,B,N Calc: starting cpap and stopping bipap."))
 				set icu_stay->qual[i]->iview_col[j]->cpap_hours_action = hours_action_start
 				set icu_stay->qual[i]->iview_col[j]->bipap_hours_action = hours_action_stop
 			endif
 			if ((0 = findstring(trim(oxygen_delivery_cpap), icu_stay->qual[i]->iview_col[j]->od_type))
 				and (0 < findstring(trim(oxygen_delivery_bipap), icu_stay->qual[i]->iview_col[j]->od_type)))
-call echo(concat("C,B,N Calc: stopping cpap and starting bipap."))
+				call decho(concat("C,B,N Calc: stopping cpap and starting bipap."))
 				set icu_stay->qual[i]->iview_col[j]->cpap_hours_action = hours_action_stop
 				set icu_stay->qual[i]->iview_col[j]->bipap_hours_action = hours_action_start
 			endif
 			if ((0 = findstring(trim(oxygen_delivery_cpap), icu_stay->qual[i]->iview_col[j]->od_type))
 				and (0 = findstring(trim(oxygen_delivery_bipap), icu_stay->qual[i]->iview_col[j]->od_type)))
 				if (0 = findstring(trim(oxygen_delivery_empty), icu_stay->qual[i]->iview_col[j]->od_type))
-call echo(concat("C,B,N Calc: stopping cpap and stopping bipap."))
+					call decho(concat("C,B,N Calc: stopping cpap and stopping bipap."))
 					set icu_stay->qual[i]->iview_col[j]->cpap_hours_action = hours_action_stop
 					set icu_stay->qual[i]->iview_col[j]->bipap_hours_action = hours_action_stop
 				else
-call echo(concat("C,B,N Calc: continuing cpap and continuing bipap."))
+					call decho(concat("C,B,N Calc: continuing cpap and continuing bipap."))
 					set icu_stay->qual[i]->iview_col[j]->cpap_hours_action = hours_action_continue
 					set icu_stay->qual[i]->iview_col[j]->bipap_hours_action = hours_action_continue
 				endif
 			endif
 			call  process_odnp(i, j)
 		of value(ventilator_activity_discontinue):
-call echo(concat("I,N,C,B,N Calc: stopping all."))
+			call decho(concat("I,N,C,B,N Calc: stopping all."))
 			set icu_stay->qual[i]->iview_col[j]->inv_hours_action = hours_action_stop
 			set icu_stay->qual[i]->iview_col[j]->niv_hours_action = hours_action_stop
 			set icu_stay->qual[i]->iview_col[j]->cpap_hours_action = hours_action_stop
@@ -792,8 +788,8 @@ declare cpap_hours_start_rec = i4 with protect, noconstant(-1)
 declare bipap_hours_start_rec = i4 with protect, noconstant(-1)
 declare hfnp_hours_start_rec = i4 with protect, noconstant(-1)
 for (i = 1 to size(icu_stay->qual, 5))
-call echo(concat("Calculating ventilation metrics for encntr_id ", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
-" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
+	call decho(concat("Calculating ventilation metrics for encntr_id ", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
+	" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 	set icu_stay->qual[i]->total_inv_hours = 0
 	set icu_stay->qual[i]->total_niv_hours = 0
 	set icu_stay->qual[i]->total_cpap_hours = 0
@@ -805,25 +801,25 @@ call echo(concat("Calculating ventilation metrics for encntr_id ", trim(cnvtstri
 	set bipap_hours_start_rec = -1
 	set hfnp_hours_start_rec = -1
 	for (j = 1 to size(icu_stay->qual[i]->iview_col, 5))
-call echo(concat("Calculating ventilation metric for event_end_dt_tm ", \
-format(icu_stay->qual[i]->iview_col[j]->event_end_dt_tm, ";;Q"), "."))
+		call decho(concat("Calculating ventilation metric for event_end_dt_tm ", \
+		format(icu_stay->qual[i]->iview_col[j]->event_end_dt_tm, ";;Q"), "."))
 		case (icu_stay->qual[i]->iview_col[j]->inv_hours_action)
 		of hours_action_start:
 			if (0 >= inv_hours_start_rec)
 				set inv_hours_start_rec = j
-call echo(concat("inv start at record ", trim(cnvtstring(j)), "."))
+				call decho(concat("inv start at record ", trim(cnvtstring(j)), "."))
 			else
 				call echo(concat("Ignoring inv already underway. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
 					" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 			endif
 		of hours_action_stop:
 			if (0 < inv_hours_start_rec)
-call echo(concat("inv stop at record ", trim(cnvtstring(j)), \
-" after starting at record ", trim(cnvtstring(inv_hours_start_rec)) , "."))
+				call decho(concat("inv stop at record ", trim(cnvtstring(j)), \
+				" after starting at record ", trim(cnvtstring(inv_hours_start_rec)) , "."))
 				set icu_stay->qual[i]->total_inv_hours = icu_stay->qual[i]->total_inv_hours +
 					datetimediff(icu_stay->qual[i]->iview_col[j]->event_end_dt_tm, \
 						icu_stay->qual[i]->iview_col[inv_hours_start_rec]->event_end_dt_tm, 3)
-call echo(concat("total_inv_hours=", trim(cnvtstring(icu_stay->qual[i]->total_inv_hours, 11, 2)), "."))
+				call decho(concat("total_inv_hours=", trim(cnvtstring(icu_stay->qual[i]->total_inv_hours, 11, 2)), "."))
 				set inv_hours_start_rec = -1
 			else
 				call echo(concat("Ignoring unmatched inv stop action. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
@@ -839,19 +835,19 @@ call echo(concat("total_inv_hours=", trim(cnvtstring(icu_stay->qual[i]->total_in
 		of hours_action_start:
 			if (0 >= niv_hours_start_rec)
 				set niv_hours_start_rec = j
-call echo(concat("niv start at record ", trim(cnvtstring(j)), "."))
+				call decho(concat("niv start at record ", trim(cnvtstring(j)), "."))
 			else
 				call echo(concat("Ignoring niv already underway. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
 					" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 			endif
 		of hours_action_stop:
 			if (0 < niv_hours_start_rec)
-call echo(concat("niv stop at record ", trim(cnvtstring(j)), \
-" after starting at record ", trim(cnvtstring(niv_hours_start_rec)) , "."))
-				set icu_stay->qual[i]->total_niv_hours = icu_stay->qual[i]->total_niv_hours +
+				call decho(concat("niv stop at record ", trim(cnvtstring(j)), \
+				" after starting at record ", trim(cnvtstring(niv_hours_start_rec)) , "."))
+				set icu_stay->qual[i]->total_niv_hours = icu_stay->qual[i]->total_niv_hours + \
 					datetimediff(icu_stay->qual[i]->iview_col[j]->event_end_dt_tm, \
-						icu_stay->qual[i]->iview_col[niv_hours_start_rec]->event_end_dt_tm, 3)
-call echo(concat("total_niv_hours=", trim(cnvtstring(icu_stay->qual[i]->total_niv_hours, 11, 2)), "."))
+					icu_stay->qual[i]->iview_col[niv_hours_start_rec]->event_end_dt_tm, 3)
+				call decho(concat("total_niv_hours=", trim(cnvtstring(icu_stay->qual[i]->total_niv_hours, 11, 2)), "."))
 				set niv_hours_start_rec = -1
 			else
 				call echo(concat("Ignoring unmatched niv stop action. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
@@ -867,19 +863,19 @@ call echo(concat("total_niv_hours=", trim(cnvtstring(icu_stay->qual[i]->total_ni
 		of hours_action_start:
 			if (0 >= cpap_hours_start_rec)
 				set cpap_hours_start_rec = j
-call echo(concat("cpap start at record ", trim(cnvtstring(j)), "."))
+				call decho(concat("cpap start at record ", trim(cnvtstring(j)), "."))
 			else
 				call echo(concat("Ignoring cpap already underway. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
 					" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 			endif
 		of hours_action_stop:
 			if (0 < cpap_hours_start_rec)
-call echo(concat("cpap stop at record ", trim(cnvtstring(j)), \
-" after starting at record ", trim(cnvtstring(cpap_hours_start_rec)) , "."))
+				call decho(concat("cpap stop at record ", trim(cnvtstring(j)), \
+				" after starting at record ", trim(cnvtstring(cpap_hours_start_rec)) , "."))
 				set icu_stay->qual[i]->total_cpap_hours = icu_stay->qual[i]->total_cpap_hours +
 					datetimediff(icu_stay->qual[i]->iview_col[j]->event_end_dt_tm, \
 						icu_stay->qual[i]->iview_col[cpap_hours_start_rec]->event_end_dt_tm, 3)
-call echo(concat("total_cpap_hours=", trim(cnvtstring(icu_stay->qual[i]->total_cpap_hours, 11, 2)), "."))
+				call decho(concat("total_cpap_hours=", trim(cnvtstring(icu_stay->qual[i]->total_cpap_hours, 11, 2)), "."))
 				set cpap_hours_start_rec = -1
 			else
 				call echo(concat("Ignoring unmatched cpap stop action. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
@@ -895,19 +891,19 @@ call echo(concat("total_cpap_hours=", trim(cnvtstring(icu_stay->qual[i]->total_c
 		of hours_action_start:
 			if (0 >= bipap_hours_start_rec)
 				set bipap_hours_start_rec = j
-call echo(concat("bipap start at record ", trim(cnvtstring(j)), "."))
+				call decho(concat("bipap start at record ", trim(cnvtstring(j)), "."))
 			else
 				call echo(concat("Ignoring bipap already underway. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
 					" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 			endif
 		of hours_action_stop:
 			if (0 < bipap_hours_start_rec)
-call echo(concat("bipap stop at record ", trim(cnvtstring(j)), \
-" after starting at record ", trim(cnvtstring(bipap_hours_start_rec)) , "."))
-				set icu_stay->qual[i]->total_bipap_hours = icu_stay->qual[i]->total_bipap_hours +
+				call decho(concat("bipap stop at record ", trim(cnvtstring(j)), \
+				" after starting at record ", trim(cnvtstring(bipap_hours_start_rec)) , "."))
+				set icu_stay->qual[i]->total_bipap_hours = icu_stay->qual[i]->total_bipap_hours + \
 					datetimediff(icu_stay->qual[i]->iview_col[j]->event_end_dt_tm, \
-						icu_stay->qual[i]->iview_col[bipap_hours_start_rec]->event_end_dt_tm, 3)
-call echo(concat("total_bipap_hours=", trim(cnvtstring(icu_stay->qual[i]->total_bipap_hours, 11, 2)), "."))
+					icu_stay->qual[i]->iview_col[bipap_hours_start_rec]->event_end_dt_tm, 3)
+					call decho(concat("total_bipap_hours=", trim(cnvtstring(icu_stay->qual[i]->total_bipap_hours, 11, 2)), "."))
 				set bipap_hours_start_rec = -1
 			else
 				call echo(concat("Ignoring unmatched bipap stop action. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
@@ -923,19 +919,19 @@ call echo(concat("total_bipap_hours=", trim(cnvtstring(icu_stay->qual[i]->total_
 		of hours_action_start:
 			if (0 >= hfnp_hours_start_rec)
 				set hfnp_hours_start_rec = j
-call echo(concat("hfnp start at record ", trim(cnvtstring(j)), "."))
+				call decho(concat("hfnp start at record ", trim(cnvtstring(j)), "."))
 			else
 				call echo(concat("Ignoring hfnp already underway. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
 					" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 			endif
 		of hours_action_stop:
 			if (0 < hfnp_hours_start_rec)
-call echo(concat("hfnp stop at record ", trim(cnvtstring(j)), \
-" after starting at record ", trim(cnvtstring(hfnp_hours_start_rec)) , "."))
-				set icu_stay->qual[i]->total_hfnp_hours = icu_stay->qual[i]->total_hfnp_hours +
+				call decho(concat("hfnp stop at record ", trim(cnvtstring(j)), \
+				" after starting at record ", trim(cnvtstring(hfnp_hours_start_rec)) , "."))
+				set icu_stay->qual[i]->total_hfnp_hours = icu_stay->qual[i]->total_hfnp_hours + \
 					datetimediff(icu_stay->qual[i]->iview_col[j]->event_end_dt_tm, \
-						icu_stay->qual[i]->iview_col[hfnp_hours_start_rec]->event_end_dt_tm, 3)
-call echo(concat("total_hfnp_hours=", trim(cnvtstring(icu_stay->qual[i]->total_hfnp_hours, 11, 2)), "."))
+					icu_stay->qual[i]->iview_col[hfnp_hours_start_rec]->event_end_dt_tm, 3)
+				call decho(concat("total_hfnp_hours=", trim(cnvtstring(icu_stay->qual[i]->total_hfnp_hours, 11, 2)), "."))
 				set hfnp_hours_start_rec = -1
 			else
 				call echo(concat("Ignoring unmatched hfnp stop action. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
@@ -950,60 +946,60 @@ call echo(concat("total_hfnp_hours=", trim(cnvtstring(icu_stay->qual[i]->total_h
 	endfor
 	; If hours are still running after the last qualifying iView recording then end the hours at cutoff_hours_dt_tm
 	if (0 < inv_hours_start_rec)
-call echo(concat("INV hours ended by cutoff. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
-" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
-		set icu_stay->qual[i]->total_inv_hours = icu_stay->qual[i]->total_inv_hours +
+		call decho(concat("INV hours ended by cutoff. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
+		" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
+		set icu_stay->qual[i]->total_inv_hours = icu_stay->qual[i]->total_inv_hours + \
 			datetimediff(icu_stay->qual[i]->hours_cutoff_dt_tm, \
-				icu_stay->qual[i]->iview_col[inv_hours_start_rec]->event_end_dt_tm, 3)
-call echo(concat("total_inv_hours=", trim(cnvtstring(icu_stay->qual[i]->total_inv_hours, 11, 2)), "."))
+			icu_stay->qual[i]->iview_col[inv_hours_start_rec]->event_end_dt_tm, 3)
+			call decho(concat("total_inv_hours=", trim(cnvtstring(icu_stay->qual[i]->total_inv_hours, 11, 2)), "."))
 		set inv_hours_start_rec = -1
 	else
 		call echo(concat("INV hours ended by iView recording. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
 			" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 	endif
 	if (0 < niv_hours_start_rec)
-call echo(concat("niv hours ended by cutoff. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
-" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
-		set icu_stay->qual[i]->total_niv_hours = icu_stay->qual[i]->total_niv_hours +
+		call decho(concat("niv hours ended by cutoff. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
+		" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
+		set icu_stay->qual[i]->total_niv_hours = icu_stay->qual[i]->total_niv_hours + \
 			datetimediff(icu_stay->qual[i]->hours_cutoff_dt_tm, \
-				icu_stay->qual[i]->iview_col[niv_hours_start_rec]->event_end_dt_tm, 3)
-call echo(concat("total_niv_hours=", trim(cnvtstring(icu_stay->qual[i]->total_niv_hours, 11, 2)), "."))
+			icu_stay->qual[i]->iview_col[niv_hours_start_rec]->event_end_dt_tm, 3)
+			call decho(concat("total_niv_hours=", trim(cnvtstring(icu_stay->qual[i]->total_niv_hours, 11, 2)), "."))
 		set niv_hours_start_rec = -1
 	else
 		call echo(concat("NIV hours ended by iView recording. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
 			" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 	endif
 	if (0 < cpap_hours_start_rec)
-call echo(concat("cpap hours ended by cutoff. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
-" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
-		set icu_stay->qual[i]->total_cpap_hours = icu_stay->qual[i]->total_cpap_hours +
+		call decho(concat("cpap hours ended by cutoff. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
+		" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
+		set icu_stay->qual[i]->total_cpap_hours = icu_stay->qual[i]->total_cpap_hours + \
 			datetimediff(icu_stay->qual[i]->hours_cutoff_dt_tm, \
-				icu_stay->qual[i]->iview_col[cpap_hours_start_rec]->event_end_dt_tm, 3)
-call echo(concat("total_cpap_hours=", trim(cnvtstring(icu_stay->qual[i]->total_cpap_hours, 11, 2)), "."))
+			icu_stay->qual[i]->iview_col[cpap_hours_start_rec]->event_end_dt_tm, 3)
+		call decho(concat("total_cpap_hours=", trim(cnvtstring(icu_stay->qual[i]->total_cpap_hours, 11, 2)), "."))
 		set cpap_hours_start_rec = -1
 	else
 		call echo(concat("cpap hours ended by iView recording. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
 			" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 	endif
 	if (0 < bipap_hours_start_rec)
-call echo(concat("bipap hours ended by cutoff. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
-" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
-		set icu_stay->qual[i]->total_bipap_hours = icu_stay->qual[i]->total_bipap_hours +
+		call decho(concat("bipap hours ended by cutoff. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
+		" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
+		set icu_stay->qual[i]->total_bipap_hours = icu_stay->qual[i]->total_bipap_hours + \
 			datetimediff(icu_stay->qual[i]->hours_cutoff_dt_tm, \
-				icu_stay->qual[i]->iview_col[bipap_hours_start_rec]->event_end_dt_tm, 3)
-call echo(concat("total_bipap_hours=", trim(cnvtstring(icu_stay->qual[i]->total_bipap_hours, 11, 2)), "."))
+			icu_stay->qual[i]->iview_col[bipap_hours_start_rec]->event_end_dt_tm, 3)
+			call decho(concat("total_bipap_hours=", trim(cnvtstring(icu_stay->qual[i]->total_bipap_hours, 11, 2)), "."))
 		set bipap_hours_start_rec = -1
 	else
 		call echo(concat("bipap hours ended by iView recording. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
 			" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 	endif
 	if (0 < hfnp_hours_start_rec)
-call echo(concat("hfnp hours ended by cutoff. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
-" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
-		set icu_stay->qual[i]->total_hfnp_hours = icu_stay->qual[i]->total_hfnp_hours +
+		call decho(concat("hfnp hours ended by cutoff. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
+		" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
+		set icu_stay->qual[i]->total_hfnp_hours = icu_stay->qual[i]->total_hfnp_hours + \
 			datetimediff(icu_stay->qual[i]->hours_cutoff_dt_tm, \
-				icu_stay->qual[i]->iview_col[hfnp_hours_start_rec]->event_end_dt_tm, 3)
-call echo(concat("total_hfnp_hours=", trim(cnvtstring(icu_stay->qual[i]->total_hfnp_hours, 11, 2)), "."))
+			icu_stay->qual[i]->iview_col[hfnp_hours_start_rec]->event_end_dt_tm, 3)
+			call decho(concat("total_hfnp_hours=", trim(cnvtstring(icu_stay->qual[i]->total_hfnp_hours, 11, 2)), "."))
 		set hfnp_hours_start_rec = -1
 	else
 		call echo(concat("hfnp hours ended by iView recording. encntr_id=", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
@@ -1049,7 +1045,7 @@ go to exit_script
 ; has any trache clinical_events overlapping the icu_stay then default it back to unknown and
 ; set it depending on the query result.
 ;**********************************************************************************************
-call echo(concat("Starting trache iView query at ",format(cnvtdatetime(curdate,curtime3),"dd/mm/yyyy hh:mm;;d")))
+call decho(concat("Starting trache iView query at ",format(cnvtdatetime(curdate,curtime3),"dd/mm/yyyy hh:mm;;d")))
 SELECT INTO "NL:"
 FROM
 	(dummyt 															d1 with seq = value(icu_stay->cnt))
@@ -1082,7 +1078,7 @@ FOOT d1.seq
 		icu_stay->qual[d1.seq]->trache 									= trache_no
 	endif
 WITH format;, maxrec=100, time=60
-call echo(concat("Ending trache iView query at ", format(cnvtdatetime(curdate,curtime3),"dd/mm/yyyy hh:mm;;d"), \
+call decho(concat("Ending trache iView query at ", format(cnvtdatetime(curdate,curtime3),"dd/mm/yyyy hh:mm;;d"), \
 " curqual=", trim(cnvtstring(curqual)), "."))
  /* Test trache
 SELECT INTO $OUTDEV
@@ -1108,8 +1104,8 @@ go to exit_script
 ;**********************************************************************************************
 declare max_venti_hours					= f8 with noconstant(0)
 for (i = 1 to size(icu_stay->qual, 5))
-call echo(concat("Calculating derived fields for encntr_id ", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
-" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
+	call decho(concat("Calculating derived fields for encntr_id ", trim(cnvtstring(icu_stay->qual[i]->encntr_id)), \
+	" and icu_stay beginning ", format(icu_stay->qual[i]->icu_admission_dt_tm, ";;Q"), "."))
 	if (icu_stay->qual[i]->total_niv_hours != (icu_stay->qual[i]->total_bipap_hours + icu_stay->qual[i]->total_cpap_hours))
 		set icu_stay->qual[i]->niv_ne_cpap_plus_bipap = "Yes"
 	else
@@ -1239,27 +1235,29 @@ WITH format, separator = " "
 ; Subroutine - process oxygen delivery of nasal prongs
 ;**********************************************************************************************
 subroutine process_odnp(m, n)
-call echo(concat("Starting process_odnp(", trim(cnvtstring(m)), ",", trim(cnvtstring(n)), ")."))
-	if (0 = findstring(trim(oxygen_delivery_nasal_prongs), icu_stay->qual[i]->iview_col[j]->od_type))
+	call decho(concat("Starting process_odnp(", trim(cnvtstring(m)), ",", trim(cnvtstring(n)), ")."))
+;	if (0 = findstring(trim(oxygen_delivery_nasal_prongs), icu_stay->qual[i]->iview_col[j]->od_type))
+	if ((0 = findstring(trim(oxygen_delivery_nasal_prongs), icu_stay->qual[i]->iview_col[j]->od_type)) and
+		(0 = findstring(trim(oxygen_delivery_humidified_nasal_prongs), icu_stay->qual[i]->iview_col[j]->od_type)))
 		if (0 = findstring(trim(oxygen_delivery_empty), icu_stay->qual[i]->iview_col[j]->od_type))
-call echo(concat("HFNP Calc: stopping hfnp."))
+			call decho(concat("HFNP Calc: stopping hfnp."))
 			set icu_stay->qual[m]->iview_col[n]->hfnp_hours_action = hours_action_stop
 		else
-call echo(concat("HFNP Calc: continuing hfnp."))
+			call decho(concat("HFNP Calc: continuing hfnp."))
 			set icu_stay->qual[m]->iview_col[n]->hfnp_hours_action = hours_action_continue
 		endif
 	else
 		case (icu_stay->qual[m]->iview_col[n]->odhf_method)
 		of value(oxygen_delivery_high_flow_yes):
-call echo(concat("HFNP Calc: starting hfnp."))
+			call decho(concat("HFNP Calc: starting hfnp."))
 			set icu_stay->qual[m]->iview_col[n]->hfnp_hours_action = hours_action_start
 		of value(oxygen_delivery_high_flow_no, oxygen_delivery_high_flow_empty):
 			case (icu_stay->qual[m]->iview_col[n]->vt_type)
 			of value(ventilation_type_highflow):
-call echo(concat("HFNP Calc: starting hfnp."))
+				call decho(concat("HFNP Calc: starting hfnp."))
 				set icu_stay->qual[m]->iview_col[n]->hfnp_hours_action = hours_action_start
 			of value(ventilation_type_invasive, ventilation_type_noninvasive, ventilation_type_empty):
-call echo(concat("HFNP Calc: stopping hfnp."))
+				call decho(concat("HFNP Calc: stopping hfnp."))
 				set icu_stay->qual[m]->iview_col[n]->hfnp_hours_action = hours_action_stop
 			of value(ventilation_type_unknown):
 				call echo(concat("HFNP Calc: ERROR: ventilation type is unknown!"))
@@ -1274,10 +1272,18 @@ call echo(concat("HFNP Calc: stopping hfnp."))
 				trim(icu_stay->qual[m]->iview_col[n]->odhf_method) ,"."))
 		endcase
 	endif
-call echo(concat("Finishing process_odnp(", trim(cnvtstring(m)), ",", trim(cnvtstring(n)), ")."))
+	call decho(concat("Finishing process_odnp(", trim(cnvtstring(m)), ",", trim(cnvtstring(n)), ")."))
    return(null)
 end; process_odnp
-
+;**********************************************************************************************
+; Subroutine - selectively write debug messages to msglog
+;**********************************************************************************************
+subroutine decho(m)
+   if (1 = debug)
+      execute oencpm_msglog(m)
+   endif
+   return(null)
+end; decho
 #exit_script
 free record enc
 free record icu_stay

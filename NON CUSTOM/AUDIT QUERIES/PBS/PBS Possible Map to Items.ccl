@@ -1,0 +1,25 @@
+    SELECT
+        O.SYNONYM_ID
+        , PRIMARY = O.CATALOG_CD
+        , O.MNEMONIC
+        , O_MNEMONIC_TYPE_DISP = UAR_GET_CODE_DISPLAY(O.MNEMONIC_TYPE_CD)
+
+    FROM
+        ORDER_CATALOG_SYNONYM   O
+
+    WHERE
+        O.ACTIVE_IND = 1
+        AND
+        O.CATALOG_TYPE_CD = 2516; PHARMACY
+        AND
+        O.MNEMONIC_TYPE_CD IN
+            (
+             614548.00; Y - Generic Products
+            , 614544.00;	M - Generic Miscellaneous Products
+            , 614549.00;	Z - Trade Products
+            , 614545.00;	N - Trade Miscellaneous Products
+            , 2580; Brand Name
+            , 2583.00;	Primary
+            )
+
+    WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10
