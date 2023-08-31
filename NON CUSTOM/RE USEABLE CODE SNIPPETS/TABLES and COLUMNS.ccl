@@ -71,7 +71,7 @@ SURG_CASE_PROCEDURE   S_C_P
 	, S_C_P.UPDT_TASK
 	, S_WOUND_CLASS_DISP = UAR_GET_CODE_DISPLAY(S_C_P.WOUND_CLASS_CD)
 
-	
+
 
 
 
@@ -139,9 +139,9 @@ ACCESSION	A
 	, A.UPDT_CNT
 	, A.UPDT_DT_TM
 	, A.UPDT_ID
-	, A.UPDT_TASK	
-/* The encounter table contains patient information for a specific period of time 
-that a person comes in contact with a healthcare provider (i.e., inpatient hospital 
+	, A.UPDT_TASK
+/* The encounter table contains patient information for a specific period of time
+that a person comes in contact with a healthcare provider (i.e., inpatient hospital
 stay, outpatient clinic visit, office visit, phone call to the doctor, etc.).*/
 ENCOUNTER	E
 	E_ABN_STATUS_DISP = UAR_GET_CODE_DISPLAY(E.ABN_STATUS_CD)
@@ -303,8 +303,8 @@ ENCOUNTER	E
 	, E_VISITOR_STATUS_DISP = UAR_GET_CODE_DISPLAY(E.VISITOR_STATUS_CD)
 	, E.ZERO_BALANCE_DT_TM
 
-/* The personnel table is a logical extension of the person table, but only includes 
-the subset of persons who are classified as personnel.  A single row in the personnel 
+/* The personnel table is a logical extension of the person table, but only includes
+the subset of persons who are classified as personnel.  A single row in the personnel
 table is related to a single row in the person table.*/
 PRSNL	PR
 	, PR_ACTIVE_STATUS_DISP = UAR_GET_CODE_DISPLAY(PR.ACTIVE_STATUS_CD)
@@ -541,7 +541,7 @@ V500_EVENT_CODE   V_E_C
 	, V_E_C.UPDT_ID
 	, V_E_C.UPDT_TASK
 
-	
+
 /* Log of all tx's going through open engine interfaces. */
 OEN_TXLOG   O_T
 	O_T.CREATE_DT_TM
