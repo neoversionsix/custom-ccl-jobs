@@ -1,0 +1,128 @@
+/* Update Script Position code swap*/
+UPDATE INTO PRSNL PR
+SET 
+    PR.POSITION_CD = 156288741 ; Change to Nurse P2
+    , PR.UPDT_DT_TM = CNVTDATETIME(CURDATE,CURTIME3)
+    , PR.UPDT_ID = REQINFO->UPDT_ID
+    , PR.UPDT_CNT = PR.UPDT_CNT + 1
+WHERE PR.POSITION_CD IN ; Change the ones below
+	(
+		89164379 ;zzNursing - Enrolled Endorsed P1
+		,156152231 ;ZZZNursing - Enrolled Endorsed P2
+		,156288713 ;Nursing - Enrolled Endorsed P2
+	)
+
+
+
+
+
+
+
+
+
+
+/* Select Script Below Accounts that will be edited */
+SELECT
+	PR.NAME_FULL_FORMATTED
+	, PR.ACTIVE_IND
+	, PR.END_EFFECTIVE_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, P_POSITION_DISP = UAR_GET_CODE_DISPLAY(PR.POSITION_CD)
+    , PR.POSITION_CD
+
+FROM
+	PRSNL   PR
+	
+WHERE PR.POSITION_CD IN
+	(
+		89164379
+		,156152231
+		,156288713
+	)
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 20
+
+
+
+/* Select script for positions */
+
+SELECT
+    POSITION = C_V.DISPLAY
+    , C_V.CODE_VALUE
+    , C_V.ACTIVE_IND
+    , C_V.DESCRIPTION
+	, C_V.DEFINITION
+	, C_V.DISPLAY_KEY
+
+FROM
+	CODE_VALUE   C_V
+
+WHERE 
+	C_V.CODE_SET = 88; POSITIONS
+    AND C_V.DISPLAY_KEY = "*ENROLLEDENDORSED*"
+
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME=5
+
+/* PROD CODES
+POSITION	                            CODE_VALUE
+Nursing P2	                            156288741
+
+zzNursing - Enrolled Endorsed P1	    89164379
+ZZZNursing - Enrolled Endorsed P2	    156152231
+Nursing - Enrolled Endorsed P2	        156288713
+ */
+
+
+
+/* MOCK CODES
+POSITION	CODE_VALUE
+Nursing - Enrolled Endorsed P1	   89164379.00
+Nursing - Enrolled Endorsed P2	  153235807.00
+ZZZNursing - Enrolled Endorsed P2	  153187343.00
+
+
+Here's the reformatted data:
+
+89164379.00; Nursing - Enrolled Endorsed P1
+153235807.00; Nursing - Enrolled Endorsed P2
+153187343.00; ZZZNursing - Enrolled Endorsed P2
+
+
+Nursing P2	  153235859.00
+
+
+ */
+
+
+
+ /*MOCK UPDATE SCRIPT
+ drop program WHS_bulk_updates  go
+create program WHS_bulk_updates
+ 
+prompt
+	"Output to File/Printer/MINE" = "MINE"
+with OUTDEV
+ 
+;insert update scripts here
+;________________________________
+UPDATE INTO PRSNL PR
+SET 
+    PR.POSITION_CD = 153235859.00 ; NURSING P2
+    , PR.UPDT_DT_TM = CNVTDATETIME(CURDATE,CURTIME3)
+    , PR.UPDT_ID = REQINFO->UPDT_ID
+    , PR.UPDT_CNT = PR.UPDT_CNT + 1
+WHERE PR.POSITION_CD IN
+	(
+		89164379.00; Nursing - Enrolled Endorsed P1
+		,153235807.00; Nursing - Enrolled Endorsed P2
+		,153187343.00; ZZZNursing - Enrolled Endorsed P2
+	)
+
+
+;__________________________________
+end
+go
+ 
+ 
+ 
+  */
