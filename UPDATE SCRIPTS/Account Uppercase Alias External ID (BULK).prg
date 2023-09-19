@@ -1,12 +1,25 @@
-UPDATE INTO PRSNL_ALIAS P
+/* CHECKER */
+SELECT
+P_A.ALIAS
+FROM
+PERSON_ALIAS P_A
+WHERE
+P_A.ALIAS != CNVTUPPER(P_A.ALIAS) ; not uppercase
+WITH TIME=10, FORMAT
+
+
+
+/* UPDATE SCRIPT */
+UPDATE INTO PRSNL_ALIAS P_A
+
 SET
-    P.ALIAS = CNVTUPPER(P.ALIAS) 
-    , P.UPDT_DT_TM = CNVTDATETIME(CURDATE,CURTIME3)
-    , P.UPDT_ID = REQINFO->UPDT_ID
-    , P.UPDT_CNT = P.UPDT_CNT + 1
+    P_A.ALIAS = CNVTUPPER(P_A.ALIAS)
+    , P_A.UPDT_DT_TM = CNVTDATETIME(CURDATE,CURTIME3)
+    , P_A.UPDT_ID = REQINFO->UPDT_ID
+    , P_A.UPDT_CNT = P_A.UPDT_CNT + 1
 
 WHERE
 ; This Where clause will target all external ID's that are not uppercase
-        P.ALIAS_POOL_CD = 683991.00 ; External ID alias only
+        P_A.ALIAS_POOL_CD = 683991.00 ; External ID alias only
         AND
-        P.ALIAS != CNVTUPPER(P.ALIAS) ; not uppercase
+        P_A.ALIAS != CNVTUPPER(P_A.ALIAS) ; not uppercase
