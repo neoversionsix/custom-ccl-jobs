@@ -1,0 +1,66 @@
+SELECT
+	O_D.ORDER_ID
+	, O_D.OE_FIELD_MEANING
+	, O_D.OE_FIELD_DISPLAY_VALUE
+	, O_D.UPDT_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D"
+    , UPDATER = PR.NAME_FULL_FORMATTED
+    , PATIENT = P.NAME_FULL_FORMATTED
+
+
+FROM
+    ORDER_DETAIL                O_D
+	, ORDERS	                O
+    , ORDER_ACTION              O_A
+    , PRSNL                     PR
+	, ORDER_CATALOG_SYNONYM     O_C_S
+    , PERSON                    P
+
+PLAN O
+	WHERE
+    /* Filter update tiome */
+        O.ORIG_ORDER_DT_TM BETWEEN
+        CNVTDATETIME("10-SEP-2023 15:45")
+        AND
+        CNVTDATETIME("19-SEP-2023 15:55")
+
+JOIN O_C_S
+    WHERE O_C_S.SYNONYM_ID = O.SYNONYM_ID
+    AND
+    /* Orderable to Filter for */
+    O_C_S.MNEMONIC = "Request for Emergency Surgery"
+
+JOIN PR
+    WHERE PR.PERSON_ID = O.UPDT_ID
+
+JOIN O_D
+    WHERE O_D.ORDER_ID = O.ORDER_ID
+
+
+/* Order action table to get ordering staff */
+JOIN O_A;ORDER_ACTION
+    WHERE O_A.ORDER_ID = O.ORDER_ID
+    AND
+    O_A.ACTION_TYPE_CD = 2534.00;Order
+    AND
+    O_A.ACTIVE_IND = 1
+    AND
+    O_A.ORDER_DT_TM BETWEEN
+        CNVTDATETIME("10-SEP-2023 15:45")
+        AND
+        CNVTDATETIME("19-SEP-2023 15:55")
+
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = O_A.ACTION_PERSONNEL_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+ORDER BY
+	O_D.ORDER_ID
+	, O_D.DETAIL_SEQUENCE
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10

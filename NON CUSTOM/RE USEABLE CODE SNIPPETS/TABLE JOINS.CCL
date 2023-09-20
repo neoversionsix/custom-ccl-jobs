@@ -10,7 +10,7 @@ PLAN E;ENCOUNTER
     /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
     E.LOC_FACILITY_CD != 4038465.00
     /* Remove Fake 'Test' Patients */
-    AND E.PERSON_ID NOT IN 
+    AND E.PERSON_ID NOT IN
         (
             SELECT PERSON_FILTER.PERSON_ID
             FROM PERSON PERSON_FILTER
@@ -89,6 +89,14 @@ PLAN O_A;ORDER_ACTION
     AND O_A.EFFECTIVE_DT_TM > CNVTLOOKBEHIND("10,H")
 
 
+JOIN O_A
+    WHERE
+    /* 'INPROCESS' Order Status Rows Only */
+    O_A.ORDER_STATUS_CD = 2548
+    /* Orders after  */
+    AND O_A.EFFECTIVE_DT_TM > CNVTLOOKBEHIND("10,H")
+
+    
 /* All orders */
 PLAN O;ORDERS
     WHERE
@@ -185,9 +193,10 @@ JOIN PR;PRSNL
 
 SELECT
     C_B.BLOB_CONTENTS
-FROM 
+FROM
     CE_BLOB         C_B
 JOIN    C_B
     WHERE C_B.EVENT_ID = C_E.EVENT_ID
 
 
+JOIN O_C_S WHERE O_C_S.SYNONYM_ID = O.SYNONYM_ID

@@ -23,3 +23,5 @@ WHERE
         P_A.ALIAS_POOL_CD = 683991.00 ; External ID alias only
         AND
         P_A.ALIAS != CNVTUPPER(P_A.ALIAS) ; not uppercase
+
+        

@@ -29,6 +29,16 @@ WHERE
                 WHERE P_A_TEMP.PERSON_ID = 13876656 ; Credential Box user
             )
 
+            and
+    /* only make the swap if the user does not already an IPM Main Code Alias */
+    NOT EXISTS
+    (
+        SELECT 1
+        FROM PRSNL_ALIAS P_A_TEMP
+        WHERE P_A_TEMP.PERSON_ID = (SELECT PERSON_ID FROM PRSNL WHERE USERNAME = "USERNAME_SWAPME")
+        AND P_A_TEMP.ALIAS_POOL_CD = 9633666.00 ;ALIAS TYPE IS 'IPM MAIN CODE'
+    )
+
 
 '; CREDENTIAL MOVE SCRIPT'
 , 'update into credential cred'
