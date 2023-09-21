@@ -2,14 +2,22 @@ drop program wh_surgery_form go
 create program wh_surgery_form
 
 prompt
-	"Output to File/Printer/MINE" = "MINE"               ;* Enter or select the printer or file name to send this report to.
-	; , "Orders Placed After..." = "SYSDATE"
-	; , "Orders Placed Before..." = "SYSDATE"
-	; , "Select Order" = "Request for Emergency Surgery"
+	"Output to File/Printer/MINE" = "MINE"              ;* Enter or select the printer or file name to send this report to.
+	, "Ordered After Date..." = "SYSDATE"
+	, "Ordered Before Date..." = "SYSDATE"
+	, "prompt1" = "Request for Emergency Surgery"
+	, "Search for this text in the Procedure..." = ""
 
-with OUTDEV;, START_DATE_TM, END_DATE_TM ; end date, Control Type= Data Time, Prompt Type: String, Prompt Options: Date and Time
+with OUTDEV, START_DATE_TM, END_DATE_TM, ORDER_NAME, PROCEDURE_SEARCH_TEXT
+;, START_DATE_TM, END_DATE_TM ; end date, Control Type= Data Time, Prompt Type: String, Prompt Options: Date and Time
 
-;DECLARE ORDER_NAME_VAR = VC with NoConstant($ORDER_NAME),Protect
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
+declare PROCEDURE_SEARCH_TEXT_VAR = VC with NoConstant(" "),Protect
+
+SET PROCEDURE_SEARCH_TEXT_VAR = CNVTUPPER($PROCEDURE_SEARCH_TEXT)
+SET PROCEDURE_SEARCH_TEXT_VAR = CONCAT("*", PROCEDURE_SEARCH_TEXT_VAR, "*")
 
 SELECT INTO $OUTDEV
     PATIENT = P.NAME_FULL_FORMATTED
@@ -32,9 +40,9 @@ PLAN O
 	WHERE
     /* Filter update tiome */
     O.ORIG_ORDER_DT_TM BETWEEN
-        CNVTDATETIME("19-OCT-2023");($START_DATE_TM)
+        CNVTDATETIME($START_DATE_TM)
         AND
-        CNVTDATETIME("19-OCT-2023");($END_DATE_TM)
+        CNVTDATETIME($END_DATE_TM)
     AND
     O.ACTIVE_IND = 1;
     AND
@@ -44,7 +52,7 @@ PLAN O
         FROM ORDER_DETAIL O_D_TEMP
         /* Procedure text input field*/
         WHERE O_D_TEMP.OE_FIELD_ID = 663840.00;SURGPROCTEXT PR
-        AND CNVTUPPER(O_D_TEMP.OE_FIELD_DISPLAY_VALUE) = "*WASH*"
+        AND CNVTUPPER(O_D_TEMP.OE_FIELD_DISPLAY_VALUE) = PATSTRING(PROCEDURE_SEARCH_TEXT_VAR)
      )
 
 
@@ -52,7 +60,9 @@ JOIN O_C_S
     WHERE O_C_S.SYNONYM_ID = O.SYNONYM_ID
     AND
     /* Orderable to Filter for */
-    O_C_S.MNEMONIC = "Request for Emergency Surgery" ;$ORDER_NAME_VAR
+    ;"Request for Emergency Surgery"
+    ;Request for Anaesthesia Procedure
+    O_C_S.MNEMONIC =  $ORDER_NAME
 
 JOIN O_D
     WHERE O_D.ORDER_ID = O.ORDER_ID
@@ -64,9 +74,9 @@ JOIN O_A;ORDER_ACTION
     O_A.ACTION_TYPE_CD = 2534.00;Order
     AND
     O_A.ORDER_DT_TM BETWEEN
-        CNVTDATETIME("19-OCT-2023");($START_DATE_TM)
+        CNVTDATETIME($START_DATE_TM)
         AND
-        CNVTDATETIME("19-OCT-2023");($END_DATE_TM)
+        CNVTDATETIME($END_DATE_TM)
 
 JOIN PR;PRSNL
     WHERE PR.PERSON_ID = O_A.ACTION_PERSONNEL_ID

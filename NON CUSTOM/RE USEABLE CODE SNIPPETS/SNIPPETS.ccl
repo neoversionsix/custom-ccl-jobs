@@ -15,3 +15,19 @@
     /* Active Only */
     P_A.ACTIVE_IND = 1
 )
+
+SELECT
+    P_A.ALIAS
+FROM
+    PERSON_ALIAS P_A
+WHERE
+    P_A.ALIAS = "R*"
+    AND
+    /* this filters for the UR Number Alias' only */
+    P_A.ALIAS_POOL_CD = 9569589.00
+    AND
+    /* Effective Only */
+    P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
