@@ -1,4 +1,17 @@
-SELECT
+drop program wh_surgery_form go
+create program wh_surgery_form
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"               ;* Enter or select the printer or file name to send this report to.
+	; , "Orders Placed After..." = "SYSDATE"
+	; , "Orders Placed Before..." = "SYSDATE"
+	; , "Select Order" = "Request for Emergency Surgery"
+
+with OUTDEV;, START_DATE_TM, END_DATE_TM ; end date, Control Type= Data Time, Prompt Type: String, Prompt Options: Date and Time
+
+;DECLARE ORDER_NAME_VAR = VC with NoConstant($ORDER_NAME),Protect
+
+SELECT INTO $OUTDEV
     PATIENT = P.NAME_FULL_FORMATTED
 	, FIELD = O_E_FI.DESCRIPTION
 	, FIELD_ENTRY = O_D.OE_FIELD_DISPLAY_VALUE
@@ -19,9 +32,9 @@ PLAN O
 	WHERE
     /* Filter update tiome */
     O.ORIG_ORDER_DT_TM BETWEEN
-        CNVTDATETIME("10-SEP-2023 15:45")
+        CNVTDATETIME("19-OCT-2023");($START_DATE_TM)
         AND
-        CNVTDATETIME("19-SEP-2023 15:55")
+        CNVTDATETIME("19-OCT-2023");($END_DATE_TM)
     AND
     O.ACTIVE_IND = 1;
     AND
@@ -39,13 +52,10 @@ JOIN O_C_S
     WHERE O_C_S.SYNONYM_ID = O.SYNONYM_ID
     AND
     /* Orderable to Filter for */
-    O_C_S.MNEMONIC = "Request for Emergency Surgery"
-
-
+    O_C_S.MNEMONIC = "Request for Emergency Surgery" ;$ORDER_NAME_VAR
 
 JOIN O_D
     WHERE O_D.ORDER_ID = O.ORDER_ID
-
 
 /* Order action table to get ordering staff */
 JOIN O_A;ORDER_ACTION
@@ -54,9 +64,9 @@ JOIN O_A;ORDER_ACTION
     O_A.ACTION_TYPE_CD = 2534.00;Order
     AND
     O_A.ORDER_DT_TM BETWEEN
-        CNVTDATETIME("10-SEP-2023 15:45")
+        CNVTDATETIME("19-OCT-2023");($START_DATE_TM)
         AND
-        CNVTDATETIME("19-SEP-2023 15:55")
+        CNVTDATETIME("19-OCT-2023");($END_DATE_TM)
 
 JOIN PR;PRSNL
     WHERE PR.PERSON_ID = O_A.ACTION_PERSONNEL_ID
@@ -78,4 +88,7 @@ ORDER BY
 	O_D.ORDER_ID
 	, O_D.DETAIL_SEQUENCE
 
-WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 20
+
+END
+GO
