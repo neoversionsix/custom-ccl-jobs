@@ -1,0 +1,70 @@
+/* CHECKER SCRIPTS*/
+    SELECT
+    P_A.ALIAS
+    FROM
+    PERSON_ALIAS P_A
+    WHERE
+    P_A.ALIAS != CNVTUPPER(P_A.ALIAS) ; not uppercase
+    WITH TIME=10, FORMAT
+
+
+    /* Check for credential box next alias that will be swapped' */
+    SELECT ALIAS_ID = MIN(P_A_TEMP.PRSNL_ALIAS_ID)
+    FROM PRSNL_ALIAS P_A_TEMP
+    WHERE P_A_TEMP.PERSON_ID = 13876656 ; Credential Box user
+
+    /* Check for credential box all alias' that will be swapped' */
+    SELECT ALIAS_IDS = P_A_TEMP.PRSNL_ALIAS_ID
+    FROM PRSNL_ALIAS P_A_TEMP
+    WHERE P_A_TEMP.PERSON_ID = 13876656 ; Credential Box user
+
+    /* Check for change on user for alias */
+    SELECT *
+    FROM PRSNL_ALIAS P_A_TEMP
+    WHERE P_A_TEMP.PERSON_ID = (select person_id from prsnl where username = "SWAPME_USERNAME")
+
+
+    /* Check for your changed rows after running the script */
+    SELECT *
+    FROM PRSNL_ALIAS P_A_TEMP
+    WHERE
+        P_A_TEMP.updt_id = reqinfo->updt_id ; filters for users that the person running the ccl changed
+		and
+		P_A_TEMP.updt_dt_tm > cnvtlookbehind("2, h"); filters for accounts changed in the last 8 hours
+
+
+
+/* UPDATE SCRIPT FOR #SWAPME_USERNAME*/
+UPDATE INTO PRSNL_ALIAS P_A
+SET
+    /* Sets the new person id for the alias by looking up the username */
+    P_A.PERSON_ID = (select person_id from prsnl where username = "#SWAPME_USERNAME")
+    /* Sets the new alias */
+    , P_A.ALIAS = "#SWAPME_ALIAS"
+    , P_A.PRSNL_ALIAS_TYPE_CD = 1088; Sets Alias Type to 'ORGANIZATION DOCTOR'
+    , P_A.ALIAS_POOL_CD = 9633666.00 ;Sets Alias Pool to 'IPM MAIN CODE'
+    , P_A.ACTIVE_STATUS_DT_TM = CNVTDATETIME(CURDATE,CURTIME3) ; Sets Active Status to now
+    , P_A.BEG_EFFECTIVE_DT_TM = CNVTDATETIME(CURDATE,CURTIME3) ; Sets Begin effective time to now
+    , P_A.END_EFFECTIVE_DT_TM = CNVTDATETIME("31-DEC-2100") ; Sets End date
+
+    ;Sets Updater info
+    , P_A.UPDT_DT_TM = CNVTDATETIME(CURDATE,CURTIME3)
+    , P_A.UPDT_ID = REQINFO->UPDT_ID
+    , P_A.UPDT_CNT = P_A.UPDT_CNT + 1
+WHERE
+    ; This Where clause select a single alias to change from the credential box user
+        PRSNL_ALIAS_ID =
+            (
+                SELECT MIN(P_A_TEMP.PRSNL_ALIAS_ID)
+                FROM PRSNL_ALIAS P_A_TEMP
+                WHERE P_A_TEMP.PERSON_ID = 13876656 ; Credential Box user
+            )
+            and
+    /* only make the swap if the user where giving the alis to, does not already an IPM Main Code Alias */
+    NOT EXISTS
+    (
+        SELECT 1
+        FROM PRSNL_ALIAS P_A_TEMP
+        WHERE P_A_TEMP.PERSON_ID = (SELECT PERSON_ID FROM PRSNL WHERE USERNAME = "#SWAPME_USERNAME")
+        AND P_A_TEMP.ALIAS_POOL_CD = 9633666.00 ;ALIAS TYPE IS 'IPM MAIN CODE'
+    )
