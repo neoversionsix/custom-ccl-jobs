@@ -2,12 +2,12 @@ drop program wh_hl7_search go
 create program wh_hl7_search
 
 prompt
-	"Output to File/Printer/MINE" = "MINE"                              ;* Enter or select the printer or file name to send this r
+	"Output to File/Printer/MINE" = "MINE"                            ;* Enter or select the printer or file name to send this rep
 	, "Messages sent after...." = "SYSDATE"
 	, "and messages sent before...." = "SYSDATE"
-	, "Patient URN" = "1613161"
-	, "Is the message going in or out of Oracle (Cerner)?" = "(2001)"
-	, "prompt1" = "MSH|^~\&|CERNERLAB|*"
+	, "Patient URN (Optional)" = "1613161"
+	, "Is the message going in or out of Oracle (Cerner)?" = "2001"
+	, "Select an interface..." = "MSH|^~\&|CERNERLAB|*"
 	, "Additional Search String (Optional)" = ""
 
 with OUTDEV, START_DATE_TM, END_DATE_TM, URN, MESSAGE_DIRECTION,

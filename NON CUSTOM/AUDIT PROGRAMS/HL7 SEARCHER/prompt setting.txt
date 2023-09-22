@@ -1,0 +1,18 @@
+
+/*
+MESSAGE DIRECTION OPTION BOX
+Label			Key			Default
+INBOUND			1001		0
+OUTBOUND		2001		1
+ANY				0			0
+
+
+
+Label	Key	Default
+FROM CERNER TO ULTRA	MSH|^~\&|CERNERLAB|*	1
+FROM ULTRA TO CERNER	MSH|^~\&|AWHS_ULTRA|*	0
+ANY	*	0
+
+
+
+ */
