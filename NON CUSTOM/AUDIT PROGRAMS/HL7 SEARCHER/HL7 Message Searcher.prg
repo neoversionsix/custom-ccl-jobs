@@ -2,11 +2,11 @@ drop program wh_hl7_search go
 create program wh_hl7_search
 
 prompt
-	"Output to File/Printer/MINE" = "MINE"                            ;* Enter or select the printer or file name to send this rep
+	"Output to File/Printer/MINE" = "MINE"                              ;* Enter or select the printer or file name to send this r
 	, "Messages sent after...." = "SYSDATE"
 	, "and messages sent before...." = "SYSDATE"
 	, "Patient URN" = "1613161"
-	, "Is the message going in or out of Oracle (Cerner)?" = "2001"
+	, "Is the message going in or out of Oracle (Cerner)?" = "(2001)"
 	, "prompt1" = "MSH|^~\&|CERNERLAB|*"
 	, "Additional Search String (Optional)" = ""
 
@@ -15,6 +15,7 @@ with OUTDEV, START_DATE_TM, END_DATE_TM, URN, MESSAGE_DIRECTION,
 
 DECLARE URN_VAR = VC WITH NOCONSTANT(" "),PROTECT
 DECLARE SEARCH_STRING_VAR = VC WITH NOCONSTANT(" "),PROTECT
+DECLARE MESSAGE_DIRECTION_VAR = VC WITH NOCONSTANT(" "),PROTECT
 
 SET URN_VAR = $URN
 IF (URN_VAR = "")
@@ -28,6 +29,13 @@ IF (SEARCH_STRING_VAR = "")
 	SET SEARCH_STRING_VAR = "*"
 	ELSE
 	SET SEARCH_STRING_VAR = CONCAT("*", SEARCH_STRING_VAR, "*")
+ENDIF
+
+SET MESSAGE_DIRECTION_VAR = $MESSAGE_DIRECTION
+IF (MESSAGE_DIRECTION_VAR = "0")
+	SET MESSAGE_DIRECTION_VAR = "*"
+	ELSE
+	SET MESSAGE_DIRECTION_VAR = CONCAT("*", MESSAGE_DIRECTION_VAR, "*")
 ENDIF
 
 
@@ -52,7 +60,7 @@ WHERE
 	/* INTERFACE */
     AND O_T.MSG_TEXT = PATSTRING($MESSAGE_INTERFACE)
 	/* DIRECTION */
-	AND O_T.EVENTID = $MESSAGE_DIRECTION
+	AND O_T.EVENTID = PATSTRING(MESSAGE_DIRECTION_VAR)
     /* ADDITIONAL STRING TO FILTER */
     AND O_T.MSG_TEXT = PATSTRING(SEARCH_STRING_VAR)
 
