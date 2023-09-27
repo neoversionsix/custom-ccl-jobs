@@ -1,12 +1,12 @@
 drop program wh_surgery_form go
 create program wh_surgery_form
 
-prompt 
-	"Output to File/Printer/MINE" = "MINE"                                           ;* Enter or select the printer or file name t
+prompt
+	"Output to File/Printer/MINE" = "MINE"              ;* Enter or select the printer or file name to send this report to.
 	, "Ordered After Date..." = "SYSDATE"
 	, "Ordered Before Date..." = "SYSDATE"
-	, "Choose The Order From Below..." = "Request for Emergency Surgery"
-	, ^Only Retrieve orders with this text in the 'Procedure Description"...^ = ^^ 
+	, "prompt1" = "Request for Emergency Surgery"
+	, "Search for this text in the Procedure..." = ""
 
 with OUTDEV, START_DATE_TM, END_DATE_TM, ORDER_NAME, PROCEDURE_SEARCH_TEXT
 ;, START_DATE_TM, END_DATE_TM ; end date, Control Type= Data Time, Prompt Type: String, Prompt Options: Date and Time
