@@ -1,0 +1,58 @@
+SELECT DISTINCT
+	WEIGHT = C_E.RESULT_VAL
+	, PERFORMED = FORMAT(C_E.PERFORMED_DT_TM, "DD-MMM-YYYY HH:MM")
+    , PATIENT = P.NAME_FULL_FORMATTED
+	, PATIENT_URN = P_A.ALIAS
+    , AGE_AT_MEASURMENT = CNVTAGE(P.BIRTH_DT_TM, C_E.PERFORMED_DT_TM,0)
+
+FROM
+	CLINICAL_EVENT      C_E
+    , PERSON            P
+    , PERSON_ALIAS      P_A
+
+PLAN C_E
+    WHERE
+        ;C_E.UPDT_DT_TM > CNVTLOOKBEHIND("35,D") ; ONLY GET'S DATA FROM OLDEST 35 DAYS AGO
+        ;AND
+        C_E.EVENT_CD = 7334438 ; FILTERS FOR "WEIGHT MEASURED"
+        AND
+        C_E.VALID_UNTIL_DT_TM > SYSDATE ; STILL VALID (NOT INVALID)
+        AND
+        C_E.PUBLISH_FLAG = 1 ; PUBLISH
+        AND
+        CNVTREAL(TRIM(C_E.RESULT_VAL,3)) > 150 ; Only get heavy patients convert vc255 to number for filtering
+        AND
+        CNVTREAL(TRIM(C_E.RESULT_VAL,3)) < 636 ; Less than the biggest person ever (remove mistakes of grams input)
+        ; C_E.ENCNTR_ID = "XXXXXXXXXX" ; FOR A SPECIFIC PATIENT ENCOUNTER
+        ; AND
+        ; C_E.PERSON_ID = 123456 ; For a specific patient
+
+
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = C_E.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+/* Patient Identifiers such as URN Medicare no etc */
+JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
+    WHERE P_A.PERSON_ID = P.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
+
+ORDER BY
+	P_A.ALIAS
+    , 0
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
