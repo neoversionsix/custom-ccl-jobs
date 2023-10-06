@@ -25,12 +25,21 @@
 
 
     /* Check for your changed rows after running the script */
-    SELECT *
-    FROM PRSNL_ALIAS P_A_TEMP
+    SELECT
+        P_A_TEMP.ALIAS
+        ,PR.USERNAME
+    FROM
+        PRSNL_ALIAS   P_A_TEMP
+        ,PRSNL	PR
+    PLAN P_A_TEMP
     WHERE
-        P_A_TEMP.updt_id = reqinfo->updt_id ; filters for users that the person running the ccl changed
-		and
-		P_A_TEMP.updt_dt_tm > cnvtlookbehind("2, h"); filters for accounts changed in the last 8 hours
+            P_A_TEMP.updt_id = reqinfo->updt_id ; filters for users that the person running the ccl changed
+            and
+            P_A_TEMP.updt_dt_tm > cnvtlookbehind("2, h"); filters for accounts changed in the last 8 hours
+            
+    JOIN PR WHERE PR.PERSON_ID = P_A_TEMP.PERSON_ID
+
+    with time = 10
 
 
 
