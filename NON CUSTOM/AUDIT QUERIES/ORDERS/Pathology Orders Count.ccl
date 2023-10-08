@@ -1,0 +1,78 @@
+SELECT DISTINCT
+	COUNT(*)
+FROM
+    ORDERS				O
+    , ORDER_CATALOG		O_C
+	, CLINICAL_EVENT	C_E
+	, ENCOUNTER			E
+	; , CE_BLOB         	C_B
+
+
+
+PLAN O ;ORDERS
+	WHERE
+        O.ACTIVE_IND = 1
+        AND
+            O.PERSON_ID NOT IN
+                (
+                SELECT PERSON_FILTER.PERSON_ID
+                FROM PERSON PERSON_FILTER
+                WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
+                )
+        AND
+		O.ORIG_ORDER_DT_TM ;> CNVTLOOKBEHIND("6,M"); last 6 months
+        BETWEEN
+            CNVTDATETIME("01-SEP-2023 00:00")
+            AND
+            CNVTDATETIME("01-OCT-2023 00:00")
+        /* Filter out fake patients */
+
+
+JOIN O_C ;ORDER_CATALOG
+	WHERE O_C.CATALOG_CD = O.CATALOG_CD
+        AND
+        O_C.CATALOG_TYPE_CD = 2513.00;LABORATORY aka (PATHOLOGY)
+		; O_C.CATALOG_TYPE_CD = 2517;RADIOLOGY
+		AND
+		/* Code value filter for specific orderables*/
+		O_C.CATALOG_CD IN
+		(
+			SELECT
+				C_V_TEMP.CODE_VALUE
+			FROM
+				CODE_VALUE   C_V_TEMP
+			WHERE
+				C_V_TEMP.ACTIVE_IND = 1
+				AND
+                /* Code set is the order catalog */
+				C_V_TEMP.CODE_SET = 200
+                /* Only these orderables */
+				AND
+				(
+					C_V_TEMP.DISPLAY_KEY = "*UEC*"
+				)
+		)
+JOIN C_E ;CLINICAL_EVENT
+	WHERE C_E.ORDER_ID = O.ORDER_ID
+
+JOIN E;ENCOUNTER
+    WHERE E.ENCNTR_ID = C_E.ENCNTR_ID
+	AND
+    /* Filter for Hospital */
+    E.LOC_FACILITY_CD = 86163477.00
+	; Sunshine	    86163400.00
+	; Williamstown	    86163477.00
+	; Footscray	    85758822.00
+
+
+ORDER BY
+	O.ORDER_ID
+	, C_E.ORDER_ID
+	, E.ENCNTR_ID
+	, 0
+
+
+; JOIN    C_B
+;     WHERE C_B.EVENT_ID = C_E.EVENT_ID
+
+WITH TIME = 30
