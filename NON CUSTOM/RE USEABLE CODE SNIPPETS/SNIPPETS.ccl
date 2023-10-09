@@ -31,3 +31,27 @@ WHERE
     AND
     /* Active Only */
     P_A.ACTIVE_IND = 1
+
+
+/* CODE VALUE FILTER */
+C_E.EVENT_CD IN (SELECT CODE_VALUE FROM CODE_VALUE WHERE DISPLAY_KEY = "*TROPONIN*")
+
+
+SELECT
+            ,  C_V_TEMP.CODE_VALUE
+        FROM
+            CODE_VALUE   C_V_TEMP
+        WHERE
+             C_V_TEMP.ACTIVE_IND = 1
+            AND
+             C_V_TEMP.CODE_SET = 220
+            AND
+            (
+                 C_V_TEMP.DISPLAY = "W ED"
+                OR
+                 C_V_TEMP.DISPLAY = "S ED"
+                OR
+                 C_V_TEMP.DISPLAY = "F ED"
+                OR
+                 C_V_TEMP.DISPLAY = "S SSU"
+            )
