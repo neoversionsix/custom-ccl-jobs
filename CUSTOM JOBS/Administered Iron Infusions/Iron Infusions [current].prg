@@ -1,22 +1,20 @@
 /*
 Programmer: Jason Whittle
 
-
-
 I require information about the number of iron infusions administered
  (iron polymaltose and iron carboxymaltose) during period
   01/02/2022 to 31/07/2022. The pharmacy have been able to give me
   data on the number administered on FCCU and S2F/CCU however I need
-  more specifically the number administered for patients under 
-  cardiology and heart failure services on these wards (excluding 
+  more specifically the number administered for patients under
+  cardiology and heart failure services on these wards (excluding
   patients that were under other units such as gen med, renal etc.).
  */
 
 drop program wh_testing_query_88:dba go
 create program wh_testing_query_88:dba
 
-prompt 
-	"Output to File/Printer/MINE" = "MINE" 
+prompt
+	"Output to File/Printer/MINE" = "MINE"
 
 with OUTDEV
 
@@ -46,10 +44,10 @@ PLAN O_D
             CNVTDATETIME("01-FEB-2022 00:00:00.00")
             AND
             CNVTDATETIME("01-AUG-2022 00:00:00.00")
-        
-        
+
+
         ; > CNVTLOOKBEHIND("3,D")
-		
+
 JOIN O_I
 	WHERE O_I.ORDER_ID = O_D.ORDER_ID
         AND
@@ -75,8 +73,8 @@ ORDER BY
 	, M.BEG_DT_TM
 
 WITH TIME = 60,
-	NOCOUNTER,  
-	SEPARATOR=" ", 
+	NOCOUNTER,
+	SEPARATOR=" ",
 	FORMAT
 
 end
