@@ -1,5 +1,5 @@
 SELECT
-	, O_I.ORDER_ID
+	O_I.ORDER_ID
 	, O.ORIG_ORDER_DT_TM "dd/mm/yyyy hh:mm"
 	, M_A_E.BEG_DT_TM "dd/mm/yyyy hh:mm"
 	, M_A_E.END_DT_TM "dd/mm/yyyy hh:mm"
