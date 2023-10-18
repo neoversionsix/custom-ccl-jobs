@@ -1,8 +1,17 @@
-SELECT
+drop program wh_export_template go
+create program wh_export_template
+
+prompt
+	"Output to File/Printer/MINE" = "output.csv"   ;* Enter or select the printer or file name to send this report to.
+
+with OUTDEV
+
+
+SELECT INTO "CCLUSERDIR:output.csv"
 	O_I.ORDER_ID
-	, O.ORIG_ORDER_DT_TM "dd/mmm/yyyy hh:mm"
-	, M_A_E.BEG_DT_TM "dd/mmm/yyyy hh:mm"
-	, M_A_E.END_DT_TM "dd/mmm/yyyy hh:mm"
+	, O.ORIG_ORDER_DT_TM "dd/mm/yyyy hh:mm"
+	, M_A_E.BEG_DT_TM "dd/mm/yyyy hh:mm"
+	, M_A_E.END_DT_TM "dd/mm/yyyy hh:mm"
 	, M_EVENT_TYPE_DISP = UAR_GET_CODE_DISPLAY(M_A_E.EVENT_TYPE_CD)
 	, O.ORDER_MNEMONIC
 	, O_I.ORDER_MNEMONIC
@@ -27,9 +36,10 @@ FROM
     , ENCNTR_ALIAS          E_A
 	, ORDER_ENTRY_FIELDS    O_E_FI
 
+
 PLAN O_D ; ORDER_DETAIL
 	 WHERE
-        O_D.ORDER_ID IN; Infusion orders only
+        O_D.ORDER_ID IN
         (
             SELECT ORDER_ID
             FROM ORDER_DETAIL
@@ -42,7 +52,7 @@ PLAN O_D ; ORDER_DETAIL
 JOIN O_I ; ORDER_INGREDIENT
 	WHERE O_I.ORDER_ID = O_D.ORDER_ID
         AND
-        O_I.CATALOG_CD IN ; Furosidmide orders only
+        O_I.CATALOG_CD IN
             (SELECT CODE_VALUE FROM CODE_VALUE WHERE CODE_SET=200 AND DISPLAY_KEY = "*FUROSEMIDE*" )
         AND
         O_I.ACTION_SEQUENCE = 1; filter out duplicate rows in this table
@@ -90,7 +100,12 @@ JOIN O_E_FI; ORDER_ENTRY_FIELDS
 ORDER BY
 	O_I.ORDER_ID
 
-WITH TIME = 600,
-	NOCOUNTER,
-	SEPARATOR=" ",
-	FORMAT
+WITH
+    TIME = 600,
+    PCFORMAT('"',',',1),
+    FORMAT=CRSTREAM,
+    HEADING,
+    FORMAT
+
+end
+go
