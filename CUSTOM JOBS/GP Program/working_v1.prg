@@ -12,8 +12,8 @@
 drop program vic_gp_details:dba go
 create program vic_gp_details:dba
 
-%i cclsource:ma_rtf_tags.inc
-%i cclsource:vic_ds_common_fonts.inc
+%i CUST_SCRIPT:ma_rtf_tags.inc
+%i CUST_SCRIPT:vic_ds_common_fonts.inc
 
 free record encntr_info
 record encntr_info
@@ -67,26 +67,44 @@ if(encntr_info->gp_consent != "N")
     epr
   where
     epr.encntr_id = request->visit[1]->encntr_id and
+;    epr.beg_effective_dt_tm = (select max(epr1.beg_effective_dt_tm)
+;								from encntr_prsnl_reltn epr1
+;									, encounter e3
+;								where e3.person_id = epr.person_id
+;								and e3.active_ind = 1 ;must be on a noncancelled encounter
+;								;and epr1.encntr_id = e3.encntr_id
+;								and epr1.encntr_prsnl_r_cd = GPVISIT;E_ENCNTR_PRSNL_R_DISP
+;								and epr1.active_ind = 1
+;								and epr1.end_effective_dt_tm > cnvtdatetime("01-dec-2100")
+;								)
+
     epr.ENCNTR_PRSNL_R_CD = GPVISIT and
     epr.active_ind = 1 and
     cnvtdatetime(curdate,curtime) between epr.beg_effective_dt_tm and epr.end_effective_dt_tm
-  join pr where pr.person_id = epr.prsnl_person_id
-  join d1
-  join a
+  join
+    pr
+  where
+    pr.person_id = epr.prsnl_person_id
+  join
+    d1
+  join
+    a
   where
     a.parent_entity_id = pr.person_id and
     a.address_type_cd = ADDRBUSINESS and
     a.active_ind =1 and
     (a.end_effective_dt_tm > cnvtdatetime(curdate,curtime3) or
      a.end_effective_dt_tm = null)
-  join d2
-  join p
-    where
+  join
+    d2
+  join
+    p
+  where
     p.parent_entity_id = a.parent_entity_id and
     p.active_ind = 1 and
     (p.end_effective_dt_tm > cnvtdatetime(curdate,curtime3) or
      p.end_effective_dt_tm = null)
-    detail
+  detail
 
     if(epr.prsnl_person_id = 0)
       encntr_info->gp_name = epr.ft_prsnl_name
@@ -106,10 +124,10 @@ if(encntr_info->gp_consent != "N")
     elseif (p.phone_type_cd = faxbusiness)
       encntr_info->gp_fax = p.phone_num
     endif
-    with
-    dontcare=a,
+  with
+    ;dontcare=a,
     outerjoin=d2
-    endif
+endif
 
 call echorecord(encntr_info)
 
