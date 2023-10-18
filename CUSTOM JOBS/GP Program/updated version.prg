@@ -12,8 +12,8 @@
 drop program vic_gp_details:dba go
 create program vic_gp_details:dba
 
-%i cclsource:ma_rtf_tags.inc
-%i cclsource:vic_ds_common_fonts.inc
+%i CUST_SCRIPT:ma_rtf_tags.inc
+%i CUST_SCRIPT:vic_ds_common_fonts.inc
 
 free record encntr_info
 record encntr_info
@@ -73,7 +73,7 @@ if(encntr_info->gp_consent != "N")
 
 								where e3.person_id = e.person_id
 								and e3.active_ind = 1 ;must be on a noncancelled encounter
-								and epr1.encntr_id = e3.encntr_id
+								;and epr1.encntr_id = e3.encntr_id
 								and epr1.encntr_prsnl_r_cd = GPVISIT
 								and epr1.active_ind = 1
 								and epr1.end_effective_dt_tm > cnvtdatetime("01-dec-2100")
