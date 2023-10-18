@@ -12,8 +12,8 @@
 drop program vic_gp_details:dba go
 create program vic_gp_details:dba
 
-%i cclsource:ma_rtf_tags.inc
-%i cclsource:vic_ds_common_fonts.inc
+%i cust_script:ma_rtf_tags.inc
+%i cust_script:vic_ds_common_fonts.inc
 
 free record encntr_info
 record encntr_info
@@ -70,23 +70,30 @@ if(encntr_info->gp_consent != "N")
     epr.ENCNTR_PRSNL_R_CD = GPVISIT and
     epr.active_ind = 1 and
     cnvtdatetime(curdate,curtime) between epr.beg_effective_dt_tm and epr.end_effective_dt_tm
-  join pr where pr.person_id = epr.prsnl_person_id
-  join d1
-  join a
+  join
+    pr
+  where
+    pr.person_id = epr.prsnl_person_id
+  join
+    d1
+  join
+    a
   where
     a.parent_entity_id = pr.person_id and
     a.address_type_cd = ADDRBUSINESS and
     a.active_ind =1 and
     (a.end_effective_dt_tm > cnvtdatetime(curdate,curtime3) or
      a.end_effective_dt_tm = null)
-  join d2
-  join p
-    where
+  join
+    d2
+  join
+    p
+  where
     p.parent_entity_id = a.parent_entity_id and
     p.active_ind = 1 and
     (p.end_effective_dt_tm > cnvtdatetime(curdate,curtime3) or
      p.end_effective_dt_tm = null)
-    detail
+  detail
 
     if(epr.prsnl_person_id = 0)
       encntr_info->gp_name = epr.ft_prsnl_name
@@ -106,10 +113,10 @@ if(encntr_info->gp_consent != "N")
     elseif (p.phone_type_cd = faxbusiness)
       encntr_info->gp_fax = p.phone_num
     endif
-    with
-    dontcare=a,
+  with
+    ; dontcare=a,
     outerjoin=d2
-    endif
+endif
 
 call echorecord(encntr_info)
 
@@ -127,7 +134,7 @@ if(encntr_info->gp_consent != "N")
   endif
 
   ; gp name
-  call PrintText("Name: ",0,0,0)
+  call PrintText("Name1: ",0,0,0)
   declare tempName = vc
   set tempName = trim(encntr_info->gp_name,3)
   call PrintText(build2(tempName),0,0,0)

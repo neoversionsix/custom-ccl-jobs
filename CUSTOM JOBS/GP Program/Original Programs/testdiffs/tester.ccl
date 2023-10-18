@@ -12,8 +12,8 @@
 drop program vic_gp_details:dba go
 create program vic_gp_details:dba
 
-%i CUST_SCRIPT:ma_rtf_tags.inc
-%i CUST_SCRIPT:vic_ds_common_fonts.inc
+%i cclsource:ma_rtf_tags.inc
+%i cclsource:vic_ds_common_fonts.inc
 
 free record encntr_info
 record encntr_info
@@ -134,7 +134,7 @@ if(encntr_info->gp_consent != "N")
   endif
 
   ; gp name
-  call PrintText("NameTEST: ",0,0,0)
+  call PrintText("Name: ",0,0,0)
   declare tempName = vc
   set tempName = trim(encntr_info->gp_name,3)
   call PrintText(build2(tempName),0,0,0)

@@ -126,7 +126,7 @@ if(encntr_info->gp_consent != "N")
     endif
   with
     ;dontcare=a,
-    outerjoin=d2
+    ;outerjoin=d2
 endif
 
 call echorecord(encntr_info)
