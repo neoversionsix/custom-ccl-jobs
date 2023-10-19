@@ -19,7 +19,7 @@ free record encntr_info
 record encntr_info
 (
   1 gp_consent          = c1
-  1 gp_consent_cd       = i8
+  1 gp_consent_cd       = f8
   1 gp_name             = vc
   1 gp_address_line_1   = vc
   1 gp_address_line_2   = vc
