@@ -114,7 +114,7 @@ if(encntr_info->gp_consent != "N")
       encntr_info->gp_fax = p.phone_num
     endif
   with
-    ; dontcare=a,
+    dontcare=a,
     outerjoin=d2
 endif
 
@@ -134,7 +134,7 @@ if(encntr_info->gp_consent != "N")
   endif
 
   ; gp name
-  call PrintText("Name1: ",0,0,0)
+  call PrintText("Name: ",0,0,0)
   declare tempName = vc
   set tempName = trim(encntr_info->gp_name,3)
   call PrintText(build2(tempName),0,0,0)

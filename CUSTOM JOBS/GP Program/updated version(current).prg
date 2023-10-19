@@ -19,7 +19,7 @@ free record encntr_info
 record encntr_info
 (
   1 gp_consent          = c1
-  1 gp_consent_cd       = f8
+  1 gp_consent_cd       = i8
   1 gp_name             = vc
   1 gp_address_line_1   = vc
   1 gp_address_line_2   = vc
@@ -38,6 +38,8 @@ declare PHONEBUSINESS = f8 with constant(uar_get_code_by("DISPLAYKEY",43,"BUSINE
 declare ORG_ADDR_CD   = f8 with constant(uar_get_code_by("MEANING",212,"BUSINESS")),protect
 ;declare TECHNICALMETHOD   = f8 with constant(uar_get_code_by("DISPLAYKEY",212,"TECHNICAL"))
 declare ADDRBUSINESS   = f8 with constant(uar_get_code_by("DISPLAYKEY",212,"BUSINESS"))
+; declare ENCNTR_ID = f8 with constant(request->visit[1].encntr_id), protect
+declare PERSON_ID_VAR = f8 with noconstant(request->person[1].person_id), protect ;002
 
 ; get gp_consent
 select into "nl:"
@@ -66,10 +68,23 @@ if(encntr_info->gp_consent != "N")
   plan
     epr
   where
-    epr.encntr_id = request->visit[1]->encntr_id and
+    epr.encntr_id =
+      (select encntr_id from encounter where person_id = PERSON_ID_VAR and active_ind=1) and
     epr.ENCNTR_PRSNL_R_CD = GPVISIT and
     epr.active_ind = 1 and
-    cnvtdatetime(curdate,curtime) between epr.beg_effective_dt_tm and epr.end_effective_dt_tm
+    epr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3) and
+    epr.end_effective_dt_tm > cnvtdatetime(curdate,curtime3) and
+    epr.beg_effective_dt_tm =
+        (
+        select max(epr1.beg_effective_dt_tm)
+		    from encntr_prsnl_reltn epr1
+        where
+		      epr1.encntr_prsnl_r_cd = GPVISIT
+		      and epr1.active_ind = 1
+		      and epr1.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+          and epr1.encntr_id in
+            (select encntr_id from encounter where person_id = PERSON_ID_VAR and active_ind=1)
+        )
   join
     pr
   where
@@ -122,21 +137,16 @@ call echorecord(encntr_info)
 
 call ApplyFont(active_fonts->normal)
 if(encntr_info->gp_consent != "N")
-    ;TESTING
-    call PrintText("EncounterID",1,0,0)
-    call PrintText(build2(" ",request->visit[1]->encntr_id),0,0,0)
-
-
 
   ; gp consent
   ;call PrintText("GP Consent:",1,0,0)
-  if(encntr_info->gp_consent_cd = 0)
-    call PrintText("**GP consent status unknown**",1,0,0)
-    call NextLine(1)
-  ;else
-   ; call PrintText(uar_get_code_display(encntr_info->gp_consent_cd),0,0,0)
-    ;call NextLine(1)
-  endif
+;   if(encntr_info->gp_consent_cd = 0)
+;     call PrintText("**GP consent status unknown**",1,0,0)
+;     call NextLine(1)
+;   ;else
+;    ; call PrintText(uar_get_code_display(encntr_info->gp_consent_cd),0,0,0)
+;     ;call NextLine(1)
+;   endif
 
   ; gp name
   call PrintText("Name: ",0,0,0)
