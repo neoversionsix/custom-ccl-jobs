@@ -2,7 +2,7 @@
 update into pbs_ocs_mapping ocsm
 set
     ocsm.beg_effective_dt_tm = cnvtdatetime(curdate, 0004)
-    ; Above line sets the activation time to today at 12:04 am, used to identify this update
+    ; Above line sets the activation time to today at 12:04 am, used to identify this type of update
     , ocsm.end_effective_dt_tm = cnvtdatetime("31-DEC-2100")
     , ocsm.pbs_drug_id = #PBSDRUGID# ; Swap With Pbs Drug Id
     , ocsm.synonym_id = #SYNONYMID# ; Swap With Synonym Id
