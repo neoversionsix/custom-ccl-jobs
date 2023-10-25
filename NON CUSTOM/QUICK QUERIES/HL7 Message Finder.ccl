@@ -1,24 +1,4 @@
-drop program wh_hl7_search go
-create program wh_hl7_search
-
-prompt
-	"Output to File/Printer/MINE" = "MINE"                            ;* Enter or select the printer or file name to send this rep
-	, "Messages sent after...." = "SYSDATE"
-	, "and messages sent before...." = "SYSDATE"
-	, "Patient URN" = ""
-	, "Is the message going in or out of Oracle (Cerner)?" = "2001"
-	, "prompt1" = "MSH|^~\&|CERNERLAB|"
-	, "Additional Search String (Optional)" = ""
-
-with OUTDEV, START_DATE_TM, END_DATE_TM, URN, MESSAGE_DIRECTION,
-	MESSAGE_INTERFACE, SEARCH_STRING
-
-DECLARE URN_VAR = VC WITH NOCONSTANT(" "),PROTECT
-
-SET URN_VAR = CONCAT("|", $URN, "^")
-
-
-SELECT INTO $OUTDEV
+SELECT
 	CREATED = O_T.CREATE_DT_TM "DD-MMM-YYYY HH:MM:SS"
 	, GOING =
 		IF (O_T.EVENTID = "1001") "INBOUND"
@@ -27,19 +7,17 @@ SELECT INTO $OUTDEV
 		ENDIF
 	, HL7 = O_T.MSG_TEXT
 
-
 FROM
 	OEN_TXLOG   O_T
 
 WHERE
 	/* TIME FROM NOW FILTER */
 	O_T.CREATE_DT_TM BETWEEN
-           CNVTDATETIME($START_DATE_TM)
+           CNVTDATETIME("19-OCT-2023 00:00")
            AND
-           CNVTDATETIME($END_DATE_TM)
+           CNVTDATETIME("19-OCT-2023 23:00")
 	/* Patients URN */
-	AND O_T.MSG_TEXT = PATSTRING(URN_VAR)
-       AND O_T.MSG_TEXT = PATSTRING($MESSAGE_INTERFACE)
+	AND O_T.MSG_TEXT = "*90000003*"
 	/* FROM ULTRA TO CERNER */
 	;AND O_T.MSG_TEXT = "MSH|^~\&|AWHS_ULTRA|*"
 	/* FROM CERNER TO ULTRA */
@@ -48,15 +26,7 @@ WHERE
 	"2001" => OUTBOUND
 	"1001" => INBOUND
 	*/
-	AND O_T.EVENTID = $MESSAGE_DIRECTION
+	AND O_T.EVENTID = "2001"
 
 
 WITH FORMAT, SEPERATOR = " ", TIME = 20, MAXREC = 1000
-
-
-/**************************************************************
-; DVDev DEFINED SUBROUTINES
-**************************************************************/
-
-end
-go
