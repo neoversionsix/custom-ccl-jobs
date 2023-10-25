@@ -15,9 +15,9 @@
         O.MNEMONIC_TYPE_CD IN
             (
              614548.00; Y - Generic Products
-            , 614544.00;	M - Generic Miscellaneous Products
-            , 614549.00;	Z - Trade Products
-            , 614545.00;	N - Trade Miscellaneous Products
+            , 614544.00; M - Generic Miscellaneous Products
+            , 614549.00; Z - Trade Products
+            , 614545.00; N - Trade Miscellaneous Products
             ;, 2580; Brand Name
             ;, 2583.00;	Primary
             )
