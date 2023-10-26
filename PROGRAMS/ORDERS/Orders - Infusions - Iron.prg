@@ -1,17 +1,8 @@
-drop program wh_export_template go
-create program wh_export_template
-
-prompt
-	"Output to File/Printer/MINE" = "output.csv"   ;* Enter or select the printer or file name to send this report to.
-
-with OUTDEV
-
-
-SELECT INTO "CCLUSERDIR:output.csv"
+SELECT
 	O_I.ORDER_ID
-	, O.ORIG_ORDER_DT_TM "dd/mm/yyyy hh:mm"
-	, M_A_E.BEG_DT_TM "dd/mm/yyyy hh:mm"
-	, M_A_E.END_DT_TM "dd/mm/yyyy hh:mm"
+	, O.ORIG_ORDER_DT_TM "dd/mmm/yyyy hh:mm"
+	, M_A_E.BEG_DT_TM "dd/mmm/yyyy hh:mm"
+	, M_A_E.END_DT_TM "dd/mmm/yyyy hh:mm"
 	, M_EVENT_TYPE_DISP = UAR_GET_CODE_DISPLAY(M_A_E.EVENT_TYPE_CD)
 	, O.ORDER_MNEMONIC
 	, O_I.ORDER_MNEMONIC
@@ -22,7 +13,7 @@ SELECT INTO "CCLUSERDIR:output.csv"
     , ENCOUNTER_NO = E_A.ALIAS
     , PATIENT_URN = P_A.ALIAS
     , ORDERER = PR.NAME_FULL_FORMATTED
-	, FIELD = O_E_FI.DESCRIPTION
+	;, FIELD = O_E_FI.DESCRIPTION
 	, FIELD_ENTRY = O_D.OE_FIELD_DISPLAY_VALUE
 
 FROM
@@ -34,32 +25,32 @@ FROM
     , PRSNL                 PR
     , PERSON_ALIAS          P_A
     , ENCNTR_ALIAS          E_A
-	, ORDER_ENTRY_FIELDS    O_E_FI
-
+	;, ORDER_ENTRY_FIELDS    O_E_FI
 
 PLAN O_D ; ORDER_DETAIL
 	 WHERE
-        O_D.ORDER_ID IN
+        O_D.ORDER_ID IN; Infusion orders only
         (
             SELECT ORDER_ID
             FROM ORDER_DETAIL
             WHERE
                 O_D.OE_FIELD_VALUE = 318173.00 ;"IV Infusion"
                 AND
-                O_D.UPDT_DT_TM > CNVTDATETIME("01-JAN-2023 00:00:00.00")
+                O_D.UPDT_DT_TM >= CNVTDATETIME("01-JAN-2023 00:00:00.00")
         )
 
 JOIN O_I ; ORDER_INGREDIENT
 	WHERE O_I.ORDER_ID = O_D.ORDER_ID
         AND
         O_I.CATALOG_CD IN
-            (SELECT CODE_VALUE FROM CODE_VALUE WHERE CODE_SET=200 AND DISPLAY_KEY = "*FUROSEMIDE*" )
+            /* Filter for orders with the below in the display key */
+            (SELECT CODE_VALUE FROM CODE_VALUE WHERE CODE_SET=200 AND DISPLAY_KEY = "*IRON*" )
         AND
         O_I.ACTION_SEQUENCE = 1; filter out duplicate rows in this table
 
 JOIN O ; ORDERS
 	WHERE O.ORDER_ID = O_I.ORDER_ID
-    AND O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-JAN-2023 00:00:00.00")
+    AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME("20-OCT-2023 00:00:00.00")
 
 JOIN E ; ENCOUNTER
 	WHERE E.ENCNTR_ID = O.ENCNTR_ID
@@ -93,19 +84,15 @@ JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
 
 JOIN PR;PRSNL
     WHERE PR.PERSON_ID = OUTERJOIN(O.STATUS_PRSNL_ID);X.UPDT_ID
+    AND PR.ACTIVE_IND = OUTERJOIN(1)
 
-JOIN O_E_FI; ORDER_ENTRY_FIELDS
-    WHERE O_E_FI.OE_FIELD_ID = O_D.OE_FIELD_ID
+; JOIN O_E_FI; ORDER_ENTRY_FIELDS
+;     WHERE O_E_FI.OE_FIELD_ID = O_D.OE_FIELD_ID
 
 ORDER BY
 	O_I.ORDER_ID
 
-WITH
-    TIME = 600,
-    PCFORMAT('"',',',1),
-    FORMAT=CRSTREAM,
-    HEADING,
-    FORMAT
-
-end
-go
+WITH TIME = 60,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT
