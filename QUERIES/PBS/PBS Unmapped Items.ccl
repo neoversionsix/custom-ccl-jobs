@@ -1,17 +1,9 @@
 SELECT
 /* NOTES:
-Retrieves Codes that need to be mapped this month. Will need to remove dentis
-codes manually from this list.
+Retrieves Codes that need to be mapped this month.
  */
 	PBS_CODE = P_L.PBS_ITEM_CODE
-    ; , KEY_WORDS = CONCAT
-    ;     (
-    ;         TRIM(P_I.DRUG_NAME)
-    ;         , "|"
-    ;         , TRIM(P_D.FORM_STRENGTH)
-    ;         , "|"
-    ;         , TRIM(P_D.BRAND_NAME)
-    ;     )
+
     , BRAND = P_D.BRAND_NAME
     , PRIMARY_DRUG_NAME = P_I.DRUG_NAME
     , FORM_STRENGTH = P_D.FORM_STRENGTH
@@ -30,18 +22,17 @@ FROM
     , PBS_DRUG                  P_D
     , PBS_MANF                  P_M
     , PBS_OCS_MAPPING           P_O_M
-    , PBS_PRESCRIBER			P_P
-    ; , PRSNL                     PR
-    ; , ORDER_CATALOG_SYNONYM     O_C_S
 
-PLAN P_D;PBS_DRUG
-    WHERE P_D.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)	; CURRENT PRODUCTS ONLY
+PLAN P_D ; PBS_DRUG
+; CURRENT PRODUCTS ONLY
+    WHERE P_D.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)
     ; UNMAPPED
     AND P_D.PBS_DRUG_ID NOT IN (SELECT PBS_DRUG_ID FROM PBS_OCS_MAPPING)
 
-JOIN P_I;PBS_ITEM
+JOIN P_I ; PBS_ITEM
     WHERE P_I.PBS_ITEM_ID = P_D.PBS_ITEM_ID
-    AND P_I.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)	; CURRENT ITEMS ONLY
+    ; CURRENT ITEMS ONLY
+    AND P_I.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)
         /*
         effective recently or soon in the future, aim of this filter
         is to retrieve only the pbs codes from the last installed package
@@ -53,23 +44,26 @@ JOIN P_I;PBS_ITEM
         P_I.BEG_EFFECTIVE_DT_TM > OUTERJOIN(CNVTLOOKAHEAD("30,D"))
     )
 
-JOIN	P_L;PBS_LISTING
+JOIN	P_L ; PBS_LISTING
         WHERE P_L.PBS_LISTING_ID = P_I.PBS_LISTING_ID
+        AND P_L.DRUG_TYPE_MEAN NOT IN ("DB", "HS", "IN", "PQ", "TY")
+        AND P_L.PBS_ITEM_CODE NOT IN
+        (
+            SELECT PBS_ITEM_CODE FROM PBS_PRESCRIBER
+            WHERE PRESCRIBER_TYPE_CD IN
+            (
+                86244501.00;	Dental Practitioner
+                , 86244513.00	;Optometrical Practitioner
+            )
+        )
 
-JOIN	P_M;PBS_MANF
+JOIN	P_M ; PBS_MANF
         WHERE P_M.PBS_MANUFACTURER_ID = OUTERJOIN(P_D.PBS_MANUFACTURER_ID)
 
-JOIN	P_O_M;PBS_OCS_MAPPING
+JOIN	P_O_M ; PBS_OCS_MAPPING
         WHERE P_O_M.PBS_DRUG_ID = OUTERJOIN(P_D.PBS_DRUG_ID)
-	    AND P_O_M.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)	; CURRENT MAPPINGS ONLY
-
-JOIN    P_P; PBS_PRESCRIBER
-    WHERE P_P.PBS_ITEM_CODE = P_L.PBS_ITEM_CODE
-        AND P_P.PRESCRIBER_TYPE_CD IN
-        (
-            SELECT CODE_VALUE FROM CODE_VALUE WHERE CODE_SET = 4386008
-            AND DISPLAY_KEY IN ("MEDICALPRACTITIONER", "NURSEPRACTITIONER", "MIDWIFE")
-        )
+        ; CURRENT MAPPINGS ONLY
+	    AND P_O_M.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)
 
 WITH	TIME = 10
         ;, MAXREC = 1000
