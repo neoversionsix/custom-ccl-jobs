@@ -10,8 +10,8 @@ set
     ocsm.beg_effective_dt_tm = cnvtdatetime(curdate, 0004)
     ; Above line sets the activation time to today at 12:04 am, used to identify this type of update
     , ocsm.end_effective_dt_tm = cnvtdatetime("31-DEC-2100")
-    , ocsm.pbs_drug_id = #PBS_DRUG_ID# ; Swap With Pbs Drug Id
-    , ocsm.synonym_id = #SYNONYM_ID# ; Swap With Synonym Id
+    , ocsm.pbs_drug_id = #PBS_DRUG_ID# ; Swap With Pbs Drug Id that maps to the synonym id
+    , ocsm.synonym_id = #SYNONYM_ID# ; Swap With Synonym Id that maps to the pbs_drug_id
     , ocsm.updt_dt_tm = cnvtdatetime(curdate,curtime3)
     , ocsm.updt_id = reqinfo->updt_id
     , ocsm.updt_cnt = ocs.updt_cnt + 1

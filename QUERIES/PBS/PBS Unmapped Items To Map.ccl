@@ -1,5 +1,6 @@
 SELECT
-/* NOTES:
+/*
+NOTES:
 Retrieves Codes that need to be mapped this month.
  */
 	PBS_CODE = P_L.PBS_ITEM_CODE
@@ -15,13 +16,11 @@ Retrieves Codes that need to be mapped this month.
 	, PRODUCT_BEG_DATE = FORMAT(P_D.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
 	, PRODUCT_END_DATE = FORMAT(P_D.END_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
 
-
 FROM
     PBS_LISTING                 P_L
     , PBS_ITEM                  P_I
     , PBS_DRUG                  P_D
     , PBS_MANF                  P_M
-
 
 PLAN P_D ; PBS_DRUG
 ; CURRENT PRODUCTS ONLY
