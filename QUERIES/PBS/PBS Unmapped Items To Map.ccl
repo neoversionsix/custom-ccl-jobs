@@ -5,8 +5,14 @@ Retrieves Codes that need to be mapped this month.
  */
 	MAP_PBS_DRUG_ID = P_D.PBS_DRUG_ID
     , PRIMARY_DRUG_NAME = P_I.DRUG_NAME
-    , BRAND = P_D.BRAND_NAME
-    , FORM_STRENGTH = P_D.FORM_STRENGTH
+    , BRAND_NAME = P_D.BRAND_NAME
+    , MNEMONIC_FORM_STRENGTH = P_D.FORM_STRENGTH
+    , BRAND_AND_MNEMONIC = CONCAT
+        (
+            TRIM(P_D.BRAND_NAME)
+            , " |"
+            , TRIM(P_D.FORM_STRENGTH)
+        )
     , PRODUCT_PACKAGE_SIZE = P_D.PACK_SIZE
     , PBS_CODE = P_L.PBS_ITEM_CODE
     ; , PRODUCT_MANUFACTURER_CODE = P_M.MANUFACTURER_CODE
@@ -20,7 +26,6 @@ FROM
     PBS_LISTING                 P_L
     , PBS_ITEM                  P_I
     , PBS_DRUG                  P_D
-    ; , PBS_MANF                  P_M
 
 PLAN P_D ; PBS_DRUG
 ; CURRENT PRODUCTS ONLY
@@ -58,8 +63,5 @@ JOIN	P_L ; PBS_LISTING
             )
         )
 
-; JOIN	P_M ; PBS_MANF
-;         WHERE P_M.PBS_MANUFACTURER_ID = OUTERJOIN(P_D.PBS_MANUFACTURER_ID)
 
 WITH	TIME = 10
-        ;, MAXREC = 1000
