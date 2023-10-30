@@ -3,6 +3,10 @@ This Script Is used for mapping a PBS Code to a Catalog Item
 It edits an unused line in the pbs_ocs_mapping table and switches the
 PBS_DRUG_ID and SYNONYM_ID to the ones that are now related
  */
+ ;and curdomain = "C2031"; used to only run in a domain
+;________________________________________________
+
+
 
 ;  PBS mapping script for PBS_DRUG_ID: #PBS_DRUG_ID# and SYNONYM_ID: #SYNONYM_ID#
 update into pbs_ocs_mapping ocsm
@@ -31,4 +35,3 @@ where
         and synonym_id = #SYNONYM_ID# ; Swap With Synonym Id
         and end_effective_dt_tm > sysdate
     )
-    ;and curdomain = "C2031"; used to only run in a domain
