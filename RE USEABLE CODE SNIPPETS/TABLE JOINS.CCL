@@ -90,13 +90,14 @@ PLAN O_A;ORDER_ACTION
 
 
 JOIN O_A
-    WHERE
+    WHERE O_A.ORDER_ID = O.ORDER_ID
     /* 'INPROCESS' Order Status Rows Only */
     O_A.ORDER_STATUS_CD = 2548
     /* Orders after  */
     AND O_A.EFFECTIVE_DT_TM > CNVTLOOKBEHIND("10,H")
+    AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicate order on this table
 
-    
+
 /* All orders */
 PLAN O;ORDERS
     WHERE

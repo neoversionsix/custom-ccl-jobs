@@ -1,15 +1,4 @@
-drop program wh_iron_infusions go
-create program wh_iron_infusions
-
-prompt
-	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
-	, "Filter start date time" = "SYSDATE"
-	, "Filter end date time" = "SYSDATE"
-
-with OUTDEV, STA_DATE_TM, END_DATE_TM
-
-
-SELECT INTO $OUTDEV
+SELECT
 	O_I.ORDER_ID
 	, O.ORIG_ORDER_DT_TM "dd/mmm/yyyy hh:mm"
 	, M_A_E.BEG_DT_TM "dd/mmm/yyyy hh:mm"
@@ -47,7 +36,7 @@ PLAN O_D ; ORDER_DETAIL
             WHERE
                 O_D.OE_FIELD_VALUE = 318173.00 ;"IV Infusion"
                 AND
-                O_D.UPDT_DT_TM >= CNVTDATETIME($STA_DATE_TM)
+                O_D.UPDT_DT_TM >= CNVTDATETIME("25-OCT-2023")
         )
 
 JOIN O_A ; ORDER_ACTION
@@ -62,13 +51,13 @@ JOIN O_I ; ORDER_INGREDIENT
             /* Filter for orders with the below in the display key */
             (SELECT CODE_VALUE FROM CODE_VALUE WHERE CODE_SET=200 AND DISPLAY_KEY IN ("*IRON*", "*FERRIC*") )
         AND O_I.ACTION_SEQUENCE = 1; filter out duplicate rows in this table
-        AND O_I.UPDT_DT_TM >= CNVTDATETIME($STA_DATE_TM)
+        AND O_I.UPDT_DT_TM >= CNVTDATETIME("25-OCT-2023")
 
 
 JOIN O ; ORDERS
 	WHERE O.ORDER_ID = O_I.ORDER_ID
-    AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME($STA_DATE_TM)
-    AND O.ORIG_ORDER_DT_TM <= CNVTDATETIME($END_DATE_TM)
+    AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME("25-OCT-2023")
+    AND O.ORIG_ORDER_DT_TM <= CNVTDATETIME("30-OCT-2023")
 
 JOIN E ; ENCOUNTER
 	WHERE E.ENCNTR_ID = O.ENCNTR_ID
@@ -114,6 +103,3 @@ WITH TIME = 600,
 	NOCOUNTER,
 	SEPARATOR=" ",
 	FORMAT
-
-end
-go

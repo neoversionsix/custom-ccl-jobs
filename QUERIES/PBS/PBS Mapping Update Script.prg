@@ -12,13 +12,18 @@ set
     , ocsm.end_effective_dt_tm = cnvtdatetime("31-DEC-2100")
     , ocsm.pbs_drug_id = #PBS_DRUG_ID# ; Swap With Pbs Drug Id that maps to the synonym id
     , ocsm.synonym_id = #SYNONYM_ID# ; Swap With Synonym Id that maps to the pbs_drug_id
+    , ocsm.drug_synonym_id = 0 ; clear multum mapping (multum mappings are not used)
+    , ocsm.main_multum_drug_code = 0 ; clear multum mapping
+    , ocsm.drug_identifier = "0" ; clear multum mapping
     , ocsm.updt_dt_tm = cnvtdatetime(curdate,curtime3)
     , ocsm.updt_id = reqinfo->updt_id
-    , ocsm.updt_cnt = ocs.updt_cnt + 1
+    , ocsm.updt_cnt = ocsm.updt_cnt + 1
 where
+    ;Update the next unused row
     ocsm.pbs_ocs_mapping_id =
     (select min(pbs_ocs_mapping_id) from pbs_ocs_mapping where end_effective_dt_tm < sysdate)
-    and not exists ; Make Sure the PBS item is not already mapped
+    ; Only Update if the item is NOT already mapped
+    and not exists
     (
         select 1
         from pbs_ocs_mapping
