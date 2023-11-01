@@ -17,7 +17,7 @@ Retrieves Codes that need to be mapped this month.
     , PBS_CODE = P_L.PBS_ITEM_CODE
     ; , PRODUCT_MANUFACTURER_CODE = P_M.MANUFACTURER_CODE
     ; , SCHEDULE = P_L.DRUG_TYPE_MEAN
-	; , ITEM_BEG_DATE = FORMAT(P_I.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+	 , ITEM_BEG_DATE = FORMAT(P_I.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
 	; , ITEM_END_DATE = FORMAT(P_I.END_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
 	; , PRODUCT_BEG_DATE = FORMAT(P_D.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
 	; , PRODUCT_END_DATE = FORMAT(P_D.END_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
@@ -53,13 +53,14 @@ JOIN	P_L ; PBS_LISTING
         /* Don't map the private hospital codes etc */
         AND P_L.DRUG_TYPE_MEAN NOT IN ("DB", "HS", "IN", "PQ", "TY")
         /* Don't map dental and optometrist codes */
-        AND P_L.PBS_ITEM_CODE NOT IN
+        AND P_L.PBS_ITEM_CODE IN
         (
             SELECT PBS_ITEM_CODE FROM PBS_PRESCRIBER
             WHERE PRESCRIBER_TYPE_CD IN
             (
-                86244501.00;	Dental Practitioner
-                , 86244513.00	;Optometrical Practitioner
+                86244504.00	;Medical Practitioner
+                , 86244510.00	;Nurse Practitioner
+                , 86244507.00	;Midwife
             )
         )
 

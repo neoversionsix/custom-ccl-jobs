@@ -1,0 +1,327 @@
+SELECT DISTINCT
+/*
+NOTES:
+Retrieves Codes that are incorrectly mapped.
+ */
+     PBS_CODE = P_L.PBS_ITEM_CODE
+    , P_L.DRUG_TYPE_MEAN
+    , PRESCRIBER_TYPE = UAR_GET_CODE_DISPLAY(P_P.PRESCRIBER_TYPE_CD)
+
+FROM
+    PBS_LISTING                 P_L
+    , PBS_OCS_MAPPING           P_O_M
+    , PBS_ITEM                  P_I
+    , PBS_DRUG                  P_D
+    , PBS_PRESCRIBER            P_P
+
+/* Items that should not be mapped */
+PLAN	P_L ; PBS_LISTING  ; P_L.PBS_LISTING_ID   P_L.PBS_ITEM_CODE
+        WHERE
+        /* Don't map the private hospital codes etc */
+        P_L.DRUG_TYPE_MEAN IN ("DB", "HS", "IN", "PQ", "TY")
+        /* PBS codes that are dental and optometrist codes but not also the others we want to map*/
+        OR P_L.PBS_ITEM_CODE IN ; RUN CODE BELOW AND PASTE THE OUTPUT
+            (
+                /*
+                SELECT DISTINCT P_P_1.PBS_ITEM_CODE
+                FROM
+                    PBS_PRESCRIBER P_P_1,
+                    PBS_PRESCRIBER P_P_2
+                PLAN P_P_1
+                    WHERE P_P_1.PRESCRIBER_TYPE_CD IN
+                    (
+                        86244501.00 ; Dental Practitioner
+                        , 86244513.00 ; Optometrical Practitioner
+                    )
+                JOIN P_P_2
+                    WHERE P_P_2.PBS_ITEM_CODE = P_P_1.PBS_ITEM_CODE
+                    AND  P_P_2.PRESCRIBER_TYPE_CD NOT IN
+                    (
+                        86244504.00	;Medical Practitioner
+                        , 86244510.00	;Nurse Practitioner
+                        , 86244507.00	;Midwife
+                    )
+                    */
+            "5011R"
+            ,"5039F"
+            ,"5082L"
+            ,"5105Q"
+            ,"5113D"
+            ,"5136H"
+            ,"3310F"
+            ,"3314K"
+            ,"3345C"
+            ,"3363B"
+            ,"3398W"
+            ,"5177L"
+            ,"5191F"
+            ,"5196L"
+            ,"5197M"
+            ,"5202T"
+            ,"5204X"
+            ,"5501M"
+            ,"5516H"
+            ,"5519L"
+            ,"5528Y"
+            ,"5535H"
+            ,"5537K"
+            ,"5542Q"
+            ,"5546X"
+            ,"5568C"
+            ,"5570E"
+            ,"11634H"
+            ,"11816X"
+            ,"11849P"
+            ,"12054K"
+            ,"13234M"
+            ,"13291M"
+            ,"13617Q"
+            ,"10108B"
+            ,"10858L"
+            ,"2002J"
+            ,"5024K"
+            ,"5031T"
+            ,"5032W"
+            ,"5034Y"
+            ,"5048Q"
+            ,"5071X"
+            ,"5108W"
+            ,"5126T"
+            ,"3321T"
+            ,"3336N"
+            ,"3393N"
+            ,"5155H"
+            ,"5169C"
+            ,"5201R"
+            ,"5260W"
+            ,"5518K"
+            ,"5524R"
+            ,"5540N"
+            ,"5543R"
+            ,"11112W"
+            ,"11366F"
+            ,"11479E"
+            ,"12010D"
+            ,"12032G"
+            ,"12559B"
+            ,"12663L"
+            ,"13184X"
+            ,"13694R"
+            ,"10027R"
+            ,"11077B"
+            ,"5004J"
+            ,"5041H"
+            ,"5047P"
+            ,"5057E"
+            ,"5117H"
+            ,"5124Q"
+            ,"5148Y"
+            ,"5153F"
+            ,"3341W"
+            ,"3399X"
+            ,"5194J"
+            ,"5239R"
+            ,"5258R"
+            ,"5261X"
+            ,"5502N"
+            ,"5503P"
+            ,"5504Q"
+            ,"5506T"
+            ,"5509Y"
+            ,"5510B"
+            ,"5517J"
+            ,"5521N"
+            ,"5553G"
+            ,"5564W"
+            ,"11228Y"
+            ,"11853W"
+            ,"12066C"
+            ,"12074L"
+            ,"13190F"
+            ,"10547D"
+            ,"2167C"
+            ,"2171G"
+            ,"5046N"
+            ,"5072Y"
+            ,"5091Y"
+            ,"5150C"
+            ,"3300Q"
+            ,"3301R"
+            ,"3316M"
+            ,"3317N"
+            ,"3318P"
+            ,"3322W"
+            ,"3342X"
+            ,"3364C"
+            ,"5176K"
+            ,"5189D"
+            ,"5190E"
+            ,"5203W"
+            ,"5225B"
+            ,"5520M"
+            ,"5533F"
+            ,"5536J"
+            ,"5541P"
+            ,"5566Y"
+            ,"12612T"
+            ,"13113E"
+            ,"13653N"
+            ,"10125X"
+            ,"10787R"
+            ,"1724R"
+            ,"5006L"
+            ,"5009P"
+            ,"5090X"
+            ,"5115F"
+            ,"3302T"
+            ,"3306B"
+            ,"3313J"
+            ,"3323X"
+            ,"3337P"
+            ,"3374N"
+            ,"5163R"
+            ,"5178M"
+            ,"5232J"
+            ,"5522P"
+            ,"5523Q"
+            ,"5527X"
+            ,"5529B"
+            ,"5544T"
+            ,"5557L"
+            ,"5563T"
+            ,"12025X"
+            ,"12045Y"
+            ,"12067D"
+            ,"12617C"
+            ,"13278W"
+            ,"13284E"
+            ,"10053D"
+            ,"1768C"
+            ,"1769D"
+            ,"2184Y"
+            ,"5012T"
+            ,"5029Q"
+            ,"5040G"
+            ,"5045M"
+            ,"5076E"
+            ,"5079H"
+            ,"5096F"
+            ,"5116G"
+            ,"3348F"
+            ,"3349G"
+            ,"3376Q"
+            ,"3391L"
+            ,"5168B"
+            ,"5205Y"
+            ,"5221T"
+            ,"5224Y"
+            ,"5231H"
+            ,"5508X"
+            ,"5532E"
+            ,"5548B"
+            ,"5549C"
+            ,"5551E"
+            ,"5562R"
+            ,"11728G"
+            ,"10609J"
+            ,"11051P"
+            ,"2748P"
+            ,"5018D"
+            ,"5022H"
+            ,"5037D"
+            ,"5063L"
+            ,"5073B"
+            ,"5077F"
+            ,"5083M"
+            ,"5114E"
+            ,"5118J"
+            ,"5123P"
+            ,"5128X"
+            ,"5132D"
+            ,"5144R"
+            ,"5151D"
+            ,"3361X"
+            ,"3371K"
+            ,"5179N"
+            ,"5186Y"
+            ,"5192G"
+            ,"5195K"
+            ,"5206B"
+            ,"5233K"
+            ,"5237P"
+            ,"5259T"
+            ,"5507W"
+            ,"5513E"
+            ,"5526W"
+            ,"5534G"
+            ,"5545W"
+            ,"5555J"
+            ,"5558M"
+            ,"5569D"
+            ,"11249C"
+            ,"11439C"
+            ,"11733M"
+            ,"12311Y"
+            ,"12572Q"
+            ,"10863R"
+            ,"1832K"
+            ,"5008N"
+            ,"5027N"
+            ,"5038E"
+            ,"5052X"
+            ,"5095E"
+            ,"5097G"
+            ,"5119K"
+            ,"3319Q"
+            ,"3320R"
+            ,"3325B"
+            ,"3334L"
+            ,"3339R"
+            ,"3360W"
+            ,"3390K"
+            ,"5157K"
+            ,"5170D"
+            ,"5193H"
+            ,"5238Q"
+            ,"5257Q"
+            ,"5505R"
+            ,"5538L"
+            ,"5550D"
+            ,"5552F"
+            ,"5554H"
+            ,"5556K"
+            ,"5565X"
+            ,"5567B"
+            ,"11191B"
+            ,"11654J"
+            ,"11735P"
+            ,"12024W"
+            ,"12048D"
+            ,"13612K"
+            )
+
+JOIN P_P /* PBS_PRESCRIBER */
+    WHERE P_P.PBS_ITEM_CODE = P_L.PBS_ITEM_CODE
+    ; AND NOT IN OUTERJOIN
+    ; (
+    ;     P_P.PRESCRIBER_TYPE_CD = OUTERJOIN(86244501.00) ; Dental Practitioner
+    ;     OR
+    ;     P_P.PRESCRIBER_TYPE_CD = OUTERJOIN(86244513.00)	; Optometrical Practitioner
+    ; )
+
+JOIN P_I ; PBS_ITEM ;PBS_ITEM_ID PBS_LISTING_ID
+     WHERE P_I.PBS_LISTING_ID = P_L.PBS_LISTING_ID
+
+JOIN P_D ; PBS_DRUG ; PBS_DRUG_ID PBS_ITEM_ID
+    WHERE P_D.PBS_ITEM_ID = P_I.PBS_ITEM_ID
+
+/*Filter for mapped items only */
+JOIN P_O_M /* PBS_OCS_MAPPING */ ;PBS_DRUG_ID
+    /* Remove Dummy Rows */
+    WHERE P_O_M.PBS_DRUG_ID = P_D.PBS_DRUG_ID
+        AND P_O_M.PBS_DRUG_ID != 11111111.00
+
+ORDER BY
+    P_L.PBS_ITEM_CODE
+
+WITH	TIME = 200

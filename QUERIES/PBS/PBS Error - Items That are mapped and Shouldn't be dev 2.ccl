@@ -1,0 +1,70 @@
+SELECT ;DISTINCT
+/*
+NOTES:
+Retrieves Codes that are incorrectly mapped.
+ */
+     PBS_CODE = P_L.PBS_ITEM_CODE
+    , P_L.DRUG_TYPE_MEAN
+    , PRESCRIBER_TYPE = UAR_GET_CODE_DISPLAY(P_P.PRESCRIBER_TYPE_CD)
+
+FROM
+    PBS_LISTING                 P_L
+    , PBS_OCS_MAPPING           P_O_M
+    , PBS_ITEM                  P_I
+    , PBS_DRUG                  P_D
+    , PBS_PRESCRIBER            P_P
+
+/* Items that should not be mapped */
+PLAN	P_L ; PBS_LISTING  ; P_L.PBS_LISTING_ID   P_L.PBS_ITEM_CODE
+        WHERE
+        /* Don't map the private hospital codes etc */
+        P_L.DRUG_TYPE_MEAN IN ("DB", "HS", "IN", "PQ", "TY")
+        /* PBS codes that are dental and optometrist codes but not also the others we want */
+        OR P_L.PBS_ITEM_CODE IN
+            (
+                SELECT DISTINCT P_P_1.PBS_ITEM_CODE
+                FROM
+                    PBS_PRESCRIBER P_P_1,
+                    PBS_PRESCRIBER P_P_2
+                PLAN P_P_1
+                    WHERE P_P_1.PRESCRIBER_TYPE_CD IN
+                    (
+                        86244501.00 ; Dental Practitioner
+                        , 86244513.00 ; Optometrical Practitioner
+                    )
+                JOIN P_P_2
+                    WHERE P_P_2.PBS_ITEM_CODE = P_P_1.PBS_ITEM_CODE
+                    AND  P_P_2.PRESCRIBER_TYPE_CD NOT IN
+                    (
+                        86244504.00	;Medical Practitioner
+                        , 86244510.00	;Nurse Practitioner
+                        , 86244507.00	;Midwife
+                    )
+            )
+
+JOIN P_P /* PBS_PRESCRIBER */
+    WHERE P_P.PBS_ITEM_CODE = P_L.PBS_ITEM_CODE
+    ; AND NOT IN OUTERJOIN
+    ; (
+    ;     P_P.PRESCRIBER_TYPE_CD = OUTERJOIN(86244501.00) ; Dental Practitioner
+    ;     OR
+    ;     P_P.PRESCRIBER_TYPE_CD = OUTERJOIN(86244513.00)	; Optometrical Practitioner
+    ; )
+
+JOIN P_I ; PBS_ITEM ;PBS_ITEM_ID PBS_LISTING_ID
+     WHERE P_I.PBS_LISTING_ID = P_L.PBS_LISTING_ID
+
+JOIN P_D ; PBS_DRUG ; PBS_DRUG_ID PBS_ITEM_ID
+    WHERE P_D.PBS_ITEM_ID = P_I.PBS_ITEM_ID
+
+/*Filter for mapped items only */
+JOIN P_O_M /* PBS_OCS_MAPPING */ ;PBS_DRUG_ID
+    /* Remove Dummy Rows */
+    WHERE P_O_M.PBS_DRUG_ID = P_D.PBS_DRUG_ID
+        AND P_O_M.PBS_DRUG_ID != 11111111.00
+
+; ORDER BY
+;     P_L.PBS_ITEM_CODE
+;     , 0
+
+WITH	TIME = 200
