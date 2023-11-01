@@ -1,0 +1,46 @@
+SELECT
+/*
+NOTES:
+Retrieves Codes that are incorrectly mapped.
+ */
+     PBS_CODE = P_L.PBS_ITEM_CODE
+    , P_L.DRUG_TYPE_MEAN
+    ; , PRODUCT_MANUFACTURER_CODE = P_M.MANUFACTURER_CODE
+    ; , SCHEDULE = P_L.DRUG_TYPE_MEAN
+	; , ITEM_BEG_DATE = FORMAT(P_I.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+	; , ITEM_END_DATE = FORMAT(P_I.END_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+	; , PRODUCT_BEG_DATE = FORMAT(P_D.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+	; , PRODUCT_END_DATE = FORMAT(P_D.END_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+
+FROM
+    PBS_OCS_MAPPING             P_O_M
+    , PBS_LISTING               P_L
+    , PBS_ITEM                  P_I
+    , PBS_DRUG                  P_D
+
+PLAN P_O_M /* PBS_OCS_MAPPING */
+    /* Remove Dummy Rows */
+    WHERE P_O_M.PBS_DRUG_ID != 11111111.00
+
+JOIN P_D ; PBS_DRUG
+    WHERE P_D.PBS_DRUG_ID = P_O_M.PBS_DRUG_ID
+
+JOIN P_I ; PBS_ITEM
+     WHERE P_I.PBS_ITEM_ID = P_D.PBS_ITEM_ID
+
+JOIN	P_L ; PBS_LISTING
+        WHERE P_L.PBS_LISTING_ID = P_I.PBS_LISTING_ID
+        /* Don't map the private hospital codes etc */
+        AND P_L.DRUG_TYPE_MEAN IN ("DB", "HS", "IN", "PQ", "TY")
+        /* Don't map dental and optometrist codes */
+        AND P_L.PBS_ITEM_CODE IN
+        (
+            SELECT PBS_ITEM_CODE FROM PBS_PRESCRIBER
+            WHERE PRESCRIBER_TYPE_CD IN
+            (
+                86244501.00;	Dental Practitioner
+                , 86244513.00	;Optometrical Practitioner
+            )
+        )
+
+WITH	TIME = 60
