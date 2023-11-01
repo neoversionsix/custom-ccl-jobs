@@ -2,7 +2,12 @@ SELECT
     MAP_SYNONYM_ID = O.SYNONYM_ID
     , O.MNEMONIC
     , PRIMARY = UAR_GET_CODE_DISPLAY(O.CATALOG_CD)
-    , O_MNEMONIC_TYPE_DISP = UAR_GET_CODE_DISPLAY(O.MNEMONIC_TYPE_CD)
+    , ITEM_TYPE = UAR_GET_CODE_DISPLAY(O.MNEMONIC_TYPE_CD)
+    /* Is the Item multimized */
+    , IS_MULTUM =
+        IF (O.CKI = "MUL*") "Y"
+        ELSE "N"
+        ENDIF
 FROM
     ORDER_CATALOG_SYNONYM   O
 WHERE
@@ -12,7 +17,7 @@ WHERE
     AND
     O.MNEMONIC_TYPE_CD IN
         (
-        , 614549.00; Z - Trade Products
+         614549.00; Z - Trade Products
         , 614545.00; N - Trade Miscellaneous Products
         )
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10

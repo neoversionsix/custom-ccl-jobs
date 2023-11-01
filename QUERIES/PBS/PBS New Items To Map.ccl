@@ -1,0 +1,67 @@
+SELECT
+/*
+NOTES:
+Retrieves Codes that need to be mapped this month.
+ */
+	MAP_PBS_DRUG_ID = P_D.PBS_DRUG_ID
+    , PRIMARY_DRUG_NAME = P_I.DRUG_NAME
+    , BRAND_NAME = P_D.BRAND_NAME
+    , MNEMONIC_FORM_STRENGTH = P_D.FORM_STRENGTH
+    , BRAND_AND_MNEMONIC = CONCAT
+        (
+            TRIM(P_D.BRAND_NAME)
+            , " |"
+            , TRIM(P_D.FORM_STRENGTH)
+        )
+    , PRODUCT_PACKAGE_SIZE = P_D.PACK_SIZE
+    , PBS_CODE = P_L.PBS_ITEM_CODE
+    ; , PRODUCT_MANUFACTURER_CODE = P_M.MANUFACTURER_CODE
+    ; , SCHEDULE = P_L.DRUG_TYPE_MEAN
+	; , ITEM_BEG_DATE = FORMAT(P_I.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+	; , ITEM_END_DATE = FORMAT(P_I.END_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+	; , PRODUCT_BEG_DATE = FORMAT(P_D.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+	; , PRODUCT_END_DATE = FORMAT(P_D.END_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+
+FROM
+    PBS_LISTING                 P_L
+    , PBS_ITEM                  P_I
+    , PBS_DRUG                  P_D
+
+PLAN P_D ; PBS_DRUG
+; CURRENT PRODUCTS ONLY
+    WHERE P_D.END_EFFECTIVE_DT_TM > (SYSDATE)
+    /*  UNMAPPED in the PBS_OCS_MAPPING Table */
+    ;AND P_D.PBS_DRUG_ID NOT IN (SELECT PBS_DRUG_ID FROM PBS_OCS_MAPPING)
+
+JOIN P_I ; PBS_ITEM
+    WHERE P_I.PBS_ITEM_ID = P_D.PBS_ITEM_ID
+    /* CURRENTLY Effective ITEMS ONLY */
+    AND P_I.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)
+        /*
+        effective recently or soon in the future, aim of this filter
+        is to retrieve only the pbs codes from the last installed package
+        */
+    AND
+    (
+        P_I.BEG_EFFECTIVE_DT_TM > OUTERJOIN(CNVTLOOKBEHIND("10,D"))
+        OR
+        P_I.BEG_EFFECTIVE_DT_TM > OUTERJOIN(CNVTLOOKAHEAD("30,D"))
+    )
+
+JOIN	P_L ; PBS_LISTING
+        WHERE P_L.PBS_LISTING_ID = P_I.PBS_LISTING_ID
+        /* Don't map the private hospital codes etc */
+        AND P_L.DRUG_TYPE_MEAN NOT IN ("DB", "HS", "IN", "PQ", "TY")
+        /* Don't map dental and optometrist codes */
+        AND P_L.PBS_ITEM_CODE NOT IN
+        (
+            SELECT PBS_ITEM_CODE FROM PBS_PRESCRIBER
+            WHERE PRESCRIBER_TYPE_CD IN
+            (
+                86244501.00;	Dental Practitioner
+                , 86244513.00	;Optometrical Practitioner
+            )
+        )
+
+
+WITH	TIME = 10
