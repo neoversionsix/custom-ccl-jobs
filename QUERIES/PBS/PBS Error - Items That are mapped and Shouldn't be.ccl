@@ -5,18 +5,14 @@ Retrieves Codes that are incorrectly mapped.
  */
      PBS_CODE = P_L.PBS_ITEM_CODE
     , P_L.DRUG_TYPE_MEAN
-    ; , PRODUCT_MANUFACTURER_CODE = P_M.MANUFACTURER_CODE
-    ; , SCHEDULE = P_L.DRUG_TYPE_MEAN
-	; , ITEM_BEG_DATE = FORMAT(P_I.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
-	; , ITEM_END_DATE = FORMAT(P_I.END_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
-	; , PRODUCT_BEG_DATE = FORMAT(P_D.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
-	; , PRODUCT_END_DATE = FORMAT(P_D.END_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+    , PRESCRIBER_TYPE = UAR_GET_CODE_DISPLAY(P_P.PRESCRIBER_TYPE_CD)
 
 FROM
     PBS_OCS_MAPPING             P_O_M
     , PBS_LISTING               P_L
     , PBS_ITEM                  P_I
     , PBS_DRUG                  P_D
+    , PBS_PRESCRIBER            P_P
 
 PLAN P_O_M /* PBS_OCS_MAPPING */
     /* Remove Dummy Rows */
@@ -33,7 +29,7 @@ JOIN	P_L ; PBS_LISTING
         /* Don't map the private hospital codes etc */
         AND P_L.DRUG_TYPE_MEAN IN ("DB", "HS", "IN", "PQ", "TY")
         /* Don't map dental and optometrist codes */
-        AND P_L.PBS_ITEM_CODE IN
+        OR P_L.PBS_ITEM_CODE IN
         (
             SELECT PBS_ITEM_CODE FROM PBS_PRESCRIBER
             WHERE PRESCRIBER_TYPE_CD IN
@@ -42,5 +38,8 @@ JOIN	P_L ; PBS_LISTING
                 , 86244513.00	;Optometrical Practitioner
             )
         )
+
+JOIN P_P /* PBS_PRESCRIBER */
+    WHERE P_P.PBS_ITEM_CODE = P_L.PBS_ITEM_CODE
 
 WITH	TIME = 60
