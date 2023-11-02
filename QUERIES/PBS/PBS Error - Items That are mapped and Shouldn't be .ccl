@@ -1,0 +1,66 @@
+SELECT DISTINCT
+/*
+NOTES:
+Retrieves Codes that are incorrectly mapped.
+ */
+     PBS_CODE = P_L.PBS_ITEM_CODE
+    , P_L.DRUG_TYPE_MEAN
+    , PRESCRIBER_TYPE = UAR_GET_CODE_DISPLAY(P_P.PRESCRIBER_TYPE_CD)
+
+FROM
+    PBS_LISTING                 P_L
+    , PBS_OCS_MAPPING           P_O_M
+    , PBS_ITEM                  P_I
+    , PBS_DRUG                  P_D
+    , PBS_PRESCRIBER            P_P
+
+/* Items that should not be mapped */
+PLAN	P_L ; PBS_LISTING  ; P_L.PBS_LISTING_ID   P_L.PBS_ITEM_CODE
+        WHERE
+        /* These are private hospital codes etc that should not be mapped */
+        P_L.DRUG_TYPE_MEAN IN ("DB", "HS", "IN", "PQ", "TY")
+        /* PBS codes that are dental and optometrist codes but not also the others we want to map*/
+        OR P_L.PBS_ITEM_CODE IN ; RUN CODE BELOW AND PASTE THE OUTPUT
+            /* Selects PBS ITEM CODES THAT SHOULD NOT BE MAPPED DUE TO PRESCRIBER TYPE */
+            (
+                SELECT PBS_ITEM_CODE
+                FROM PBS_PRESCRIBER P_P_0
+                WHERE P_P_0.PRESCRIBER_TYPE_CD IN
+                (
+                    86244501.00 ; Dental Practitioner
+                    , 86244513.00 ; Optometrical Practitioner
+                )
+                AND P_P_0.PBS_ITEM_CODE NOT IN
+                (
+                    SELECT P_X.PBS_ITEM_CODE FROM PBS_PRESCRIBER P_X  WHERE P_X.PRESCRIBER_TYPE_CD IN
+                    (
+                        86244504.00	;Medical Practitioner
+                        , 86244510.00	;Nurse Practitioner
+                        , 86244507.00	;Midwife
+                    )
+
+                )
+                AND P_P_0.END_EFFECTIVE_DT_TM > SYSDATE
+            )
+
+JOIN P_P /* PBS_PRESCRIBER */ ; P_P.PBS_ITEM_CODE
+    WHERE P_P.PBS_ITEM_CODE = P_L.PBS_ITEM_CODE
+    AND P_P.END_EFFECTIVE_DT_TM > SYSDATE
+
+JOIN P_I ; PBS_ITEM ;PBS_ITEM_ID PBS_LISTING_ID
+     WHERE P_I.PBS_LISTING_ID = P_L.PBS_LISTING_ID
+
+JOIN P_D ; PBS_DRUG ; PBS_DRUG_ID PBS_ITEM_ID
+    WHERE P_D.PBS_ITEM_ID = P_I.PBS_ITEM_ID
+
+/*Filter for mapped items only */
+JOIN P_O_M /* PBS_OCS_MAPPING */ ;PBS_DRUG_ID
+    /* Remove Dummy Rows */
+    WHERE P_O_M.PBS_DRUG_ID = P_D.PBS_DRUG_ID
+        AND P_O_M.PBS_DRUG_ID != 11111111.00
+        AND P_O_M.END_EFFECTIVE_DT_TM > SYSDATE
+
+ORDER BY
+    P_L.PBS_ITEM_CODE
+
+WITH	TIME = 30
