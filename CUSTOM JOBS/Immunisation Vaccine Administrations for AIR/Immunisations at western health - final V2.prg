@@ -63,7 +63,7 @@ JOIN P;PERSON
 	WHERE
     P.PERSON_ID = C_E.PERSON_ID
     /* Removes Fake Test Patients */
-    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    AND P.NAME_LAST_KEY != "TESTWHS"
 
 JOIN C_M_R; CE_MED_RESULT
     WHERE
