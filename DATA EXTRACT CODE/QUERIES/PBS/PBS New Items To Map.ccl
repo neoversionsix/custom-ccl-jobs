@@ -32,6 +32,12 @@ PLAN P_D ; PBS_DRUG
     WHERE P_D.END_EFFECTIVE_DT_TM > (SYSDATE)
     /*  UNMAPPED in the PBS_OCS_MAPPING Table */
     ;AND P_D.PBS_DRUG_ID NOT IN (SELECT PBS_DRUG_ID FROM PBS_OCS_MAPPING)
+    AND
+    (
+        P_D.BEG_EFFECTIVE_DT_TM > OUTERJOIN(CNVTLOOKBEHIND("10,D"))
+        OR
+        P_D.BEG_EFFECTIVE_DT_TM > OUTERJOIN(CNVTLOOKAHEAD("30,D"))
+    )
 
 JOIN P_I ; PBS_ITEM
     WHERE P_I.PBS_ITEM_ID = P_D.PBS_ITEM_ID
@@ -41,12 +47,7 @@ JOIN P_I ; PBS_ITEM
         effective recently or soon in the future, aim of this filter
         is to retrieve only the pbs codes from the last installed package
         */
-    AND
-    (
-        P_I.BEG_EFFECTIVE_DT_TM > OUTERJOIN(CNVTLOOKBEHIND("10,D"))
-        OR
-        P_I.BEG_EFFECTIVE_DT_TM > OUTERJOIN(CNVTLOOKAHEAD("30,D"))
-    )
+
 
 JOIN	P_L ; PBS_LISTING
         WHERE P_L.PBS_LISTING_ID = P_I.PBS_LISTING_ID
