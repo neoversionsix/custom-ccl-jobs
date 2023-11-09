@@ -4,7 +4,8 @@ NOTES:
 Retrieves Codes that need to be mapped this month and also don't have any current mappings.
  */
 	MAP_PBS_DRUG_ID = P_D.PBS_DRUG_ID
-    , PRIMARY_DRUG_NAME = P_I.DRUG_NAME
+    , ORIGINAL_PRIMARY_DRUG_NAME = P_I.DRUG_NAME
+    , PRIMARY_DRUG_NAME = REPLACE(P_I.DRUG_NAME," + ","-",0)
     , BRAND_NAME = P_D.BRAND_NAME
     , MNEMONIC_FORM_STRENGTH = P_D.FORM_STRENGTH
     , BRAND_AND_MNEMONIC = CONCAT
