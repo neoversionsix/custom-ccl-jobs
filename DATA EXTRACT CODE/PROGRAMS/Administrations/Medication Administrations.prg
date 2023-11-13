@@ -2,14 +2,28 @@ drop program wh_med_administrations2 go
 create program wh_med_administrations2
 
 prompt
-	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+	"Output to File/Printer/MINE" = "MINE"                           ;* Enter or select the printer or file name to send this repo
 	, "Administered After..." = "SYSDATE"
 	, "Administered Before..." = "SYSDATE"
+	, "Patient URN (leave blank if you don't want to filter)" = ""
 
-with OUTDEV, START_DATE_TIME, END_DATE_TIME
+with OUTDEV, START_DATE_TIME, END_DATE_TIME, URN
+
+DECLARE URN_VAR = VC WITH NOCONSTANT(" "),PROTECT
+
+SET URN_VAR = $URN
+IF (URN_VAR = "")
+	SET URN_VAR = "*"
+	ELSE
+	SET URN_VAR = CONCAT("*", URN_VAR, "*")
+ENDIF
 
 SELECT INTO $OUTDEV
 	EVENT_BEG_TIME = M_A_E.BEG_DT_TM "dd/mmm/yyyy hh:mm"
+    , ENTERED =                                                           ; "PHONE" IN DESCRIPTION?
+        IF (M_A_E.MED_ADMIN_EVENT_ID>0) "POWERCHART"
+        ELSE "SURGINET"
+        ENDIF
     , M_A_E.END_DT_TM "dd/mmm/yyyy hh:mm"
     , ENCOUNTER_NO = E_A.ALIAS
     , PATIENT_URN = P_A.ALIAS
@@ -26,6 +40,7 @@ SELECT INTO $OUTDEV
 	;, FIELD = O_E_FI.DESCRIPTION ; details filled out in the Order Entry Form
 	; , FIELD_ENTRY = O_D.OE_FIELD_DISPLAY_VALUE
 
+
 FROM
 	; ORDER_DETAIL            O_D
     ORDER_ACTION          O_A
@@ -38,28 +53,21 @@ FROM
     , ENCNTR_ALIAS          E_A
 	;, ORDER_ENTRY_FIELDS    O_E_FI
 
-PLAN
-	M_A_E
+
+PLAN O_A ; ORDER_ACTION
     WHERE
-;	M_A_E.BEG_DT_TM > CNVTLOOKBEHIND ("1,H")
-;	AND
-	M_A_E.EVENT_TYPE_CD !=     4093095.00	;Not Administered/Task Purged
-    AND M_A_E.BEG_DT_TM >= CNVTDATETIME($START_DATE_TIME)
-    AND M_A_E.BEG_DT_TM <= CNVTDATETIME($END_DATE_TIME)
-
-
-
-JOIN O_A ; ORDER_ACTION
-    WHERE O_A.ORDER_ID = M_A_E.ORDER_ID
-    AND O_A.ACTION_TYPE_CD = 2534.00	;Order
-    ;AND O_A.ACTION_SEQUENCE = 1 ; get first action sequence only
+    O_A.ORDER_STATUS_CD IN(2548, 2543) 	; In process or complete orders only
     AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+    AND O_A.ACTION_DT_TM >= CNVTDATETIME($START_DATE_TIME)
+    AND O_A.ACTION_DT_TM <= CNVTDATETIME($END_DATE_TIME)
 
+JOIN M_A_E ;MED_ADMIN_EVENT
+    WHERE M_A_E.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
 
 JOIN O ; ORDERS
 	WHERE O.ORDER_ID = O_A.ORDER_ID
-    ; AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME("25-OCT-2023")
-    ; AND O.ORIG_ORDER_DT_TM <= CNVTDATETIME("30-OCT-2023")
+    /*Pharmacy Catalog only */
+    AND O.CATALOG_TYPE_CD = 2516.00;
 
 JOIN E ; ENCOUNTER
 	WHERE E.ENCNTR_ID = O.ENCNTR_ID
@@ -79,8 +87,8 @@ JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
     /* Active Only */
     P_A.ACTIVE_IND = 1
     /* Patient URN */
-;    AND
-;    P_A.ALIAS = "1599017" ; ENTER URN!!!!!!!!!!!!!!!!!!!!
+    AND
+    P_A.ALIAS = PATSTRING(URN_VAR) ; ENTER URN!!!!!!!!!!!!!!!!!!!!
 
 /* Encounter Identifiers such as the Financial Number */
 JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
@@ -97,11 +105,9 @@ JOIN PR;PRSNL
     WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID);X.UPDT_ID
     AND PR.ACTIVE_IND = OUTERJOIN(1)
 
-; JOIN O_E_FI; ORDER_ENTRY_FIELDS
-;     WHERE O_E_FI.OE_FIELD_ID = O_D.OE_FIELD_ID
-
 ORDER BY
-	O.ORDER_ID
+    O.PERSON_ID
+	, O.ORDER_ID
 
 WITH TIME = 10,
 	NOCOUNTER,

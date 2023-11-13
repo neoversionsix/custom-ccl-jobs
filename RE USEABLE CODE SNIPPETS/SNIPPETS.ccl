@@ -1,3 +1,6 @@
+/*(DATE) */
+ "DD-MMM-YYYY HH:MM:SS;;D"
+
 /*PERSON ID FOR URN*/
 (
     SELECT
