@@ -40,7 +40,7 @@ SELECT INTO $OUTDEV
     , ORDERED_BY = PR_2.NAME_FULL_FORMATTED
 
 FROM
-    ORDER_ACTION          O_A
+    ORDER_ACTION          	O_A
     , ORDER_ACTION          O_A_2
 	, ORDERS                O
 	, ENCOUNTER             E
@@ -126,7 +126,7 @@ ORDER BY
     O.PERSON_ID
 	, O.ORDER_ID
 
-WITH TIME = 10,
+WITH TIME = 200,
 	NOCOUNTER,
 	SEPARATOR=" ",
 	FORMAT
