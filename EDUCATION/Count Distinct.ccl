@@ -1,0 +1,10 @@
+/* Shows how to do a distinct coung */
+SELECT
+	cnt_distinct = count(distinct o.order_id),
+	cnt_all = count(o.order_id)
+
+FROM ORDER_DETAIL O
+WHERE
+
+ O.UPDT_DT_TM > CNVTDATETIME("01-NOV-2023")
+WITH TIME = 10
