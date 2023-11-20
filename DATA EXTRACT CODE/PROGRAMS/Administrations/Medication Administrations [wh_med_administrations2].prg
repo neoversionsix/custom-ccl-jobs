@@ -1,5 +1,10 @@
 drop program wh_med_administrations2 go
 create program wh_med_administrations2
+/*
+Programmer: Jason Whittle
+Date: 16 Nov 2023
+Use: Medication Administrations
+ */
 
 prompt
 	"Output to File/Printer/MINE" = "MINE"                           ;* Enter or select the printer or file name to send this repo
@@ -20,6 +25,10 @@ ENDIF
 
 SELECT INTO $OUTDEV
 	PATIENT = P.NAME_FULL_FORMATTED
+    , FAKE_TEST_PATIENT =
+        IF (P.NAME_LAST_KEY="TESTWHS") "Y"
+        ELSE "N"
+        ENDIF
 	, PATIENT_URN = P_A.ALIAS
 	, ENCOUNTER_ = E_A.ALIAS
 	, EVENT_TYPE = UAR_GET_CODE_DISPLAY(M_A_E.EVENT_TYPE_CD); EVENT TYPE
@@ -31,7 +40,6 @@ SELECT INTO $OUTDEV
 	, ORDERED_TIME = O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
 	, ADMINISTERED_BEG = M_A_E.BEG_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
 	, ADMINISTERED_END =M_A_E.END_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
-    , ORDER_ID = O.ORDER_ID
 	, UNIT = UAR_GET_CODE_DISPLAY(M_A_E.NURSE_UNIT_CD); unit
 	, POSITION = UAR_GET_CODE_DISPLAY(M_A_E.POSITION_CD) ; POSITION
 	, SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
@@ -82,6 +90,8 @@ JOIN O ; ORDERS
 JOIN E ; ENCOUNTER
 	WHERE E.ENCNTR_ID = O.ENCNTR_ID
     AND E.ACTIVE_IND = 1
+    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    AND E.LOC_FACILITY_CD != 4038465.00
 
 /* Patient Identifiers such as URN Medicare no etc */
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
@@ -105,7 +115,7 @@ JOIN P;PERSON
     /* Remove Inactive Patients */
     AND P.ACTIVE_IND = 1
     /* Remove Fake 'Test' Patients */
-    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    ;AND P.NAME_LAST_KEY != "*TESTWHS*"
     /* Remove Ineffective Patients */
     AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
@@ -118,9 +128,6 @@ JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
     AND E_A.ACTIVE_IND = 1
     /* effective FIN NBRs only */
 	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
-
-
-
 
 ORDER BY
     O.PERSON_ID

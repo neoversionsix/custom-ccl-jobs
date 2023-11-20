@@ -1,0 +1,10 @@
+SELECT *
+FROM CODE_VALUE C_V
+WHERE
+    /* Code Set for Activity Sub Types */
+	C_V.CODE_SET =5801
+    /* Enter Catalog type */
+	AND C_V.DEFINITION = "RADIOLOGY"
+    /* Filter for active options */
+	AND C_V.ACTIVE_IND = 1
+with time =10
