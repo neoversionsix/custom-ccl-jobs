@@ -42,7 +42,7 @@ FROM
 
 PLAN O_D ; ORDER_DETAIL
 	 WHERE
-        O_D.ORDER_ID IN; Infusion orders only
+        O_D.ORDER_ID IN; Infusion orders onlya
         (
             SELECT ORDER_ID
             FROM ORDER_DETAIL
