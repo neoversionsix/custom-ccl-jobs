@@ -1,0 +1,84 @@
+drop program wh_pbs_unmapped go
+create program wh_pbs_unmapped
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+
+with OUTDEV
+
+SELECT INTO $OUTDEV
+/*
+NOTES:
+Retrieves Codes that need to be mapped but don't have any current mappings.
+ */
+      PBS_CODE = P_L.PBS_ITEM_CODE
+    , ITEM_BEG_DATE = FORMAT(P_I.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+    , ITEM_END_DATE = FORMAT(P_I.END_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+
+    , PRIMARY_DRUG_NAME = P_I.DRUG_NAME
+    , PRIMARY_DRUG_NAME_CORRECTED = REPLACE(P_I.DRUG_NAME," + ","-",0)
+    , BRAND_NAME = P_D.BRAND_NAME
+    , MNEMONIC_FORM_STRENGTH = P_D.FORM_STRENGTH
+    , TRADE_NAME = CONCAT
+        (
+            TRIM(P_D.BRAND_NAME)
+            , " |"
+            , TRIM(P_D.FORM_STRENGTH)
+        )
+    , PRODUCT_PACKAGE_SIZE = P_D.PACK_SIZE
+    , MAP_PBS_DRUG_ID = P_D.PBS_DRUG_ID
+    , SCHEDULE = P_L.DRUG_TYPE_MEAN
+	, PRODUCT_BEG_DATE = FORMAT(P_D.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+	, PRODUCT_END_DATE = FORMAT(P_D.END_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+
+FROM
+    PBS_LISTING                 P_L
+    , PBS_ITEM                  P_I
+    , PBS_DRUG                  P_D
+
+PLAN P_D ; PBS_DRUG
+; CURRENT PRODUCTS ONLY
+    WHERE P_D.END_EFFECTIVE_DT_TM > (SYSDATE)
+    /*  UNMAPPED in the PBS_OCS_MAPPING Table */
+    AND P_D.PBS_DRUG_ID NOT IN (SELECT PBS_DRUG_ID FROM PBS_OCS_MAPPING)
+
+
+JOIN P_I ; PBS_ITEM
+    WHERE P_I.PBS_ITEM_ID = P_D.PBS_ITEM_ID
+    /* CURRENTLY Effective ITEMS ONLY */
+    AND P_I.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)
+    /* Don't include the stuff that doesn't usually have a mapping in our DB */
+    AND CNVTUPPER(P_I.DRUG_NAME) NOT IN ("*DRESSING*")
+    AND CNVTUPPER(P_I.DRUG_NAME) NOT IN ("*AMINO ACID*")
+    AND CNVTUPPER(P_I.DRUG_NAME) NOT IN ("*FORMULA*")
+    AND CNVTUPPER(P_I.DRUG_NAME) NOT IN ("*BANDAGE*")
+    AND CNVTUPPER(P_I.DRUG_NAME) NOT IN ("* TAPE")
+    AND CNVTUPPER(P_I.DRUG_NAME) NOT IN ("TAPE *")
+    AND CNVTUPPER(P_I.DRUG_NAME) NOT IN ("* TAPE *")
+
+
+JOIN	P_L ; PBS_LISTING
+        WHERE P_L.PBS_LISTING_ID = P_I.PBS_LISTING_ID
+        /* Don't map the private hospital codes etc */
+        AND P_L.DRUG_TYPE_MEAN NOT IN ("DB", "HS", "IN", "PQ", "TY")
+        /* Don't map dental and optometrist codes */
+        AND P_L.PBS_ITEM_CODE IN
+        (
+            SELECT PBS_ITEM_CODE FROM PBS_PRESCRIBER
+            WHERE PRESCRIBER_TYPE_CD IN
+            (
+                86244504.00	;Medical Practitioner
+                , 86244510.00	;Nurse Practitioner
+                , 86244507.00	;Midwife
+            )
+        )
+
+ORDER BY P_I.BEG_EFFECTIVE_DT_TM DESC, P_L.PBS_ITEM_CODE
+
+WITH TIME = 20,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT
+
+end
+go

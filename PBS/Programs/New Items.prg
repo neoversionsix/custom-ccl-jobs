@@ -1,5 +1,13 @@
-SELECT		;RETRIEVES CODES THAT NEED TO BE MAPPED THIS MONTH.
-/* Notes: Faras updated my code to get this code */
+drop program wh_pbs_new_items go
+create program wh_pbs_new_items
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+
+with OUTDEV
+
+
+SELECT INTO $OUTDEV		;RETRIEVES CODES THAT NEED TO BE MAPPED THIS MONTH.
     MAP_PBS_DRUG_ID_ = P_D.PBS_DRUG_ID
 	; , DOMAIN = CURDOMAIN
 	, PBS_CODE = P_L.PBS_ITEM_CODE
@@ -70,4 +78,11 @@ ORDER BY
 	, P_D.BRAND_NAME
 	, P_D.FORM_STRENGTH
 
-WITH	TIME = 10
+WITH TIME = 20,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT
+
+
+end
+go
