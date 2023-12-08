@@ -7,3 +7,7 @@ X.PERSON_ID IN
         FROM PRSNL PERSON_FILTER
         WHERE PERSON_FILTER.USERNAME = "CREDENTIALBOX"
     )
+
+
+/* Current person running the query */
+p.updt_id = reqinfo->updt_id

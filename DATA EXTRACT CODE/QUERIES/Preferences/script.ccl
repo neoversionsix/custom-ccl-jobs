@@ -1,0 +1,155 @@
+select
+	root = pdr.value
+	, context = pdc.value
+	, grp_attribute_1 = if (p_pdg1.person_id > 0) p_pdg1.name_full_formatted
+	elseif  (cv_pdg1.code_value > 0) cv_pdg1.display
+	else pdg1.value
+	endif
+	, grp_attribute_2 = if (p_pdg2.person_id > 0) p_pdg2.name_full_formatted
+	elseif  (cv_pdg2.code_value > 0) cv_pdg2.display
+	else pdg2.value
+	endif
+	, grp_attribute_3 = if (p_pdg3.person_id > 0) p_pdg3.name_full_formatted
+	elseif  (cv_pdg3.code_value > 0) cv_pdg3.display
+	else pdg3.value
+	endif
+	, grp_attribute_4 = if (p_pdg4.person_id > 0) p_pdg4.name_full_formatted
+	elseif  (cv_pdg4.code_value > 0) cv_pdg4.display
+	else pdg4.value
+	endif
+	, preference_name = pde.value
+	, preference_data_summary = pded.entry_data
+	, preference_value_display = if (p_pdv.person_id > 0) p_pdv.name_full_formatted
+	elseif (cv_pdv.code_value > 0) cv_pdv.display
+	else pdv.value
+	endif
+	, pde.entry_id
+	, pded_rowid = pded.rowid
+	, pdv_rowid = pdv.rowid
+
+from	prefdir_root pdr	; preference root
+	, prefdir_context pdc	; preference first level folder
+	, ((select pdg.value
+	, pdg.entry_id
+	, rank = rank () over (partition by pdg.entry_id order by pdg.value_upper)
+	from prefdir_group pdg
+	with sqltype ("vc1024","f8","i4")) pdg1)
+	, prsnl p_pdg1
+	, code_value cv_pdg1
+	, ((select pdg.value
+	, pdg.entry_id
+	, rank = rank () over (partition by pdg.entry_id order by pdg.value_upper)
+	from prefdir_group pdg
+	with sqltype ("vc1024","f8","i4")) pdg2)
+	, prsnl p_pdg2
+	, code_value cv_pdg2
+	, ((select pdg.value
+	, pdg.entry_id
+	, rank = rank () over (partition by pdg.entry_id order by pdg.value_upper)
+	from prefdir_group pdg
+	with sqltype ("vc1024","f8","i4")) pdg3)
+	, prsnl p_pdg3
+	, code_value cv_pdg3
+	, ((select pdg.value
+	, pdg.entry_id
+	, rank = rank () over (partition by pdg.entry_id order by pdg.value_upper)
+	from prefdir_group pdg
+	with sqltype ("vc1024","f8","i4")) pdg4)
+	, prsnl p_pdg4
+	, code_value cv_pdg4
+	, prefdir_entry pde	; preference name
+	, prefdir_entrydata pded	; concatenation of data found on other prefdir tables
+	, prefdir_value pdv
+	, prsnl p_pdv
+	, code_value cv_pdv
+
+plan	pdr
+
+join	pdc
+where	pdc.entry_id = pdr.entry_id
+;and	pdc.value = "reference"
+;and	pdc.value = "position"
+;and	pdc.value = "facility"
+;and	pdc.value = "user"
+;and	pdc.value = "balancetype"
+;and	pdc.value = "workflowstate"
+;and	pdc.value = "Organization"
+;and	pdc.value = "prearrival type"
+;and	pdc.value = "USER"
+;and	pdc.value = "app"
+;and	pdc.value = "tracking group"
+;and	pdc.value = "service resource"
+;and	pdc.value = "logical domain"
+;and	pdc.value = "default"
+;and	pdc.value = "encounter"
+;and	pdc.value = "tracking provider role"
+;and	pdc.value = "nurse unit"
+;and	pdc.value = "tg+pa"
+;and	pdc.value = "position location"
+
+join	pdg1
+where	pdg1.entry_id = outerjoin(pdr.entry_id)
+and	pdg1.rank = outerjoin(1)
+
+join	p_pdg1
+where	concat(cnvtstring(p_pdg1.person_id),".00") = outerjoin(pdg1.value)
+
+join	cv_pdg1
+where	concat(cnvtstring(cv_pdg1.code_value),".00") = outerjoin(pdg1.value)
+
+join	pdg2
+where	pdg2.entry_id = outerjoin(pdr.entry_id)
+and	pdg2.rank = outerjoin(2)
+
+join	p_pdg2
+where	concat(cnvtstring(p_pdg2.person_id),".00") = outerjoin(pdg2.value)
+
+join	cv_pdg2
+where	concat(cnvtstring(cv_pdg2.code_value),".00") = outerjoin(pdg2.value)
+
+join	pdg3
+where	pdg3.entry_id = outerjoin(pdr.entry_id)
+and	pdg3.rank = outerjoin(3)
+
+join	p_pdg3
+where	concat(cnvtstring(p_pdg3.person_id),".00") = outerjoin(pdg3.value)
+
+join	cv_pdg3
+where	concat(cnvtstring(cv_pdg3.code_value),".00") = outerjoin(pdg3.value)
+
+join	pdg4
+where	pdg4.entry_id = outerjoin(pdr.entry_id)
+and	pdg4.rank = outerjoin(4)
+
+join	p_pdg4
+where	concat(cnvtstring(p_pdg4.person_id),".00") = outerjoin(pdg4.value)
+
+join	cv_pdg4
+where	concat(cnvtstring(cv_pdg4.code_value),".00") = outerjoin(pdg4.value)
+
+join	pde
+where	pde.entry_id = pdr.entry_id
+and	pde.value = "default facility list"
+;;	select distinct value from prefdir_entry order by value_upper	; return list of all preferences
+
+join	pded
+where	pded.entry_id = outerjoin(pdr.entry_id)
+
+join	pdv
+where	pdv.entry_id = outerjoin(pdr.entry_id)
+
+join	p_pdv
+where	cnvtstring(p_pdv.person_id) = outerjoin(pdv.value)
+
+join	cv_pdv
+where	cnvtstring(cv_pdv.code_value) = outerjoin(pdv.value)
+
+
+
+order by	pdr.value_upper
+	, pdc.value_upper
+	, grp_attribute_1
+	, grp_attribute_2
+	, grp_attribute_3
+	, grp_attribute_4
+	, cv_pdv.display_key
