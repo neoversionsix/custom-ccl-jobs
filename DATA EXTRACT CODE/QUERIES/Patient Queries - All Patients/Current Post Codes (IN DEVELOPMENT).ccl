@@ -1,0 +1,31 @@
+SELECT
+	A.ADDRESS_ID
+	, A.BEG_EFFECTIVE_DT_TM "DD-MM-YYYY HH:MM;;D"
+	, A.UPDT_DT_TM "DD-MM-YYYY HH:MM;;D"
+	, A.PARENT_ENTITY_ID
+	, A.ZIPCODE
+
+FROM
+	ADDRESS   A ; NOT NULL ADDRESSES
+;	, ADDRESS A_BEG ; most recent beg effective time
+
+;PLAN A
+WHERE ; A.PARENT_ENTITY_ID = X.PARENT_ENTITY_ID
+;	A.PARENT_ENTITY_ID = 11677899.00
+;	AND
+	A.ZIPCODE != NULL
+	AND
+    A.beg_effective_dt_tm =
+        (
+        	select max(A1.beg_effective_dt_tm)
+		    from ADDRESS A1
+        	where
+		  		A1.ZIPCODE != NULL
+          		and
+     			A1.PARENT_ENTITY_ID in
+            		(
+            		select PARENT_ENTITY_ID from ADDRESS where PARENT_ENTITY_ID = A.PARENT_ENTITY_ID
+            		)
+        )
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 100, maxrec = 50
