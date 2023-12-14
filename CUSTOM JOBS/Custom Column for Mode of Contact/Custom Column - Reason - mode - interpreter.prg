@@ -16,30 +16,34 @@ record reply (
 ) with protect
 */
 
-
 declare PUBLIC::Main(null) = null with private
-declare PUBLIC::ReasonForVisit(null) = null with protect
+declare PUBLIC::GetRMI(null) = null with protect
 
 /**
 Main subroutine.
 @param null
 @returns null
 */
+
 subroutine PUBLIC::Main(null)
-  call ReasonForVisit(null)
+  call GetRMI(null)
   set reply->status_data.status = "S"
 end ; Main
-
 
 /**
 Determine the reason for visit of each person. Add the reason for visit to the person's content list. No secondary data is included.
 @param null
 @returns null
 */
-subroutine PUBLIC::ReasonForVisit(null)
+
+subroutine PUBLIC::GetRMI(null)
   declare PERSON_CNT = i4 with protect, constant(SIZE(reply->person, 5))
   declare REASON_FOR_VISIT_CD = f8 with protect, constant(UAR_GET_CODE_BY("DISPLAY_KEY", 16449, "REASONFOREXAM"))
   declare exp_idx = i4 with protect, noconstant(0)
+  /* Variable for concatenating all the info into a string */
+  declare ALL_INFO_STR = vc with protect, noconstant("")
+
+	SET ALL_INFO_STR = "Testing"
 
 	select into "nl:"
 	from
@@ -62,11 +66,12 @@ subroutine PUBLIC::ReasonForVisit(null)
 	head sa.encntr_id
 		pos = LOCATEVAL(exp_idx, 1, PERSON_CNT, sa.encntr_id, reply->person[exp_idx].encntr_id)
 		while(pos>0)
-			reply->person[pos].contents[1].primary = sed.oe_field_display_value
+			;reply->person[pos].contents[1].primary = sed.oe_field_display_value
+			reply->person[pos].contents[1].primary = ALL_INFO_STR
 			pos = LOCATEVAL(exp_idx, pos+1, PERSON_CNT, sa.encntr_id, reply->person[exp_idx].encntr_id)
 		endwhile
 	with nocounter,expand=1
-end ; ReasonForVisit
+end ; GetRMI
 
 call PUBLIC::Main(null)
 

@@ -1,0 +1,109 @@
+/* Found online */
+
+select distinct
+
+mp_viewpoint = mv.viewpoint_name,
+
+mp_viewpoint_identifier = mv.viewpoint_name_key,
+
+mp_view = bdc.category_name,
+
+mp_view_identifier = bdc.category_mean,
+
+mp_view_layout = if (bdc.layout_flag = 0) "Summary"
+
+elseif(bdc.layout_flag = 1) "Workflow"
+
+elseif(bdc.layout_flag = 2) "Smart Template"
+
+elseif(bdc.layout_flag = 3) "QOC"
+
+else "Other"
+
+endif,
+
+mp_component = bdr.report_name,
+
+mp_component_identifier = bdr.report_mean,
+
+mp_filter = bdf.filter_display,
+
+mp_filter_value = bdv.freetext_desc,
+
+mp_filter_category = bdf.filter_category_mean,
+
+mp_parameter = bdv.mpage_param_mean,
+
+mp_parameter_value = bdv.mpage_param_value
+
+from
+
+br_datamart_category bdc,
+
+br_datamart_filter bdf,
+
+br_datamart_report bdr,
+
+br_datamart_report_filter_r bdrfr,
+
+br_datamart_value bdv,
+
+mp_viewpoint_reltn mvr,
+
+mp_viewpoint mv
+
+plan bdc
+
+;where bdc.layout_flag = 1 ;mpage type
+
+;and bdc.category_name = "*" ; view (topic)
+
+;where bdc.category_mean = "*" ; view identifier
+
+join mvr
+
+where mvr.br_datamart_category_id = outerjoin(bdc.br_datamart_category_id)
+
+join mv
+
+where mv.mp_viewpoint_id = outerjoin(mvr.mp_viewpoint_id)
+
+and mv.active_ind = outerjoin(1)
+
+;and mv.viewpoint_name = "*" ; viewpoint
+
+;and mv.viewpoint_name_key = "*"; viewpoint identifier
+
+join bdr
+
+where bdr.br_datamart_category_id = bdc.br_datamart_category_id
+
+;and bdr.report_name = "*" ; component
+
+;and bdr.report_mean = "*" ; component identifier
+
+join bdrfr
+
+where bdrfr.br_datamart_report_id = bdr.br_datamart_report_id
+
+join bdf
+
+where bdf.br_datamart_filter_id = bdrfr.br_datamart_filter_id
+
+;and bdf.filter_display = "*" ; filter
+
+;and bdf.filter_category_mean = "*" ; filter category
+
+join bdv
+
+where bdv.br_datamart_filter_id = outerjoin(bdf.br_datamart_filter_id)
+
+;and bdv.freetext_desc = outerjoin("*") ;filter value
+
+;and bdv.mpage_param_mean = outerjoin("*") ; filter param
+
+;and bdv.mpage_param_value = outerjoin("*") ; filter param value
+
+order by
+
+mp_viewpoint, mp_view, mp_component, mp_filter, mp_filter_value, mp_parameter, mp_parameter_value
