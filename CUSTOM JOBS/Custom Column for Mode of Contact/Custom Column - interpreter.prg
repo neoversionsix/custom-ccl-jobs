@@ -1,5 +1,5 @@
-drop program wh_column_vis_mode_int go
-create program wh_column_vis_mode_int
+drop program wh_column_interpreter go
+create program wh_column_interpreter
 
 /* Modified from wh_wklt_cust_col_reason_visit:dba by Jason Whittle December 2023
 Interpreter Field ID in cert =   152423689.00
@@ -8,7 +8,8 @@ Mode of Contact Field ID in cert   166751997.00
 
 */
 
-/* The reply record must be declared by the consuming script, with the appropriate person details already available.
+/* The reply record must be declared by the consuming script,
+with the appropriate person details already available.
 record reply (
   1 person[*]
     2 person_id = f8
@@ -38,14 +39,15 @@ subroutine PUBLIC::Main(null)
 end ; Main
 
 /**
-Determine the reason for visit of each person. Add the reason for visit to the person's content list. No secondary data is included.
+Determine the appointment details of each person. Add the reason
+for visit to the person's content list. No secondary data is included.
 @param null
 @returns null
 */
 
 subroutine PUBLIC::GetRMI(null)
   declare PERSON_CNT = i4 with protect, constant(SIZE(reply->person, 5))
-  declare REASON_FOR_VISIT_CD = f8 with protect, constant(UAR_GET_CODE_BY("DISPLAY_KEY", 16449, "REASONFOREXAM"))
+  declare INTERPRETER_FIELD_ID_VAR = f8 with protect, constant(152423689.00)
   declare exp_idx = i4 with protect, noconstant(0)
   /* Variable for concatenating all the info into a string */
   declare ALL_INFO_STR = vc with protect, noconstant("")
@@ -67,14 +69,14 @@ subroutine PUBLIC::GetRMI(null)
 	where expand(exp_idx, 1, PERSON_CNT, sa.encntr_id, reply->person[exp_idx].encntr_id)
 	and sb.booking_id=sa.booking_id
 	and sed.sch_event_id=sa.sch_event_id
-	and sed.oe_field_id=REASON_FOR_VISIT_CD
+	and sed.oe_field_id=INTERPRETER_FIELD_ID_VAR
 	and sed.version_dt_tm=cnvtdatetime("31-DEC-2100")
 	order by sa.encntr_id, sa.beg_effective_dt_tm desc
 	head sa.encntr_id
 		pos = LOCATEVAL(exp_idx, 1, PERSON_CNT, sa.encntr_id, reply->person[exp_idx].encntr_id)
 		while(pos>0)
-			;reply->person[pos].contents[1].primary = sed.oe_field_display_value
-			reply->person[pos].contents[1].primary = ALL_INFO_STR
+			reply->person[pos].contents[1].primary = sed.oe_field_display_value
+			;reply->person[pos].contents[1].primary = ALL_INFO_STR
 			pos = LOCATEVAL(exp_idx, pos+1, PERSON_CNT, sa.encntr_id, reply->person[exp_idx].encntr_id)
 		endwhile
 	with nocounter,expand=1
