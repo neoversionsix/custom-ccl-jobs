@@ -1,7 +1,12 @@
 drop program wh_column_vis_mode_int go
 create program wh_column_vis_mode_int
 
-/* Modified from wh_wklt_cust_col_reason_visit:dba by Jason Whittle December 2023*/
+/* Modified from wh_wklt_cust_col_reason_visit:dba by Jason Whittle December 2023
+Interpreter Field ID in cert =   152423689.00
+Reason for exam Field ID in cert =      12683.00
+Mode of Contact Field ID in cert   166751997.00
+
+*/
 
 /* The reply record must be declared by the consuming script, with the appropriate person details already available.
 record reply (
