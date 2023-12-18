@@ -1,30 +1,35 @@
 select
-	te.track_event_id
-	, te.complete_dt_tm "@SHORTDATETIME"
-	, te.collected_dt_tm "@SHORTDATETIME"
-	, te.inlab_dt_tm "@SHORTDATETIME"
-	, te.onset_dt_tm "@SHORTDATETIME"
-	, te.requested_dt_tm "@SHORTDATETIME"
-	, te.updt_dt_tm "@SHORTDATETIME"
-	, Track_Event_Evt_Status = uar_get_code_display(te.event_status_cd)
-	, te.event_status_cd
-;	, Clinical_Event = uar_get_code_display(te.clinical_event_cd)
-;	, te.clinical_event_cd
-	, tre.active_ind
-	, Tracking_Event_Type = uar_get_code_display(tre.tracking_event_type_cd)
-	, tre.tracking_event_type_cd
-	, tre.description
-	, tre.display
-	, tre.display_key
-from tracking_item ti;, track_event tre, tracking_event te
-, (left join tracking_event te on te.tracking_id = ti.tracking_id)
-, (left join track_event tre on tre.track_event_id = te.track_event_id)
+	tkge.track_event_id
+	, tkge.requested_dt_tm "@SHORTDATETIME"
+	, tkge.onset_dt_tm "@SHORTDATETIME"
+	, tkge.complete_dt_tm "@SHORTDATETIME"
+	, tkge.updt_dt_tm "@SHORTDATETIME"
+;	, tkge.collected_dt_tm "@SHORTDATETIME"
+;	, tkge.inlab_dt_tm "@SHORTDATETIME"
+	, Track_Event_Evt_Status = uar_get_code_display(tkge.event_status_cd)
+	, tkge.event_status_cd ;complete, requested etc
+;	, Clinical_Event = uar_get_code_display(tkge.clinical_event_cd)
+;	, tkge.clinical_event_cd ;this is 0 for all
+	, tke.active_ind
+	, row_num = row_number() over (partition by tke.display_key order by tkge.onset_dt_tm asc, tkge.complete_dt_tm asc, tkge.
+	track_event_id asc)
+	, Tracking_Event_Type = uar_get_code_display(tke.tracking_event_type_cd)
+	, tke.tracking_event_type_cd
+	, Event_Use_Mean = uar_get_code_display(tke.event_use_mean_cd)
+	, tke.event_use_mean_cd
+	, tke.description
+	, tke.display
+	, tke.display_key
+from tracking_item ti;, track_event tke, tracking_event te
+, (left join tracking_event tkge on tkge.tracking_id = ti.tracking_id)
+, (left join track_event tke on tke.track_event_id = tkge.track_event_id)
 
 ;plan ti
-where ti.encntr_id = 53790145
-;join te where te.event_status_cd = 10525
-;join tre where tre.display_key = "DRSEEN"
+where ti.encntr_id = 54084220
+	and tkge.event_status_cd in (79850081 /*start*/, 10525 /*complete*/)
+;join tkge where te.event_status_cd = 10525
+;join tke where tre.display_key = "DRSEEN"
 
-order by te.complete_dt_tm asc
+order by tkge.onset_dt_tm asc, tkge.complete_dt_tm asc, tkge.track_event_id asc
 
 with time=60
