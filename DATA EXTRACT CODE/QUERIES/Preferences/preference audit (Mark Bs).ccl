@@ -64,7 +64,6 @@ from	prefdir_root pdr	; preference root
 	, code_value cv_pdv
 
 plan	pdr
-
 join	pdc
 where	pdc.entry_id = pdr.entry_id
 ;and	pdc.value = "reference"
