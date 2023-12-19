@@ -2,7 +2,9 @@ drop program WHS_bulk_updates  go
 create program WHS_bulk_updates
 
 /*
+Notes:
 Deactivates all clinical Events for an encounter
+Note: This has never been used!
 */
 
 prompt
