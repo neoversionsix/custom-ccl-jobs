@@ -1,11 +1,21 @@
 
-/*PRSNL FILTER */
+/*PR*/
 WHERE
 X.PERSON_ID IN
     (
         SELECT PERSON_FILTER.PERSON_ID
         FROM PRSNL PERSON_FILTER
         WHERE PERSON_FILTER.USERNAME = "CREDENTIALBOX"
+    )
+
+E.ENCNTR_ID IN
+    (
+        SELECT E_A.ENCNTR_ID
+        FROM ENCNTR_ALIAS E_A
+        WHERE E_A.ALIAS = "12345" ; EDIT THIS!
+            AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077	; 'FIN NBR' from code set 319
+            AND E_A.ACTIVE_IND = 1	; active FIN NBRs only
+            AND E_A.END_EFFECTIVE_DT_TM > SYSDATE	; effective FIN NBRs only
     )
 
 
