@@ -1,18 +1,15 @@
 select
-	tkge.track_event_id
+	ti.encntr_id
+	, tkge.track_event_id
 	, tkge.requested_dt_tm "@SHORTDATETIME"
 	, tkge.onset_dt_tm "@SHORTDATETIME"
 	, tkge.complete_dt_tm "@SHORTDATETIME"
 	, tkge.updt_dt_tm "@SHORTDATETIME"
-;	, tkge.collected_dt_tm "@SHORTDATETIME"
-;	, tkge.inlab_dt_tm "@SHORTDATETIME"
 	, Track_Event_Evt_Status = uar_get_code_display(tkge.event_status_cd)
 	, tkge.event_status_cd ;complete, requested etc
-;	, Clinical_Event = uar_get_code_display(tkge.clinical_event_cd)
-;	, tkge.clinical_event_cd ;this is 0 for all
 	, tke.active_ind
-	, row_num = row_number() over (partition by tke.display_key order by tkge.onset_dt_tm asc, tkge.complete_dt_tm asc, tkge.
-	track_event_id asc)
+	, row_num = row_number() over (partition by ti.encntr_id, tke.display_key order by tkge.onset_dt_tm asc, tkge.complete_dt_tm asc,
+	tkge.track_event_id asc)
 	, Tracking_Event_Type = uar_get_code_display(tke.tracking_event_type_cd)
 	, tke.tracking_event_type_cd
 	, Event_Use_Mean = uar_get_code_display(tke.event_use_mean_cd)
@@ -25,8 +22,12 @@ from tracking_item ti;, track_event tke, tracking_event te
 , (left join track_event tke on tke.track_event_id = tkge.track_event_id)
 
 ;plan ti
-where ti.encntr_id = 54084220
-	and tkge.event_status_cd in (79850081 /*start*/, 10525 /*complete*/)
+where ti.active_ind = 1
+	and tke.active_ind = 1
+	and tkge.active_ind = 1
+	and tkge.event_status_cd in (79850081 /*start*/, 10525 /*complete*/) ;ignore events that haven't started or completed
+	and tke.event_use_mean_cd = 2729 /*Doctor See Event*/
+	and ti.encntr_id = 54084220
 ;join tkge where te.event_status_cd = 10525
 ;join tke where tre.display_key = "DRSEEN"
 
