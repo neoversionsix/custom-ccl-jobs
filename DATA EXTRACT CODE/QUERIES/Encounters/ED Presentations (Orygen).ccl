@@ -2,22 +2,18 @@ select
 	ENC_ID = enc.encntr_id
 	, URNo = ea_URN.alias
 	, Active_Status = uar_get_code_display(enc.active_status_cd)
-;	, FIN_NBR = ea.alias
-;	, DOB = p.birth_dt_tm "@SHORTDATETIME"
 	, AGE_AT_PRESENTATION = floor(datetimediff(enc.arrive_dt_tm, P.BIRTH_DT_TM, 9))
 	, GENDER = uar_get_code_display(p.sex_cd)
 	, POSTCODE = pcode.Postcode
 	, CAMPUS = uar_get_code_display(enc.loc_facility_cd)
-;	, ENC_TYPE = uar_get_code_display(enc.encntr_type_cd)
-;	, ENC_ADMIT_TYPE = uar_get_code_display(enc.admit_type_cd)
 	, ARRIVAL_TIME = enc.arrive_dt_tm "@SHORTDATETIME"
 	, ARRIVAL_MODE = uar_get_code_display(enc.admit_mode_cd)
 	, SYMPTOM = enc.reason_for_visit ;VISIT COMPLAINT from Triage powerform
+	, DISCH_DISP = uar_get_code_display(enc.disch_disposition_cd)
 	, Dr_TIME_SEEN = dr_seen.start_time "@SHORTDATETIME"
 	, TRIAGE_DATE_TIME = enc.triage_dt_tm  "@SHORTDATETIME"
-;	, ENC_ADMIT_SRC = uar_get_code_display(enc.admit_src_cd)
-;	, ENC_CREATE_DT_TM = enc.create_dt_tm "@SHORTDATETIME"
-;	, ENC_IP_ADMIT_DT_TM = enc.inpatient_admit_dt_tm "@SHORTDATETIME"
+	, DEPART_DATE_TIME = enc.depart_dt_tm  "@SHORTDATETIME"
+	, IP_BED_REQ = ip_bed_req.req_time  "@SHORTDATETIME"
 from encounter enc
 	, (left join encntr_alias ea_URN on ea_URN.encntr_id = enc.encntr_id
 		and ea_URN.encntr_alias_type_cd = 1079	; 'URN' from code set 319
@@ -60,14 +56,34 @@ from encounter enc
 
 		with SQLTYPE("F8","VC50","DQ8")
 
-		) dr_seen on dr_seen.encntr_id = enc.encntr_id ;and dr_seen.row_no = 1
+		) dr_seen on dr_seen.encntr_id = enc.encntr_id
 	)
+	, (left join
+		(select
+			ti.encntr_id
+			, tke.display_key
+			, req_time = min(tkge.onset_dt_tm)
+		from tracking_item ti;, track_event tke, tracking_event te
+		, (inner join tracking_event tkge on tkge.tracking_id = ti.tracking_id
+			and tkge.active_ind = 1
+			and tkge.event_status_cd in (79850081 /*start*/, 10525 /*complete*/))
+		, (inner join track_event tke on tke.track_event_id = tkge.track_event_id
+			and tke.active_ind = 1
+			and tke.event_use_mean_cd = 119688380 /*Inpatient Bed Request Event*/
+			and tke.display_key = "INPTBEDREQUEST")
 
+		where ti.active_ind = 1
+
+		group by ti.encntr_id, tke.display_key
+
+		with SQLTYPE("F8","VC50","DQ8")
+
+		) ip_bed_req on ip_bed_req.encntr_id = enc.encntr_id
+	)
 
 where enc.arrive_dt_tm >= cnvtdatetime("01-aug-2023 00:00:00") and enc.arrive_dt_tm < cnvtdatetime("01-sep-23 00:00:00")
 	and exists (select 1 from encntr_loc_hist elh where elh.encntr_id = enc.encntr_id
 	and elh.admit_type_cd in (79848699 /*Emergency presentation*/, 309203 /*Admission from ED*/))
-	and enc.disch_disposition_cd = 0
 	;and enc.encntr_id = 53936242
 
 with	time = 60
