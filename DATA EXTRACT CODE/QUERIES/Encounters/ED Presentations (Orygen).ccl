@@ -1,6 +1,7 @@
 select
 	ENC_ID = enc.encntr_id
-	, URN = ea_URN.alias
+	, URNo = ea_URN.alias
+	, Active_Status = uar_get_code_display(enc.active_status_cd)
 ;	, FIN_NBR = ea.alias
 ;	, DOB = p.birth_dt_tm "@SHORTDATETIME"
 	, AGE_AT_PRESENTATION = floor(datetimediff(enc.arrive_dt_tm, P.BIRTH_DT_TM, 9))
@@ -12,8 +13,8 @@ select
 	, ARRIVAL_TIME = enc.arrive_dt_tm "@SHORTDATETIME"
 	, ARRIVAL_MODE = uar_get_code_display(enc.admit_mode_cd)
 	, SYMPTOM = enc.reason_for_visit ;VISIT COMPLAINT from Triage powerform
-	, dr_seen.start_time "@SHORTDATETIME"
-;	, TRIAGE_DATE_TIME = enc.triage_dt_tm  "@SHORTDATETIME"
+	, Dr_TIME_SEEN = dr_seen.start_time "@SHORTDATETIME"
+	, TRIAGE_DATE_TIME = enc.triage_dt_tm  "@SHORTDATETIME"
 ;	, ENC_ADMIT_SRC = uar_get_code_display(enc.admit_src_cd)
 ;	, ENC_CREATE_DT_TM = enc.create_dt_tm "@SHORTDATETIME"
 ;	, ENC_IP_ADMIT_DT_TM = enc.inpatient_admit_dt_tm "@SHORTDATETIME"
@@ -36,6 +37,7 @@ from encounter enc
 			and ad.end_effective_dt_tm > sysdate
 			and ad.zipcode != null
 			and ad.active_status_cd = 188 /*active*/
+			and ad.parent_entity_name = "PERSON"
 		) pcode on pcode.person_id = p.person_id and pcode.row_no = 1
 	)
 	, (left join
@@ -65,6 +67,7 @@ from encounter enc
 where enc.arrive_dt_tm >= cnvtdatetime("01-aug-2023 00:00:00") and enc.arrive_dt_tm < cnvtdatetime("01-sep-23 00:00:00")
 	and exists (select 1 from encntr_loc_hist elh where elh.encntr_id = enc.encntr_id
 	and elh.admit_type_cd in (79848699 /*Emergency presentation*/, 309203 /*Admission from ED*/))
+	and enc.disch_disposition_cd = 0
 	;and enc.encntr_id = 53936242
 
 with	time = 60
