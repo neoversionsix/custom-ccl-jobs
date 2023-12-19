@@ -11,7 +11,8 @@ select
 ;	, ENC_ADMIT_TYPE = uar_get_code_display(enc.admit_type_cd)
 	, ARRIVAL_TIME = enc.arrive_dt_tm "@SHORTDATETIME"
 	, ARRIVAL_MODE = uar_get_code_display(enc.admit_mode_cd)
-	, SYMPTOM = enc.reason_for_visit
+	, SYMPTOM = enc.reason_for_visit ;VISIT COMPLAINT from Triage powerform
+	, dr_seen.start_time "@SHORTDATETIME"
 ;	, TRIAGE_DATE_TIME = enc.triage_dt_tm  "@SHORTDATETIME"
 ;	, ENC_ADMIT_SRC = uar_get_code_display(enc.admit_src_cd)
 ;	, ENC_CREATE_DT_TM = enc.create_dt_tm "@SHORTDATETIME"
@@ -21,12 +22,10 @@ from encounter enc
 		and ea_URN.encntr_alias_type_cd = 1079	; 'URN' from code set 319
 		and ea_URN.active_ind = 1	; active URNs only
 		and ea_URN.end_effective_dt_tm > sysdate	; effective URNs only
-;		and ea_URN.end_effective_dt_tm > cnvtdatetime("01-JUL-23 00:00:00")
-;		and ea_URN.beg_effective_dt_tm < cnvtdatetime("01-JUL-23 00:00:00")
 	)
 	, (left join person p on p.person_id = enc.person_id)
-	, (left join(
-		select
+	, (left join
+		(select
 			person_id = ad.parent_entity_id
 			, Postcode = ad.zipcode
 			, row_no = row_number() over (partition by ad.parent_entity_id order by ad.beg_effective_dt_tm desc, ad.updt_dt_tm
@@ -36,18 +35,36 @@ from encounter enc
 			and ad.active_ind = 1
 			and ad.end_effective_dt_tm > sysdate
 			and ad.zipcode != null
-			and ad.active_status_cd = 188 /*active*/)
-		pcode on pcode.person_id = p.person_id and pcode.row_no = 1)
+			and ad.active_status_cd = 188 /*active*/
+		) pcode on pcode.person_id = p.person_id and pcode.row_no = 1
+	)
+	, (left join
+		(select
+			ti.encntr_id
+			, tke.display_key
+			, start_time = min(tkge.onset_dt_tm)
+		from tracking_item ti;, track_event tke, tracking_event te
+		, (inner join tracking_event tkge on tkge.tracking_id = ti.tracking_id
+			and tkge.active_ind = 1
+			and tkge.event_status_cd in (79850081 /*start*/, 10525 /*complete*/))
+		, (inner join track_event tke on tke.track_event_id = tkge.track_event_id
+			and tke.active_ind = 1
+			and tke.event_use_mean_cd = 2729 /*Doctor See Event*/
+			and tke.display_key = "DRSEEN")
+
+		where ti.active_ind = 1
+
+		group by ti.encntr_id, tke.display_key
+
+		with SQLTYPE("F8","VC50","DQ8")
+
+		) dr_seen on dr_seen.encntr_id = enc.encntr_id ;and dr_seen.row_no = 1
+	)
+
 
 where enc.arrive_dt_tm >= cnvtdatetime("01-aug-2023 00:00:00") and enc.arrive_dt_tm < cnvtdatetime("01-sep-23 00:00:00")
 	and exists (select 1 from encntr_loc_hist elh where elh.encntr_id = enc.encntr_id
 	and elh.admit_type_cd in (79848699 /*Emergency presentation*/, 309203 /*Admission from ED*/))
-;plan enc where enc.arrive_dt_tm >= cnvtdatetime("01-aug-2023 00:00:00") and enc.arrive_dt_tm < cnvtdatetime("01-sep-23 00:00:00")
-;	and exists (select 1 from encntr_loc_hist elh where elh.encntr_id = enc.encntr_id
-;	and elh.admit_type_cd in (79848699 /*Emergency presentation*/, 309203 /*Admission from ED*/))
-;join edpres where edpres.encntr_id = enc.encntr_id
-;join ea_URN
-;join p
-;join pcode
+	;and enc.encntr_id = 53936242
 
 with	time = 60
