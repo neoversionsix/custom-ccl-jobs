@@ -1,13 +1,25 @@
-SELECT	DISTINCT 	;RETRIEVES CODES THAT ARE INCORRECTLY MAPPED due to hospital type and prescriber type.
-/* Notes: Faras updated my code to get this code */
-	    DOMAIN = CURDOMAIN
-	    , PBS_CODE = P_L.PBS_ITEM_CODE
-	    , SCHADUAL_PROGRAM = P_L.DRUG_TYPE_MEAN
-	    , P_D.BRAND_NAME
-	    , PRESCRIBER_TYPE = UAR_GET_CODE_DISPLAY(P_P.PRESCRIBER_TYPE_CD)
-	    , P_D.PBS_DRUG_ID
-	    , MAPPED_SYNONYM = OCS.MNEMONIC
-	    , SYNONYM_ID = OCS.SYNONYM_ID
+drop program wh_pbs_mapping_errors go
+create program wh_pbs_mapping_errors
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+
+with OUTDEV
+
+SELECT INTO $OUTDEV
+/*
+NOTES:
+Retrieves codes that are incorrectly mapped due to hospital type and prescriber type.
+ */
+
+	DOMAIN = CURDOMAIN
+	, PBS_CODE = P_L.PBS_ITEM_CODE
+	, SCHADUAL_PROGRAM = P_L.DRUG_TYPE_MEAN
+	, P_D.BRAND_NAME
+	, PRESCRIBER_TYPE = UAR_GET_CODE_DISPLAY(P_P.PRESCRIBER_TYPE_CD)
+	, P_D.PBS_DRUG_ID
+	, MAPPED_SYNONYM = OCS.MNEMONIC
+	, SYNONYM_ID = OCS.SYNONYM_ID
 
 FROM
 	PBS_LISTING P_L
