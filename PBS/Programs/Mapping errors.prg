@@ -1,17 +1,17 @@
 drop program wh_pbs_mapping_errors go
 create program wh_pbs_mapping_errors
 
-prompt
-	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
-
-with OUTDEV
-
-SELECT INTO $OUTDEV
 /*
 NOTES:
 Retrieves codes that are incorrectly mapped due to hospital type and prescriber type.
  */
 
+prompt
+	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
+
+with OUTDEV
+
+SELECT DISTINCT INTO $OUTDEV
 	DOMAIN = CURDOMAIN
 	, PBS_CODE = P_L.PBS_ITEM_CODE
 	, SCHADUAL_PROGRAM = P_L.DRUG_TYPE_MEAN
@@ -72,3 +72,6 @@ WITH TIME = 20,
 	NOCOUNTER,
 	SEPARATOR=" ",
 	FORMAT
+
+end
+go
