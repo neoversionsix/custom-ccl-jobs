@@ -1,0 +1,5 @@
+edit multiple lines:                shift, alt, I
+search for a file:                  cntrl, p
+search for text in all files:       ctrl, shift, f    (do this while you have a file selected in the left)    
+find and replace in file:           ctrl, h
+find in file:                       ctrl, f

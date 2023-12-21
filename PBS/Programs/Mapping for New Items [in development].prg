@@ -11,9 +11,11 @@ SELECT INTO $OUTDEV		;RETRIEVES CODES THAT NEED TO BE MAPPED THIS MONTH.
 	; , DOMAIN = CURDOMAIN
 	, PBS_CODE = P_L.PBS_ITEM_CODE
 	; , PRIMARY_DRUG_NAME = P_I.DRUG_NAME
-    , PRIMARY_DRUG_NAME_CORRECTED = REPLACE(P_I.DRUG_NAME," + ","-",0)
+    , PBS_PRIMARY_DRUG_NAME_CORRECTED = REPLACE(P_I.DRUG_NAME," + ","-",0)
+    , PBS_PRIMARY_DRUG_NAME = P_I.DRUG_NAME
+    , MAPPED_PRIMARY = O_C_S_P.PRIMARY_NAME
 	, BRAND_NAME = P_D.BRAND_NAME
-    , TRADE_NAME = CONCAT
+    , TRADE_NAME_GENERATED = CONCAT
         (
             TRIM(P_D.BRAND_NAME)
             , " "
@@ -30,7 +32,25 @@ FROM
 	 PBS_LISTING    P_L
 	, PBS_ITEM      P_I
 	, PBS_DRUG      P_D
-    , ORDER_CATALOG_SYNONYM     O_C_S
+    , (
+		(SELECT
+			PRIMARY_NAME = O.MNEMONIC
+            SYNONYM_ID = O.SYNONYM_ID
+
+		FROM
+			ORDER_CATALOG_SYNONYM   O
+
+		WHERE
+            O.ACTIVE_IND = 1
+            AND
+            O.CATALOG_TYPE_CD = 2516; PHARMACY
+            AND
+            O.MNEMONIC_TYPE_CD IN
+                (
+                2583.00;	Primary
+                )
+		WITH SQLTYPE("VC200"))   O_C_S_P
+	)
 
 PLAN P_D
     WHERE	P_D.END_EFFECTIVE_DT_TM > (SYSDATE)	; CURRENT PRODUCTS ONLY
@@ -70,6 +90,23 @@ JOIN	P_L
                 AND CV.CDF_MEANING IN ("M", "W", "N")
             )
             AND	END_EFFECTIVE_DT_TM = CNVTDATETIME("31-DEC-2100")
+        )
+
+JOIN P_O_M; PBS_OCS_MAPPING
+    WHERE P_O_M.PBS_DRUG_ID = OUTERJOIN(P_D.PBS_DRUG)
+        /* Get Mappings that are not expired at this time */
+        P_O_M.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)
+
+JOIN O_C_S_P
+    WHERE O_C_S_P.SYNONYM_ID = OUTERJOIN(P_O_M.SYNONYM_ID)
+    AND
+    O.ACTIVE_IND = 1
+    AND
+    O.CATALOG_TYPE_CD = 2516; PHARMACY
+    AND
+    O.MNEMONIC_TYPE_CD IN
+        (
+        2583.00;	Primary
         )
 
 ORDER BY
