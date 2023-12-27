@@ -14,6 +14,7 @@ select
 	, TRIAGE_DATE_TIME = enc.triage_dt_tm  "@SHORTDATETIME"
 	, DEPART_DATE_TIME = enc.depart_dt_tm  "@SHORTDATETIME"
 	, IP_BED_REQ = ip_bed_req.req_time  "@SHORTDATETIME"
+	, this_is_a_test = 1
 from encounter enc
 	, (left join encntr_alias ea_URN on ea_URN.encntr_id = enc.encntr_id
 		and ea_URN.encntr_alias_type_cd = 1079	; 'URN' from code set 319
