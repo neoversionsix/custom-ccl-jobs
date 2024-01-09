@@ -1,3 +1,5 @@
+/*Query to return all encounters for a given UR number */
+
 select
 	e.encntr_id
 	, pa.person_id
