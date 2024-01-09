@@ -1,4 +1,4 @@
-/*Query to return all encounters for a given UR number */
+/*Query to return all encounters (with aliases) for a given UR number */
 
 select
 	e.encntr_id
