@@ -4,6 +4,8 @@ select
 	pa.person_id
 	, URN = pa.alias
 	, e.encntr_id
+	, enc_active = e.active_ind
+	, enc_active_status = uar_get_code_display(e.active_status_cd)
 	, enc_type = uar_get_code_display(e.encntr_type_cd)
 	, enc_contributor_sys = uar_get_code_display(e.contributor_system_cd)
 	, enc_created = format(e.create_dt_tm,"DD/MM/YYYY HH:mm:SS")
@@ -11,6 +13,7 @@ select
 	, registration = e.reg_dt_tm "@SHORTDATETIME"
 	, complete_registration = e.complete_reg_dt_tm "@SHORTDATETIME"
 	, arrival = format(e.arrive_dt_tm,"DD/MM/YYYY HH:mm:SS")
+	, triage = e.triage_dt_tm "@SHORTDATETIME"
 	, admit_decision = e.admit_decision_dt_tm "@SHORTDATETIME"
 	, depart = e.depart_dt_tm "@SHORTDATETIME"
 	, inpatient_admit = e.inpatient_admit_dt_tm "@SHORTDATETIME"
@@ -26,7 +29,7 @@ from person_alias pa
 
 plan pa
 where pa.person_alias_type_cd = 10 /*alias type of URN*/
-and pa.alias = "xxxxx" ;<----- where xxxxx is to be replaced by UR number
+and pa.alias = "7100433" ;<----- where xxxxx is to be replaced by UR number
 join e
 
 order by e.arrive_dt_tm desc
