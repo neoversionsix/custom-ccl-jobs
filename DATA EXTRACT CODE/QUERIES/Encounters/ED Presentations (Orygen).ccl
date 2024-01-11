@@ -18,6 +18,8 @@ select
 	, ED_DEPART = if(enc.inpatient_admit_dt_tm != null) format(enc.inpatient_admit_dt_tm, "dd/mm/yyyy hh:mm:ss")
 		else format(enc.depart_dt_tm, "dd/mm/yyyy hh:mm:ss")
 	endif
+	, PRIMARY_DIAG = p_diag.diag_cnt
+
 
 from encounter enc
 	/*	Need to get only those encounters with an ED arrival event within the required time period.
@@ -49,8 +51,8 @@ from encounter enc
 		with SQLTYPE("F8","vc50","DQ8")
 
 		) arrived on arrived.encntr_id = enc.encntr_id
-;		and arrived.arrived_dt >= cnvtdatetime("01-aug-2023 00:00:00") and arrived.arrived_dt < cnvtdatetime("01-sep-23 00:00:00")
-		and arrived.arrived_dt >= cnvtdatetime("01-jan-2024 00:00:00")
+		and arrived.arrived_dt >= cnvtdatetime("01-aug-2023 00:00:00") and arrived.arrived_dt < cnvtdatetime("01-sep-23 00:00:00")
+;		and arrived.arrived_dt >= cnvtdatetime("01-jan-2024 00:00:00")
 	)
 
 	, (left join encntr_alias ea_URN on ea_URN.encntr_id = enc.encntr_id
@@ -130,7 +132,25 @@ from encounter enc
 		) ip_bed_req on ip_bed_req.encntr_id = enc.encntr_id
 	)
 
-	/*
+	/*	Getting the primary diagnosis
+		11/1/24  need to work out logic to only get one primary diagnosis.  Whether I look at just the primary diagnosis entered in ED
+		using encounter dates to compare diagnosis dates, or whether I just get the most recently entered diagnosis
+	 */
+	, (left join(
+		select
+			d.encntr_id
+			, diag_cnt = count(*)
+		from diagnosis d
+
+		where d.active_ind = 1
+			and d.diag_type_cd = 3538766 ; "principal" diagnosis
+			and d.end_effective_dt_tm > sysdate
+
+		group by d.encntr_id
+
+		with SQLTYPE("f8", "i2")
+		) p_diag on p_diag.encntr_id = enc.encntr_id
+	)
 
 ;where enc.arrive_dt_tm >= cnvtdatetime("01-aug-2023 00:00:00") and enc.arrive_dt_tm < cnvtdatetime("01-sep-23 00:00:00")
 	where enc.active_ind = 1
