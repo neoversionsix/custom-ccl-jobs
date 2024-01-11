@@ -7,19 +7,20 @@ select
 	, POSTCODE = pcode.Postcode
 	, CAMPUS = uar_get_code_display(enc.loc_facility_cd)
 	, ARRIVAL_TIME = enc.arrive_dt_tm "@SHORTDATETIME"
-	, ARRIVAL_DT = arrived.arrived_dt "@SHORTDATETIME"
 	, REG_TIME = enc.reg_dt_tm "@SHORTDATETIME"
 	, ARRIVAL_MODE = uar_get_code_display(enc.admit_mode_cd)
 	, SYMPTOM = enc.reason_for_visit ;VISIT COMPLAINT from Triage powerform
 	, DISCH_DISP = uar_get_code_display(enc.disch_disposition_cd)
 	, TRIAGE_DATE_TIME = enc.triage_dt_tm  "@SHORTDATETIME"
 	, Dr_TIME_SEEN = dr_seen.start_time "@SHORTDATETIME"
-	, IP_BED_REQ = ip_bed_req.IP_req_time  "@SHORTDATETIME"
-	, IP_ADMIT = enc.inpatient_admit_dt_tm  "@SHORTDATETIME"
-	, ED_DISCH_TIME = c_out.cout_dt "@SHORTDATETIME"
-	, ED_DISCH_CNT = c_out.cnt
+	, IP_BED_REQ = ip_bed_req.IP_req_time "@SHORTDATETIME"
+	, IP_ADMIT = enc.inpatient_admit_dt_tm "@SHORTDATETIME"
+	, ED_DEPART = if(enc.inpatient_admit_dt_tm != null) format(enc.inpatient_admit_dt_tm, "dd/mm/yyyy hh:mm:ss")
+		else format(enc.depart_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	endif
+
 from encounter enc
-	/*Need to get only those encounters with an ED arrival event within the required time period.
+	/*	Need to get only those encounters with an ED arrival event within the required time period.
 	Because of encounter merges, can't rely on enc.arrival_dt_tm because if the inpatient encounter
 	becomes the major encounter, it will use the admit DT as the arrival DT which is incorrect*/
 	, (inner join(
@@ -35,6 +36,9 @@ from encounter enc
 		, (inner join track_event tke on tke.track_event_id = tkge.track_event_id
 			and tke.active_ind = 1
 			and tke.event_use_mean_cd = 2724 /*Arrive Event*/
+
+			;this looks at only those arrival events that were attributable to ED
+			and tke.tracking_group_cd in (151886115 /*ED FH*/, 151974417 /*ED SH*/, 151886117 /*ED WTN*/)
 			and tke.display_key = "ARRIVE")
 
 		where ti.active_ind = 1
@@ -46,7 +50,7 @@ from encounter enc
 
 		) arrived on arrived.encntr_id = enc.encntr_id
 ;		and arrived.arrived_dt >= cnvtdatetime("01-aug-2023 00:00:00") and arrived.arrived_dt < cnvtdatetime("01-sep-23 00:00:00")
-		and arrived.arrived_dt >= cnvtdatetime("01-jan-2024 00:00:00") ;this line is only for testing
+		and arrived.arrived_dt >= cnvtdatetime("01-jan-2024 00:00:00")
 	)
 
 	, (left join encntr_alias ea_URN on ea_URN.encntr_id = enc.encntr_id
@@ -56,7 +60,7 @@ from encounter enc
 	)
 	, (left join person p on p.person_id = enc.person_id)
 
-	/*get ONE postcode from the active addresses based on most recent
+	/*	get ONE postcode from the active addresses based on most recent
 	begin effective DT TM and most recently updated DT TM*/
 	, (left join(
 		select
@@ -74,7 +78,7 @@ from encounter enc
 		) pcode on pcode.person_id = p.person_id and pcode.row_no = 1
 	)
 
-	/*get the earliest DR SEEN tracking event start (onset) time where
+	/*	get the earliest DR SEEN tracking event start (onset) time where
 	the event was either "started" or "completed" (excludes "requested")*/
 	, (left join(
 		select
@@ -100,18 +104,18 @@ from encounter enc
 		) dr_seen on dr_seen.encntr_id = enc.encntr_id
 	)
 
-	/*get the earliest IP Bed Request tracking event start (onset) time where
+	/*	get the earliest IP Bed Request tracking event start (onset) time where
 	the event was either started or completed (excludes "requested")*/
 	, (left join(
 		select
 			ti.encntr_id
 			, tke.display_key
-			, IP_req_time = min(tkge.onset_dt_tm)
+			, IP_req_time = min(tkge.requested_dt_tm)
 		from tracking_item ti;, track_event tke, tracking_event te
 		;only look at IP Bed Request tracking events that are started or completed
 		, (inner join tracking_event tkge on tkge.tracking_id = ti.tracking_id
 			and tkge.active_ind = 1
-			and tkge.event_status_cd in (79850081 /*start*/, 10525 /*complete*/))
+			and tkge.event_status_cd = 10527 /*request*/)	;, 79850081 /*start*/, 10525 /*complete*/))
 		, (inner join track_event tke on tke.track_event_id = tkge.track_event_id
 			and tke.active_ind = 1
 			and tke.event_use_mean_cd = 119688380 /*Inpatient Bed Request Event*/
@@ -126,20 +130,7 @@ from encounter enc
 		) ip_bed_req on ip_bed_req.encntr_id = enc.encntr_id
 	)
 
-
-	, (left join(
-		select
-			encntr_id = fne.encntr_id
-			, cout_dt = max(fne.checkout_dt_tm)
-			, cnt = count(*)
-		from fn_omf_encntr fne
-		where fne.tracking_group_cd in (151886115 /*FH ED*/, 151886117 /*WTN ED*/, 151974417 /*SH ED*/)
-			and fne.active_ind = 1
-		group by fne.encntr_id
-		with SQLTYPE("f8","dq8","i4")
-		) c_out on c_out.encntr_id = enc.encntr_id
-	)
-
+	/*
 
 ;where enc.arrive_dt_tm >= cnvtdatetime("01-aug-2023 00:00:00") and enc.arrive_dt_tm < cnvtdatetime("01-sep-23 00:00:00")
 	where enc.active_ind = 1
