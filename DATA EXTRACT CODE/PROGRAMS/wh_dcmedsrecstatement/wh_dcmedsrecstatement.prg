@@ -1,6 +1,10 @@
 drop program wh_dcmedsrecstatement:dba go
 create program wh_dcmedsrecstatement:dba
 
+/* Notes
+Changed font size (line 39) in Jan 2024 - Jason Whittle
+ */
+
 SET rhead = "{\rtf1\ansi\deff0{\fonttbl{\f0\fswiss Tahoma;}}{\colortbl;\red0\green0\blue0;\red255\green255\blue255;}\deftab1134"
 set wr = "\plain \f0 \fs20 \cb2 "
 set reol = "\par"
@@ -30,7 +34,10 @@ detail
 with nocounter
 
 if (RECONCILEDMEDS = null)
-        set reply->text = concat(rhead, wr, "\b Note: Medication reconciliation has NOT been performed so this medication list may NOT be accurate  \b", reol, rtfeof)
+        ;set reply->text = concat(rhead, wr, "\b Note: Medication reconciliation has NOT been performed so this medication list may NOT be accurate  \b", reol, rtfeof)
+        /* Changed font size on request */
+        set reply->text = concat(rhead, wr, "\b \fs24 Note: Medication reconciliation has NOT been performed so this medication list may NOT be accurate  \b \fs20", reol, rtfeof)
+
 endif
 
 
