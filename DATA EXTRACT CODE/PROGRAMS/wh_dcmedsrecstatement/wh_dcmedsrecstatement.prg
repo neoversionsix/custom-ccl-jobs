@@ -1,14 +1,13 @@
 drop program wh_dcmedsrecstatement:dba go
 create program wh_dcmedsrecstatement:dba
 
-SET rhead  =  "{\rtf1\ansi\deff0{\fonttbl{\f0\fswiss Tahoma;}}{\colortbl;\red0\green0\blue0;\red255\green255\blue255;}\deftab1134"
+SET rhead = "{\rtf1\ansi\deff0{\fonttbl{\f0\fswiss Tahoma;}}{\colortbl;\red0\green0\blue0;\red255\green255\blue255;}\deftab1134"
 set wr = "\plain \f0 \fs20 \cb2 "
 set reol = "\par"
 set rtfeof = "}"
 
 declare RECONCILEDMEDS = f8
 declare COMPLETEDMEDSREC = f8 with constant(uar_get_code_by("DISPLAYKEY",4002695,"COMPLETE")) ,protect ;completed status meds rec
-
 
 ; get the encntr level information
 select into "nl:"
