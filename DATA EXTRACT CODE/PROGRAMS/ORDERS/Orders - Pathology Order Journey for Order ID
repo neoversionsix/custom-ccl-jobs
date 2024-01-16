@@ -1,0 +1,214 @@
+drop program wh_path_order go
+create program wh_path_order
+
+/* NOTES
+	This get's the order actions for a pathology order. Good to check the history
+	of the order to see if it was marked as collected and if/when the order was discontinued
+ - orders timeline
+ - distinct required for both multiple active problems and multiple tubes
+ */
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"                        ;* Enter or select the printer or file name to send this report
+	, "Enter the order id for the order you want data on." = ""
+
+with OUTDEV, ORDER_ID_VAR
+
+SELECT DISTINCT INTO $OUTDEV
+	dept_status_after_action = uar_get_code_display(o_a.dept_status_cd)
+	, action_type = uar_get_code_display(o_a.action_type_cd)
+	, order_mnemonic = o.ordered_as_mnemonic
+	, order_status_after_action = uar_get_code_display(o_a.order_status_cd)
+	;BELOW: if 'Order' action type (from code set 6003), return clinical display line
+	, details = if(o_a.action_type_cd = 2534) build(o.clinical_display_line
+	; BELOW: ; if container accession exists, append this to the clinical display line
+	, if(c_a.accession_id > 0) build(", Container Accession: "
+	, c_a.barcode_accession
+	, evaluate(c_a.accession_container_nbr
+	, 1, "A"
+	, 2, "B"
+	, 3, "C"
+	, 4, "D"
+	, 5, "E"
+	, 6, "F"
+	, 7, "G"
+	, 8, "H"
+	, 9, "I"
+	, 10, "J"
+	, 11, "K"
+	, 12, "L"
+	, 13, "M"
+	, 14, "N"
+	, 15, "O"
+	, 16, "P"
+	, 17, "Q"
+	, 18, "R"
+	, 19, "S"
+	, 20, "T"
+	, 21, "U"
+	, 22, "V"
+	, 23, "W"
+	, 24, "X"
+	, 25, "Y"
+	, 26, "Z"
+	)
+	, " (", uar_get_code_display (c.spec_cntnr_cd), ")"
+	)
+	else ""
+	endif
+	)
+	elseif(o.catalog_type_cd = 2513  	; elseif not 'Order' action, and 'Pathology' orderable (from code set 6000)
+	and o_a.order_status_cd != 2542 	; and not 'Cancelled' order status (from code set 6004)
+	; BELOW: ; and 'Dispatched' or "Collected' dept status (from code set 14281)
+	and (o_a.dept_status_cd = 9315 or o_a.dept_status_cd = 9311 )
+	)
+	build("Container Accession: "	; return the container accession (barcode) number
+	, c_a.barcode_accession
+	, evaluate(c_a.accession_container_nbr
+	, 1, "A"
+	, 2, "B"
+	, 3, "C"
+	, 4, "D"
+	, 5, "E"
+	, 6, "F"
+	, 7, "G"
+	, 8, "H"
+	, 9, "I"
+	, 10, "J"
+	, 11, "K"
+	, 12, "L"
+	, 13, "M"
+	, 14, "N"
+	, 15, "O"
+	, 16, "P"
+	, 17, "Q"
+	, 18, "R"
+	, 19, "S"
+	, 20, "T"
+	, 21, "U"
+	, 22, "V"
+	, 23, "W"
+	, 24, "X"
+	, 25, "Y"
+	, 26, "Z"
+	)
+	, " (", uar_get_code_display (c.spec_cntnr_cd), ")"
+	)
+	; BELOW: ; if action type is 'Cancel', 'Cancel/DC', 'Delete', 'Dis.', 'Resume' or 'Susp.'  (from code set 6003)
+	elseif(o_a.action_type_cd in (2526,2527,2530,2532,2537,2540)) o_d.oe_field_display_value
+	else ""
+	endif
+	, action_date = format(o_a.action_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, action_system = uar_get_code_display(o_a.contributor_system_cd)
+	, actioner = p_o_a.name_full_formatted
+	, UR_number = ea_URN.alias
+	, patient_name = p.name_full_formatted
+	, patient_id = o.person_id
+	, encntr_dates = concat(format(e_orig.arrive_dt_tm, "dd/mm/yy hh:mm"), " - ", format(e_orig.depart_dt_tm, "dd/mm/yy hh:mm"))
+	, visit_no = ea_visit.alias
+	, o.encntr_id
+	, unit_at_time_of_action =if(elh.loc_nurse_unit_cd > 0) uar_get_code_display(elh.loc_nurse_unit_cd)
+	else uar_get_code_display(e_orig.loc_nurse_unit_cd)
+	endif
+	, alerts_at_time_of_action = listagg(prob.annotated_display, "; ") over (partition by o.order_id
+	, o_a.action_sequence
+;	, ce.clinical_event_id
+;	, ce_p.ce_event_prsnl_id
+	order by prob.annotated_display
+	)
+	, encntr_rank = dense_rank() over (partition by 0
+	order by o.encntr_id
+	)
+	, specimen_type = o_d8.oe_field_display_value
+	, o.order_id
+
+	, order_rank = dense_rank() over (partition by 0
+	order by o.order_id
+	)
+	, domain = concat( trim(curdomain) ,' (', format(sysdate,"yyyymmdd hhmm;3;q"), ")" )
+
+from
+	orders o
+	, (left join prsnl p_o_stat on p_o_stat.person_id = o.status_prsnl_id)	; order status updater
+	, (left join person p on p.person_id = o.person_id)	; patient
+	, (left join order_detail o_d8 on o_d8.order_id = o.order_id
+	and o_d8.oe_field_id = 12584	; 'Specimen Type' oef field
+	)
+	, (left join order_action o_a on o_a.order_id = o.order_id)
+	, (left join prsnl p_o_a on p_o_a.person_id = o_a.action_personnel_id)
+	, (left join order_detail o_d on o_d.order_id = o_a.order_id
+	and o_d.action_sequence = o_a.action_sequence
+	; BELOW: 'Can. Reason', 'Dis. Reason', 'Can./Dis. Reason Text', 'Susp.Reason', 'Void Order Reason'
+	and o_d.oe_field_id in (12664, 12671, 46820226, 12666, 4094378)
+	)
+	, (left join order_container_r o_c_r on o_c_r.order_id = o.order_id)
+	, (left join container c on c.container_id = o_c_r.container_id)
+	, (left join container_accession c_a on c_a.container_id = o_c_r.container_id)
+	, (left join encounter e_orig on e_orig.encntr_id = o.encntr_id)
+	, (left join encntr_alias ea_URN on ea_URN.encntr_id = o.encntr_id
+	and ea_URN.encntr_alias_type_cd = 1079	; 'URN' from code set 319
+	and ea_URN.active_ind = 1	; active URNs only
+	and ea_URN.end_effective_dt_tm > sysdate	; effective URNs only
+	)
+	, (left join encntr_alias ea_visit on ea_visit.encntr_id = o.encntr_id
+	and ea_visit.encntr_alias_type_cd = 1077	; 'FIN NBR' from code set 319
+	and ea_visit.active_ind = 1	; active FIN NBRs only
+	and ea_visit.end_effective_dt_tm > sysdate	; effective FIN NBRs only
+	)
+	, (left join encntr_loc_hist elh on elh.encntr_id = o.encntr_id
+	and elh.active_ind = 1	; to remove inactive rows that seem to appear for unknown reason(s)
+	and elh.pm_hist_tracking_id > 0	; to remove duplicate row that seems to occur at discharge
+	and elh.beg_effective_dt_tm < o_a.action_dt_tm	; encounter location began before order action occured
+	and elh.end_effective_dt_tm >  o_a.action_dt_tm	; encounter location ended after order action occured
+	)
+	, (left join problem prob on prob.person_id = o.person_id
+	and prob.beg_effective_dt_tm < o_a.action_dt_tm	; effective problems only
+	and prob.end_effective_dt_tm > o_a.action_dt_tm	; effective problems only
+	and prob.life_cycle_status_cd = 3301	; 'Active' from code set 12030
+;	and prob.nomenclature_id in ()	; list of relevent problems only
+	)
+
+plan	o
+where
+o.ORDER_ID = CNVTREAL($ORDER_ID_VAR)
+	;o.encntr_id in ()	; list of relevent encounters only
+;where	o.orig_order_dt_tm between cnvtdatetime("01-MAY-2020") and cnvtdatetime("31-DEC-2100")	; list of relevent dates only
+;and	o.catalog_type_cd not in (2513, 2516, 2517, 0)	; code values for 'Laboratory', 'Pharmacy' and 'Radiology' from code set 6000.
+;and	o.catalog_type_cd = 2513 	; code value for 'Laboratory' from code set 6000
+;and	o.catalog_type_cd = 2515	; code value for 'Patient Care' from code set 6000
+;and	o.catalog_type_cd = 2516	; code value for 'Pharmacy' from code set 6000
+;and	o.catalog_type_cd = 2517 	; code value for 'Radiology' from code set 6000
+;and	o.catalog_type_cd in (2519, 84871493)	; code values for 'Surgery' and 'CMBS Code - SN' from code set 6000
+;and	o.catalog_cd in ()	; list of relevent orderables only
+;and	o.synonym_id in ()	; list of relevent synonyms only
+;and	o.ordered_as_mnemonic in ("")	; list of relevent synonyms only
+join	p_o_stat	; order status updater
+join	o_d8	; 'Specimen Type' oef field
+join	p	; patient
+join	o_a	; order action
+join	p_o_a	; order action personnel
+join	o_d	; order detail for cancel-type actions
+join	o_c_r
+join	c
+join	c_a
+join	e_orig
+join	ea_URN
+;where	ea_URN.alias = "123456"	; enter patient number here
+join	ea_visit
+;where	ea_visit.alias = "IPE123456"	; enter visit number here
+join	elh
+join	prob
+
+order by
+	o_a.action_dt_tm
+	, o_a.order_id
+;	, ce.clinical_event_id
+	, 0
+
+WITH TIME = 60,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT
+
+end
+go
