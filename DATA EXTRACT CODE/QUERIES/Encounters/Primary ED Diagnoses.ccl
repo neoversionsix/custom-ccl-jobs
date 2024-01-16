@@ -1,0 +1,23 @@
+;	Getting the primary diagnoses entered in ED for given encounter ID
+select
+	d.diagnosis_id
+	, d.diagnosis_display
+	, d.diagnosis_group
+	, d.diag_priority
+	, type = uar_get_code_display(d.diag_type_cd)
+	, d.diag_type_cd
+	, service = uar_get_code_display(d.clinical_service_cd)
+	, d.clinical_service_cd
+	, d.updt_dt_tm "@SHORTDATETIME"
+	, d.beg_effective_dt_tm "@SHORTDATETIME"
+	, d.end_effective_dt_tm "@SHORTDATETIME"
+from diagnosis d
+
+where d.active_ind = 1
+	and d.diag_type_cd = 3538766 ; "principal" diagnosis
+	and d.clinical_service_cd = 677214	; "Emergency Medicine"
+	and d.end_effective_dt_tm > sysdate
+	and d.encntr_id = 53777726
+;	and d.encntr_id = 53755950
+
+with time = 60

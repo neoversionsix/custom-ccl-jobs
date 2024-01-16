@@ -18,8 +18,7 @@ select
 	, ED_DEPART = if(enc.inpatient_admit_dt_tm != null) format(enc.inpatient_admit_dt_tm, "dd/mm/yyyy hh:mm:ss")
 		else format(enc.depart_dt_tm, "dd/mm/yyyy hh:mm:ss")
 	endif
-	, PRIMARY_DIAG = p_diag.diag_cnt
-
+	, triage_cat = triage_cat.result_val
 
 from encounter enc
 	/*	Need to get only those encounters with an ED arrival event within the required time period.
@@ -51,8 +50,8 @@ from encounter enc
 		with SQLTYPE("F8","vc50","DQ8")
 
 		) arrived on arrived.encntr_id = enc.encntr_id
-		and arrived.arrived_dt >= cnvtdatetime("01-aug-2023 00:00:00") and arrived.arrived_dt < cnvtdatetime("01-sep-23 00:00:00")
-;		and arrived.arrived_dt >= cnvtdatetime("01-jan-2024 00:00:00")
+;		and arrived.arrived_dt >= cnvtdatetime("01-aug-2023 00:00:00") and arrived.arrived_dt < cnvtdatetime("01-sep-23 00:00:00")
+		and arrived.arrived_dt >= cnvtdatetime("01-jan-2024 00:00:00")
 	)
 
 	, (left join encntr_alias ea_URN on ea_URN.encntr_id = enc.encntr_id
@@ -132,25 +131,27 @@ from encounter enc
 		) ip_bed_req on ip_bed_req.encntr_id = enc.encntr_id
 	)
 
-	/*	Getting the primary diagnosis
-		11/1/24  need to work out logic to only get one primary diagnosis.  Whether I look at just the primary diagnosis entered in ED
-		using encounter dates to compare diagnosis dates, or whether I just get the most recently entered diagnosis
-	 */
+	/*	Get the triage category from clinical events table.  Could be possible that there are multiple 'active' rows
+		hence need to do a row_number() over encounter ID and sorted most recent to earliest and only return 1st one*/
 	, (left join(
 		select
-			d.encntr_id
-			, diag_cnt = count(*)
-		from diagnosis d
+			ce.encntr_id
+			, row_no = row_number() over (partition by ce.encntr_id order by ce.valid_from_dt_tm desc, ce.updt_dt_tm desc)
+			, ce.result_val
+;			, event_cnt = count(*)
+		from clinical_event ce
+		where ce.valid_until_dt_tm > sysdate
+			and ce.event_cd = 3346954 ; tracking acuity (triage category)
+;			and ce.result_val != NULL
+;			and ce.encntr_id = 51525319
 
-		where d.active_ind = 1
-			and d.diag_type_cd = 3538766 ; "principal" diagnosis
-			and d.end_effective_dt_tm > sysdate
+;		group by ce.encntr_id
 
-		group by d.encntr_id
-
-		with SQLTYPE("f8", "i2")
-		) p_diag on p_diag.encntr_id = enc.encntr_id
+		with SQLTYPE("f8", "i2", "VC50")
+		) triage_cat on triage_cat.encntr_id = enc.encntr_id and triage_cat.row_no = 1
 	)
+
+
 
 ;where enc.arrive_dt_tm >= cnvtdatetime("01-aug-2023 00:00:00") and enc.arrive_dt_tm < cnvtdatetime("01-sep-23 00:00:00")
 	where enc.active_ind = 1
@@ -160,3 +161,5 @@ from encounter enc
 ;	and enc.encntr_id = 53751913
 
 with	time = 60
+
+

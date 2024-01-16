@@ -34,4 +34,4 @@ join e
 
 order by e.arrive_dt_tm desc
 
-with maxrec = 1000
+with time = 60
