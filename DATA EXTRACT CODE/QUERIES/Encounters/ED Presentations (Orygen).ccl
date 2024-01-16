@@ -7,9 +7,11 @@ select
 	, POSTCODE = pcode.Postcode
 	, CAMPUS = uar_get_code_display(enc.loc_facility_cd)
 	, ARRIVAL_TIME = enc.arrive_dt_tm "@SHORTDATETIME"
-	, REG_TIME = enc.reg_dt_tm "@SHORTDATETIME"
+;	, REG_TIME = enc.reg_dt_tm "@SHORTDATETIME"
 	, ARRIVAL_MODE = uar_get_code_display(enc.admit_mode_cd)
+	, triage_cat = triage_cat.result_val
 	, SYMPTOM = enc.reason_for_visit ;VISIT COMPLAINT from Triage powerform
+	, triage_desc = triage_desc.result_val
 	, DISCH_DISP = uar_get_code_display(enc.disch_disposition_cd)
 	, TRIAGE_DATE_TIME = enc.triage_dt_tm  "@SHORTDATETIME"
 	, Dr_TIME_SEEN = dr_seen.start_time "@SHORTDATETIME"
@@ -18,7 +20,6 @@ select
 	, ED_DEPART = if(enc.inpatient_admit_dt_tm != null) format(enc.inpatient_admit_dt_tm, "dd/mm/yyyy hh:mm:ss")
 		else format(enc.depart_dt_tm, "dd/mm/yyyy hh:mm:ss")
 	endif
-	, triage_cat = triage_cat.result_val
 
 from encounter enc
 	/*	Need to get only those encounters with an ED arrival event within the required time period.
@@ -138,19 +139,29 @@ from encounter enc
 			ce.encntr_id
 			, row_no = row_number() over (partition by ce.encntr_id order by ce.valid_from_dt_tm desc, ce.updt_dt_tm desc)
 			, ce.result_val
-;			, event_cnt = count(*)
 		from clinical_event ce
 		where ce.valid_until_dt_tm > sysdate
 			and ce.event_cd = 3346954 ; tracking acuity (triage category)
-;			and ce.result_val != NULL
-;			and ce.encntr_id = 51525319
-
-;		group by ce.encntr_id
+			and ce.result_val != NULL
 
 		with SQLTYPE("f8", "i2", "VC50")
 		) triage_cat on triage_cat.encntr_id = enc.encntr_id and triage_cat.row_no = 1
 	)
 
+	/*	Triage Description */
+	, (left join(
+		select
+			ce.encntr_id
+			, row_no = row_number() over (partition by ce.encntr_id order by ce.valid_from_dt_tm desc, ce.updt_dt_tm desc)
+			, ce.result_val
+		from clinical_event ce
+		where ce.valid_until_dt_tm > sysdate
+			and ce.event_cd = 86316017 ; Chief Complaint (triage description)
+			and ce.result_val != NULL
+
+		with SQLTYPE("f8", "i2", "VC50")
+		) triage_desc on triage_desc.encntr_id = enc.encntr_id and triage_desc.row_no = 1
+	)
 
 
 ;where enc.arrive_dt_tm >= cnvtdatetime("01-aug-2023 00:00:00") and enc.arrive_dt_tm < cnvtdatetime("01-sep-23 00:00:00")
