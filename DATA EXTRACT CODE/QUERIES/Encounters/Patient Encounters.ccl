@@ -29,7 +29,7 @@ from person_alias pa
 
 plan pa
 where pa.person_alias_type_cd = 10 /*alias type of URN*/
-and pa.alias = "7100433" ;<----- where xxxxx is to be replaced by UR number
+and pa.alias = "xxxxx" ;<----------------------------------------UR number here
 join e
 
 order by e.arrive_dt_tm desc
