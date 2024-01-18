@@ -11,15 +11,21 @@ select
 	, ARRIVAL_MODE = uar_get_code_display(enc.admit_mode_cd)
 	, triage_cat = triage_cat.result_val
 	, SYMPTOM = enc.reason_for_visit ;VISIT COMPLAINT from Triage powerform
-	, triage_desc = triage_desc.result_val
-	, DISCH_DISP = uar_get_code_display(enc.disch_disposition_cd)
+	, TRIAGE_DESC = triage_desc.result_val
+	, TRIAGE_TEXT = triage_txt.triage_text
+	, DISCH_DISP = uar_get_code_display(enc.disch_disposition_cd) ;<--- *****need to update to look at PM Transactions***** <---
 	, TRIAGE_DATE_TIME = enc.triage_dt_tm  "@SHORTDATETIME"
 	, Dr_TIME_SEEN = dr_seen.start_time "@SHORTDATETIME"
 	, IP_BED_REQ = ip_bed_req.IP_req_time "@SHORTDATETIME"
 	, IP_ADMIT = enc.inpatient_admit_dt_tm "@SHORTDATETIME"
 	, ED_DEPART = if(enc.inpatient_admit_dt_tm != null) format(enc.inpatient_admit_dt_tm, "dd/mm/yyyy hh:mm:ss")
-		else format(enc.depart_dt_tm, "dd/mm/yyyy hh:mm:ss")
-	endif
+		else format(enc.depart_dt_tm, "dd/mm/yyyy hh:mm:ss") endif
+	, INJURY_PLACE = injury_place.result_val
+	, INJURY_INTENT = injury_intent.result_val
+	, INJURY_ACTIVITY = injury_activity.result_val
+	, INJURY_DESCRIPTION = injury_desc.result_val
+	, INJURY_CAUSE = injury_cause.result_val
+
 
 from encounter enc
 	/*	Need to get only those encounters with an ED arrival event within the required time period.
@@ -51,8 +57,8 @@ from encounter enc
 		with SQLTYPE("F8","vc50","DQ8")
 
 		) arrived on arrived.encntr_id = enc.encntr_id
-;		and arrived.arrived_dt >= cnvtdatetime("01-aug-2023 00:00:00") and arrived.arrived_dt < cnvtdatetime("01-sep-23 00:00:00")
-		and arrived.arrived_dt >= cnvtdatetime("01-jan-2024 00:00:00")
+		and arrived.arrived_dt >= cnvtdatetime("01-aug-2023 00:00:00") and arrived.arrived_dt < cnvtdatetime("01-sep-23 00:00:00")
+;		and arrived.arrived_dt >= cnvtdatetime("01-jan-2024 00:00:00")
 	)
 
 	, (left join encntr_alias ea_URN on ea_URN.encntr_id = enc.encntr_id
@@ -113,11 +119,12 @@ from encounter enc
 			ti.encntr_id
 			, tke.display_key
 			, IP_req_time = min(tkge.requested_dt_tm)
-		from tracking_item ti;, track_event tke, tracking_event te
-		;only look at IP Bed Request tracking events that are started or completed
+		from tracking_item ti
+		/*	look at all IP Bed Request tracking events that were requested regardless of whether they
+			had an onset (start) or complete (end) time */
 		, (inner join tracking_event tkge on tkge.tracking_id = ti.tracking_id
 			and tkge.active_ind = 1
-			and tkge.event_status_cd = 10527 /*request*/)	;, 79850081 /*start*/, 10525 /*complete*/))
+			and tkge.event_status_cd = 10527 /*request*/)
 		, (inner join track_event tke on tke.track_event_id = tkge.track_event_id
 			and tke.active_ind = 1
 			and tke.event_use_mean_cd = 119688380 /*Inpatient Bed Request Event*/
@@ -152,6 +159,7 @@ from encounter enc
 	, (left join(
 		select
 			ce.encntr_id
+			;use row_number to ensure only one row returned because the description can be updated
 			, row_no = row_number() over (partition by ce.encntr_id order by ce.valid_from_dt_tm desc, ce.updt_dt_tm desc)
 			, ce.result_val
 		from clinical_event ce
@@ -163,11 +171,154 @@ from encounter enc
 		) triage_desc on triage_desc.encntr_id = enc.encntr_id and triage_desc.row_no = 1
 	)
 
+	/*	Injury Surveillance powerform entries */
+
+	;place where injury occurred
+	, (left join(
+		select
+			ce.encntr_id
+			, row_no = row_number() over (partition by ce.encntr_id order by ce.valid_from_dt_tm desc, ce.updt_dt_tm desc)
+			, ce.result_val
+		from clinical_event ce
+		where ce.valid_until_dt_tm > sysdate
+			and ce.event_cd = 79848592 ; Place where injury occurred (injury surveillance)
+			and ce.result_val != NULL
+
+		with SQLTYPE("f8", "i2", "VC50")
+		) injury_place on injury_place.encntr_id = enc.encntr_id and injury_place.row_no = 1
+	)
+
+	;Injury Intent
+	, (left join(
+		select
+			ce.encntr_id
+			, row_no = row_number() over (partition by ce.encntr_id order by ce.valid_from_dt_tm desc, ce.updt_dt_tm desc)
+			, ce.result_val
+		from clinical_event ce
+		where ce.valid_until_dt_tm > sysdate
+			and ce.event_cd = 79848905 ; Injury intent (injury surveillance)
+			and ce.result_val != NULL
+
+		with SQLTYPE("f8", "i2", "VC50")
+		) injury_intent on injury_intent.encntr_id = enc.encntr_id and injury_intent.row_no = 1
+	)
+
+	;Injury Activity
+	, (left join(
+		select
+			ce.encntr_id
+			, row_no = row_number() over (partition by ce.encntr_id order by ce.valid_from_dt_tm desc, ce.updt_dt_tm desc)
+			, ce.result_val
+		from clinical_event ce
+		where ce.valid_until_dt_tm > sysdate
+			and ce.event_cd = 79848891 ; Acitivity when injury occurred (injury surveillance)
+			and ce.result_val != NULL
+
+		with SQLTYPE("f8", "i2", "VC50")
+		) injury_activity on injury_activity.encntr_id = enc.encntr_id and injury_activity.row_no = 1
+	)
+
+	;Injury Description
+	, (left join(
+		select
+			ce.encntr_id
+			, row_no = row_number() over (partition by ce.encntr_id order by ce.valid_from_dt_tm desc, ce.updt_dt_tm desc)
+			, ce.result_val
+		from clinical_event ce
+		where ce.valid_until_dt_tm > sysdate
+			and ce.event_cd = 79848725 ; Description of injury (injury surveillance)
+			and ce.result_val != NULL
+
+		with SQLTYPE("f8", "i2", "VC50")
+		) injury_desc on injury_desc.encntr_id = enc.encntr_id and injury_desc.row_no = 1
+	)
+
+	;Injury Cause
+	, (left join(
+		select
+			ce.encntr_id
+			, row_no = row_number() over (partition by ce.encntr_id order by ce.valid_from_dt_tm desc, ce.updt_dt_tm desc)
+			, ce.result_val
+		from clinical_event ce
+		where ce.valid_until_dt_tm > sysdate
+			and ce.event_cd = 79849268 ; Cause of injury (injury surveillance)
+			and ce.result_val != NULL
+
+		with SQLTYPE("f8", "i2", "VC50")
+		) injury_cause on injury_cause.encntr_id = enc.encntr_id and injury_cause.row_no = 1
+	)
+
+	/*	Individual obs and other data entry from Triage form concatenated into one field */
+	, (left join(
+		select distinct
+			obs.encntr_id
+			, triage_text = listagg(trim(obs.concat_val), ",") over (partition by obs.encntr_id)
+		from (
+			(select
+				ce.encntr_id
+				, row_no = row_number() over (partition by ce.encntr_id, ce.event_cd order by ce.valid_from_dt_tm desc, ce.performed_dt_tm desc)
+				, ce.result_val
+				, concat_val = concat(EVALUATE(ce.event_cd
+					, 86233833, "AVPU:"
+					, 75705789, "Temp:"
+					, 703540, "RR:"
+					, 88204044, "HR:"
+					, 3623994, "SpO2:"
+					, 703960, "O2 Delivery:"
+					, 703569, "O2 Flow Rate:"
+					, 152433903, "BOC Score:"
+					, 86709587, "Pain Score:"
+					, 703501, "BP Sys:"
+					, 703516, "BP Dia:"
+					, 26785627, "BSL:"
+					, 26785563, "Keytones:"
+					, 7334438, "Weight:"
+					, 86163322, "GCS Eyes Open:"
+					, 86163348, "GCS Voice:"
+					, 86163333, "GCS Motor:"
+					, 703608, "Cap Refill:"
+					, 703565, "GCS Score:"
+					, "Unknown"),ce.result_val)
+
+			from clinical_event ce
+			where ce.valid_until_dt_tm > sysdate
+				and ce.event_cd in (
+					86233833 ;AVPU
+					,75705789 ;Temp
+					,703540 ;RR
+					,88204044 ;HR
+					,3623994 ;SpO2
+					,703960 ;O2 delivery
+					,703569 ;O2 flow rate
+					,152433903 ;BOC Score
+					,86709587 ;Pain score
+					,703501 ;BP Sys
+					,703516 ;BP Dia
+					,26785627 ;BSL
+					,26785563 ;Keytones
+					,7334438 ;Weight
+					,86163322 ;GCS eyes open
+					,86163348 ;GCS voice
+					,86163333 ;GCS motor
+					,703608 ;Cap refill
+					,703565) ;GCS score
+				;and ce.encntr_id = 51526139
+
+			order by ce.event_title_text asc
+
+			with SQLTYPE("f8", "i2", "vc50", "vc255")
+			) obs)
+
+		where obs.row_no = 1
+		;order by 0
+		with SQLTYPE("f8","vc512")
+		) triage_txt on triage_txt.encntr_id = enc.encntr_id
+	)
 
 ;where enc.arrive_dt_tm >= cnvtdatetime("01-aug-2023 00:00:00") and enc.arrive_dt_tm < cnvtdatetime("01-sep-23 00:00:00")
 	where enc.active_ind = 1
-	and exists (select 1 from encntr_loc_hist elh where elh.encntr_id = enc.encntr_id
-		and elh.admit_type_cd in (79848699 /*Emergency presentation*/));, 309203 /*Admission from ED*/))
+;	and exists (select 1 from encntr_loc_hist elh where elh.encntr_id = enc.encntr_id
+;		and elh.admit_type_cd in (79848699 /*Emergency presentation*/));, 309203 /*Admission from ED*/))
 ;	;and enc.encntr_id = 53936242
 ;	and enc.encntr_id = 53751913
 
