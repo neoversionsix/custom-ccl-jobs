@@ -82,7 +82,7 @@ JOIN P;PERSON
     /* Remove Ineffective Patients */
     AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
-/* Encounter Identifiers such as the Financial Number */
+;Encounter Alias
 JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
     WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
     /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
