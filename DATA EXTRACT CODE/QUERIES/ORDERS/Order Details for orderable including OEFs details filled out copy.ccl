@@ -18,37 +18,34 @@ FROM
 
 PLAN O
 	WHERE
-    /* Filter update tiome */
-    O.ORIG_ORDER_DT_TM BETWEEN
-        CNVTDATETIME("10-SEP-2023 15:45")
-        AND
-        CNVTDATETIME("19-SEP-2023 15:55")
-    AND
-    O.ACTIVE_IND = 1;
+    ;Filter update time
+    O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-SEP-2023 00:00")
+    AND O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-JAN-2024 00:00")
+    AND O.ACTIVE_IND = 1;
     AND
     O.ORDER_ID IN
      (
         SELECT O_D_TEMP.ORDER_ID
         FROM ORDER_DETAIL O_D_TEMP
-        /* Procedure text input field*/
-        WHERE O_D_TEMP.OE_FIELD_ID = 663840.00;SURGPROCTEXT PR
-        AND CNVTUPPER(O_D_TEMP.OE_FIELD_DISPLAY_VALUE) = "*WASH*"
+        ;Procedure text input field
+        WHERE
+            O_D_TEMP.OE_FIELD_ID = 663840.00;SURGPROCTEXT PR
+            AND CNVTUPPER(O_D_TEMP.OE_FIELD_DISPLAY_VALUE) = "*WASH*"
      )
 
-
+/*
 JOIN O_C_S
     WHERE O_C_S.SYNONYM_ID = O.SYNONYM_ID
     AND
-    /* Orderable to Filter for */
+    ;Orderable to Filter for
     O_C_S.MNEMONIC = "Request for Emergency Surgery"
-
-
+*/
 
 JOIN O_D
     WHERE O_D.ORDER_ID = O.ORDER_ID
 
 
-/* Order action table to get ordering staff */
+;Order action table to get ordering staff
 JOIN O_A;ORDER_ACTION
     WHERE O_A.ORDER_ID = O.ORDER_ID
     AND
@@ -62,14 +59,14 @@ JOIN O_A;ORDER_ACTION
 JOIN PR;PRSNL
     WHERE PR.PERSON_ID = O_A.ACTION_PERSONNEL_ID
 
-/* Patients */
+;Patients
 JOIN P;PERSON
 	WHERE P.PERSON_ID = O.PERSON_ID
-    /* Remove Inactive Patients */
+    ;Remove Inactive Patients
     AND P.ACTIVE_IND = 1
-    /* Remove Fake 'Test' Patients */
+    ;Remove Fake 'Test' Patients
     AND P.NAME_LAST_KEY != "*TESTWHS*"
-    /* Remove Ineffective Patients */
+    ;Remove Ineffective Patients
     AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
 JOIN O_E_FI; ORDER_ENTRY_FIELDS

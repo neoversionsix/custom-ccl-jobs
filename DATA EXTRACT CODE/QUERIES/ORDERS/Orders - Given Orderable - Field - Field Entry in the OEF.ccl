@@ -1,0 +1,166 @@
+SELECT
+    ORDERABLE = UAR_GET_CODE_DISPLAY (O.CATALOG_CD)
+    , PATIENT_NAME = P.NAME_FULL_FORMATTED
+    , PATIENT_URN = P_A.ALIAS
+	, FIELD = O_E_FI.DESCRIPTION
+	, FIELD_ENTRY = O_D.OE_FIELD_DISPLAY_VALUE
+	, ORDERED_DATE = O.ORIG_ORDER_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D"
+    , ORDERED_TIME = O.ORIG_ORDER_DT_TM  "HH:MM:SS;;D"
+    , ORDERED_BY = PR.NAME_FULL_FORMATTED
+
+FROM
+    ORDER_DETAIL                O_D
+	, ORDERS	                O
+    , ORDER_ACTION              O_A
+    , PRSNL                     PR
+    , PERSON                    P
+    , ORDER_ENTRY_FIELDS        O_E_FI
+    ; , ORDER_CATALOG_SYNONYM     O_C_S
+
+PLAN O
+	WHERE
+    ;Filter update time
+        O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-DEC-2023 00:00")
+    AND O.ORIG_ORDER_DT_TM < CNVTDATETIME("01-JAN-2024 00:00")
+    AND O.ACTIVE_IND = 1 ;Active Only
+    O.CATALOG_CD = 90228280.00 ; Primary Code = "Consult to Medical Specialty (MO Use Only)"
+    AND O.ORDER_ID IN ; Orders where FIELD and FIELD Entry are the following
+        (
+            SELECT O_D_TEMP.ORDER_ID
+            FROM ORDER_DETAIL O_D_TEMP
+            /* Procedure text input field*/
+            WHERE
+            O_D_TEMP.OE_FIELD_ID = 633614.00 ;CONSULTMEDSERVICE
+            AND O_D_TEMP.OE_FIELD_DISPLAY_VALUE = "Epidural Service"
+            ; O_D_TEMP.OE_FIELD_MEANING = "CONSULTMEDSERVICE"
+        )
+
+JOIN O_D
+    WHERE O_D.ORDER_ID = O.ORDER_ID
+
+/* Order action table to get ordering staff */
+JOIN O_A;ORDER_ACTION
+    WHERE O_A.ORDER_ID = O.ORDER_ID
+    AND
+    O_A.ACTION_TYPE_CD = 2534.00;Order
+    AND
+    O_A.ORDER_DT_TM BETWEEN
+        CNVTDATETIME("10-SEP-2023 15:45")
+        AND
+        CNVTDATETIME("19-SEP-2023 15:55")
+
+JOIN PR;PRSNL
+    WHERE PR.PERSON_ID = O_A.ACTION_PERSONNEL_ID
+
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = O.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+;For Patient  URN
+JOIN P_A;PERSON_ALIAS
+    WHERE P_A.PERSON_ID = O.PERSON_ID
+    AND
+    ;this filters for the UR Number Alias' only
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    ;Effective Only
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    ;Active Only
+    P_A.ACTIVE_IND = 1
+
+JOIN O_E_FI; ORDER_ENTRY_FIELDS
+    WHERE O_E_FI.OE_FIELD_ID = O_D.OE_FIELD_ID
+
+/*
+JOIN O_C_S
+    WHERE O_C_S.SYNONYM_ID = O.SYNONYM_ID
+    AND
+    ;Orderable to Filter for
+    O_C_S.MNEMONIC = "Request for Emergency Surgery"
+ */
+
+ORDER BY
+	O_D.ORDER_ID
+	, O_D.DETAIL_SEQUENCE
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
+
+/*
+CODE FOR VALUES
+-----------------------------------------------------------------------------------------
+
+SELECT
+	O_C_S.ACTIVE_IND
+	, PRIMARY_CATALOG_CODE = O_C.CATALOG_CD
+	, CHILD_OF_PRIMARY_SYNONYM_ID = O_C_S.SYNONYM_ID
+	, PRIMARY_NAME = O_C.PRIMARY_MNEMONIC; UAR_GET_CODE_DISPLAY(O_C.CATALOG_CD)
+	, SYNONYM_NAME = O_C_S.MNEMONIC
+	, O_C_S.MNEMONIC_KEY_CAP
+	, O_MNEMONIC_TYPE_DISP = UAR_GET_CODE_DISPLAY(O_C_S.MNEMONIC_TYPE_CD)
+	, O_ACTIVITY_SUBTYPE_DISP = UAR_GET_CODE_DISPLAY(O_C_S.ACTIVITY_SUBTYPE_CD)
+	, O_ACTIVITY_TYPE_DISP = UAR_GET_CODE_DISPLAY(O_C_S.ACTIVITY_TYPE_CD)
+	, O_C_S.AUTHORIZATION_REVIEW_FLAG
+	, O_CATALOG_DISP = UAR_GET_CODE_DISPLAY(O_C_S.CATALOG_CD)
+	, O_CATALOG_TYPE_DISP = UAR_GET_CODE_DISPLAY(O_C_S.CATALOG_TYPE_CD)
+	, O_C_S.CKI
+
+
+	, O_C.OE_FORMAT_ID
+
+
+FROM
+	ORDER_CATALOG_SYNONYM   O_C_S
+	, ORDER_CATALOG			O_C
+
+PLAN O_C_S
+	WHERE
+	O_C_S.MNEMONIC = "Consult to Medical Special*"
+
+JOIN O_C
+	WHERE O_C.CATALOG_CD = O_C_S.CATALOG_CD
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10
+
+-----------------------------------------------------------------------------------------
+
+ */
+
+ /*
+ Use this if you want to fileter by a specific field that is recorded as something specific
+ It finds the field
+
+SELECT
+	ORDERABLE = UAR_GET_CODE_DISPLAY (O.CATALOG_CD)
+	, O_D.OE_FIELD_ID ; THIS IS THE ID YOU WANT
+	, O_D.OE_FIELD_MEANING
+	, FIELD_ENTRY = O_D.OE_FIELD_DISPLAY_VALUE
+	, ORDERED = O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+
+FROM
+	ORDER_DETAIL   O_D
+	, ORDERS   O
+
+PLAN O
+	WHERE
+    ;Filter update time
+    O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-SEP-2023 00:00")
+    AND O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-OCT-2023 00:00")
+    AND O.ACTIVE_IND = 1;
+    ; PUT IN PRIMARY CATALOG CODE BELOW FOR ORDERABLE
+    AND O.CATALOG_CD = 90228280.00 ; PRIMARY = "Consult to Medical Specialty (MO Use Only)"
+JOIN O_D
+    WHERE O_D.ORDER_ID = O.ORDER_ID
+
+WITH TIME = 10
+
+
+
+
+  */
