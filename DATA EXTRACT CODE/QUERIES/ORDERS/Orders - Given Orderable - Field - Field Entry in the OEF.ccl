@@ -1,17 +1,26 @@
 SELECT
-    , ACTION = UAR_GET_CODE_DISPLAY(O_A.ACTION_TYPE_CD)
+/* Order for:
+    1) a given orderabe
+    2) a given OEF Field
+    3) a given selection for the OEF Field
+
+    #ORDERS #ORDER #EOF #FIELD
+*/
+    ACTION = UAR_GET_CODE_DISPLAY(O_A.ACTION_TYPE_CD)
+    , O.ORDER_ID
     , ORDERABLE = UAR_GET_CODE_DISPLAY (O.CATALOG_CD)
     , PATIENT_NAME = P.NAME_FULL_FORMATTED
     , PATIENT_URN = P_A.ALIAS
     , ENCOUNTER_N = E_A.ALIAS
 	, FIELD_NAME = O_E_FI.DESCRIPTION
 	, FIELD_INPUT = O_D.OE_FIELD_DISPLAY_VALUE
+	, ORDERED_DATE = O.ORIG_ORDER_DT_TM  "DD-MMM-YYYY"
+    , ORDERED_TIME = O.ORIG_ORDER_DT_TM  "HH:MM:SS;;D"
 	, FACILITY_AT_TIME_OF_ORDER = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
 	, UNIT_AT_TIME_OF_ORDER =
         IF(ELH.LOC_NURSE_UNIT_CD > 0) UAR_GET_CODE_DISPLAY(ELH.LOC_NURSE_UNIT_CD)
-        ELSE UAR_GET_CODE_DISPLAY(E_ORIG.LOC_NURSE_UNIT_CD)
-	, ORDERED_DATE = O.ORIG_ORDER_DT_TM  "DD-MMM-YYYY HH:MM:SS;;D"
-    , ORDERED_TIME = O.ORIG_ORDER_DT_TM  "HH:MM:SS;;D"
+        ELSE UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+        ENDIF
     , ORDERED_BY = PR.NAME_FULL_FORMATTED
     , DISPLAY_L = O_A.CLINICAL_DISPLAY_LINE
 
@@ -22,6 +31,7 @@ FROM
     , PRSNL                     PR
     , PERSON                    P
     , PERSON_ALIAS              P_A
+    , ENCOUNTER                 E
     , ENCNTR_ALIAS              E_A
     , ORDER_ENTRY_FIELDS        O_E_FI
     , ENCNTR_LOC_HIST           ELH
@@ -30,7 +40,7 @@ FROM
 PLAN O
 	WHERE
     ;Filter update time
-        O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-DEC-2023 00:00")
+        O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-SEP-2023 00:00")
     AND O.ORIG_ORDER_DT_TM < CNVTDATETIME("01-JAN-2024 00:00")
     AND O.ACTIVE_IND = 1 ;Active Only
     AND O.CATALOG_CD = 90228280.00 ; Primary Code = "Consult to Medical Specialty (MO Use Only)"
@@ -45,18 +55,17 @@ PLAN O
             ; O_D_TEMP.OE_FIELD_MEANING = "CONSULTMEDSERVICE"
         )
 
-JOIN O_D
-    WHERE O_D.ORDER_ID = O.ORDER_ID
+JOIN O_D ; ORDER_DETAIL
+    WHERE O_D.ORDER_ID = OUTERJOIN(O.ORDER_ID)
 
-/* Order action table to get ordering staff */
+;Order action table to get ordering staff
 JOIN O_A;ORDER_ACTION
-    WHERE O_A.ORDER_ID = O.ORDER_ID
-    AND
-    O_A.ACTION_TYPE_CD = 2534.00;Order
+    WHERE O_A.ORDER_ID = OUTERJOIN(O.ORDER_ID)
+    AND O_A.ACTION_TYPE_CD = OUTERJOIN(2534.00);Order
     ; Can add time fileters here to make more efficient
 
 JOIN PR;PRSNL
-    WHERE PR.PERSON_ID = O_A.ACTION_PERSONNEL_ID
+    WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID)
 
 /* Patients */
 JOIN P;PERSON
@@ -81,6 +90,10 @@ JOIN P_A;PERSON_ALIAS
     ;Active Only
     P_A.ACTIVE_IND = 1
 
+;Encounter Facility
+JOIN E;ENCOUNTER
+    WHERE E.ENCNTR_ID = O.ENCNTR_ID
+
 ;Encounter Alias
 JOIN E_A;ENCNTR_ALIAS
     WHERE E_A.ENCNTR_ID = O.ENCNTR_ID
@@ -103,17 +116,17 @@ JOIN O_C_S
  */
 
 JOIN ELH
-    WHERE ELH.ENCNTR_ID = O.ENCNTR_ID
-	AND ELH.ACTIVE_IND = 1	; to remove inactive rows that seem to appear for unknown reason(s)
-	AND ELH.PM_HIST_TRACKING_ID > 0	; to remove duplicate row that seems to occur at discharge
-	AND ELH.BEG_EFFECTIVE_DT_TM < O.ORIG_ORDER_DT_TM	; encounter location began before order was placed
-	AND ELH.END_EFFECTIVE_DT_TM >  O.ORIG_ORDER_DT_TM	; encounter location ended after order was placed
+    WHERE ELH.ENCNTR_ID = OUTERJOIN(O.ENCNTR_ID)
+	AND ELH.ACTIVE_IND = OUTERJOIN(1)	; to remove inactive rows that seem to appear for unknown reason(s)
+	AND ELH.PM_HIST_TRACKING_ID > OUTERJOIN(0)	; to remove duplicate row that seems to occur at discharge
+	AND ELH.BEG_EFFECTIVE_DT_TM < OUTERJOIN(O.ORIG_ORDER_DT_TM)	; encounter location began before order was placed
+	AND ELH.END_EFFECTIVE_DT_TM >  OUTERJOIN(O.ORIG_ORDER_DT_TM)	; encounter location ended after order was placed
 
 ORDER BY
 	O_D.ORDER_ID
 	, O_D.DETAIL_SEQUENCE
 
-WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 30
 
 /*
 CODE FOR VALUES
