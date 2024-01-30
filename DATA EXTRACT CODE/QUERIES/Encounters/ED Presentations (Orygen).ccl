@@ -355,7 +355,6 @@ from encounter enc
 
 	/***********
 	** get the primary (principal) diagnosis that was entered under emergency medicine
-	** still don't know how to get the ICD10 code
 	***********/
 
 	, (left join(
