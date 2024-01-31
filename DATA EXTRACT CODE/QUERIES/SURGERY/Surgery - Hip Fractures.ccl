@@ -1,4 +1,4 @@
-SELECT
+SELECT DISTINCT
 
 /*
 I am currently working in the Anaesthetics Department and completing an ethics-approved audit on adult patients awaiting emergency surgery for hip fractures. Previously, this data could be extracted from iPM with help from the Performance Unit. However, with the move towards EMR, this data set can no longer be extracted from iPM.
@@ -12,22 +12,26 @@ Kind regards,
 Paolo
  */
 	  PATIENT = P.NAME_FULL_FORMATTED
+    , N_CODE = N.SOURCE_IDENTIFIER
+    , N_SOURCE_STRING_N = N.SOURCE_STRING
 	, PATIENT_URN = P_A.ALIAS
 	, GENDER = UAR_GET_CODE_DISPLAY(P.SEX_CD)
 	, AGE = CNVTAGE(P.BIRTH_DT_TM)
 	, ENCOUNTER_NO = E_A.ALIAS
-	, SCHED_TYPE = UAR_GET_CODE_DISPLAY(S_C.SCHED_TYPE_CD)
+    , ENCOUNTER_LOC = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+    , ENCOUNTER_UNIT = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+	, SURG_SCHED_TYPE = UAR_GET_CODE_DISPLAY(S_C.SCHED_TYPE_CD)
 	, PROCEDURE = O_C_S.MNEMONIC
 	, SURGEON = PR_SURGEON.NAME_FULL_FORMATTED
 	, ANESTHETIST = PR_ANESTHETIST.NAME_FULL_FORMATTED
-	, LOCATION = UAR_GET_CODE_DISPLAY(S_C.SURG_OP_LOC_CD)
-	, AREA = UAR_GET_CODE_DISPLAY(S_C_P.SURG_AREA_CD)
-	, S_C.SCHED_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
-	, S_C.SURG_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
-	, S_C_P.PROC_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
-	, SCHEDULED_DURATION = S_C.SCHED_DUR
-	, DURATION = S_C_P.PROC_DUR_MIN
-	, S_C.SURG_STOP_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, SURG_LOCATION = UAR_GET_CODE_DISPLAY(S_C.SURG_OP_LOC_CD)
+	, SURG_AREA = UAR_GET_CODE_DISPLAY(S_C_P.SURG_AREA_CD)
+	, SURG_SCHED_START = S_C.SCHED_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, SURG_START = S_C.SURG_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, SURG_PROC_START = S_C_P.PROC_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, SURG_SCHEDULED_DURATION = S_C.SCHED_DUR
+	, SURG_DURATION = S_C_P.PROC_DUR_MIN
+	, SURG_STOP = S_C.SURG_STOP_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
 	, E_DISCH_DISPOSITION_DISP = UAR_GET_CODE_DISPLAY(E.DISCH_DISPOSITION_CD)
 	, E_DISCH_TO_LOCTN_DISP = UAR_GET_CODE_DISPLAY(E.DISCH_TO_LOCTN_CD)
 
@@ -42,6 +46,8 @@ FROM
 	, PRSNL   					PR_ANESTHETIST
 	, PERSON   					P
 	, PERSON_ALIAS   			P_A
+    , DIAGNOSIS                 D
+    , NOMENCLATURE              N
 
 PLAN S_C ;SURGICAL_CASE
 	WHERE
@@ -111,7 +117,30 @@ JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
     ; Active Only
     P_A.ACTIVE_IND = 1
 
-ORDER BY
-	S_C.SURG_START_DT_TM	DESC
+JOIN D ; DIAGNOSIS
+    WHERE D.ENCNTR_ID = OUTERJOIN(S_C.ENCNTR_ID)
 
-WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 5
+JOIN N;NOMENCLATURE
+	WHERE N.NOMENCLATURE_ID = OUTERJOIN(D.NOMENCLATURE_ID)
+    AND N.ACTIVE_STATUS_CD = 188
+    ; Return only diagnostic nomenclature with the phrase "FRACTURE"
+    AND CNVTUPPER(N.SOURCE_STRING) = "*FRACTURE*"
+    ; AND N.SOURCE_IDENTIFIER IN ; ICD10 codes
+    ;     (
+    ;     "S324" ,    ;Fracture of acetabulum
+    ;     "S7200",    ;Fracture of neck of femur, part unspecified
+    ;     "S7201",    ;Fracture of intracapsular section of femur
+    ;     "S7202",    ;Fracture of upper epiphysis (separation) of femur
+    ;     "S7203",    ;Fracture of subcapital section of femur
+    ;     "S7204",   ;Fracture of midcervical section of femur
+    ;     "S7205",   ;Fracture of base of neck of femur
+    ;     "S7208",   ;Fracture of other parts of neck of femur (including head of femur)
+    ;     "S7210",   ;Fracture of trochanteric section of femur, unspecified
+    ;     "S7211",   ;Fracture of intertrochanteric section of femur
+    ;     "S722"    ;Subtrochanteric fracture
+    ;     )
+
+ORDER BY
+	E.ENCNTR_ID	DESC
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 15

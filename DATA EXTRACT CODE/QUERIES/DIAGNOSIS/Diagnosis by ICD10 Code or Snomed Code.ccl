@@ -1,0 +1,101 @@
+SELECT DISTINCT
+	PATIENT_URN = P_A.ALIAS
+    , FACILITY = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+	, NURSE_UNIT = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+    , MED_SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+	, LOCATION = UAR_GET_CODE_DISPLAY(E.LOCATION_CD)
+	, ROOM = UAR_GET_CODE_DISPLAY(E.LOC_ROOM_CD)
+	, BED = UAR_GET_CODE_DISPLAY(E.LOC_BED_CD)
+	, GENDER = UAR_GET_CODE_DISPLAY(P.SEX_CD)
+    , ENCOUNTER_NO = E_A.ALIAS
+	, PATIENT_NAME = P.NAME_FULL_FORMATTED
+    , DIAGNOSIS_D = D.DIAGNOSIS_DISPLAY
+    , DIAGNOSIS_SOURCE_STRING_N = N.SOURCE_STRING
+    , DIAG_BEG_TIME_D = D.BEG_EFFECTIVE_DT_TM "DD-MMM-YYYY HH:MM;;d"
+    , DIAG_BEG_TIME_N = N.BEG_EFFECTIVE_DT_TM "DD-MMM-YYYY HH:MM;;d"
+	, DIAG_END_TIME_N = N.END_EFFECTIVE_DT_TM "DD-MMM-YYYY HH:MM;;d"
+	, DIAGNOSIS_TYPE_D = UAR_GET_CODE_DISPLAY(D.DIAG_TYPE_CD)
+    , DIAGNOSIS_TYPE_N = UAR_GET_CODE_DISPLAY(N.VOCAB_AXIS_CD)
+    , PRINCIPAL_TYPE_N = UAR_GET_CODE_DISPLAY(N.PRINCIPLE_TYPE_CD)
+    , CODE_CONCEPT_CKI_N = N.CONCEPT_CKI
+    , CODE_CMTI_N = N.CMTI
+    , CODE_SOURCE_INDENTIFIER_N = N.SOURCE_IDENTIFIER
+    , SYSTEM_N = UAR_GET_CODE_DISPLAY(N.CONTRIBUTOR_SYSTEM_CD)
+    , SOURCE_VOCAB_N = UAR_GET_CODE_DISPLAY(N.SOURCE_VOCABULARY_CD)
+
+FROM
+	ENCOUNTER       E
+	, DIAGNOSIS     D
+	, PERSON_ALIAS  P_A
+	, PERSON        P
+    , ENCNTR_ALIAS  E_A
+    , NOMENCLATURE  N
+
+PLAN D
+	WHERE
+    ;AND
+    D.BEG_EFFECTIVE_DT_TM >= CNVTDATETIME("07-AUG-2023 00:00:00.00")
+    AND D.BEG_EFFECTIVE_DT_TM <= CNVTDATETIME("08-NOV-2023 00:00:00.00")
+
+JOIN N;NOMENCLATURE
+	WHERE N.NOMENCLATURE_ID = OUTERJOIN(D.NOMENCLATURE_ID)
+    AND N.ACTIVE_STATUS_CD = 188
+    AND N.SOURCE_IDENTIFIER IN ; ICD10 codes
+        (
+        "S324" ,    ;Fracture of acetabulum
+        "S7200",    ;Fracture of neck of femur, part unspecified
+        "S7201",    ;Fracture of intracapsular section of femur
+        "S7202",    ;Fracture of upper epiphysis (separation) of femur
+        "S7203",    ;Fracture of subcapital section of femur
+        "S7204",   ;Fracture of midcervical section of femur
+        "S7205",   ;Fracture of base of neck of femur
+        "S7208",   ;Fracture of other parts of neck of femur (including head of femur)
+        "S7210",   ;Fracture of trochanteric section of femur, unspecified
+        "S7211",   ;Fracture of intertrochanteric section of femur
+        "S722"    ;Subtrochanteric fracture
+        )
+
+JOIN E;ENCOUNTER
+    WHERE D.ENCNTR_ID = E.ENCNTR_ID
+    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    AND E.LOC_FACILITY_CD != 4038465.00
+    /* Encounter time filter */
+	AND E.ARRIVE_DT_TM >= CNVTDATETIME("07-AUG-2023 00:00:00.00")
+
+/* Encounter Identifiers such as the Financial Number */
+JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+	/* active FIN NBRs only */
+    AND E_A.ACTIVE_IND = 1
+    /* effective FIN NBRs only */
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+
+/* Patient Identifiers such as URN Medicare no etc */
+JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
+    WHERE P_A.PERSON_ID = E.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
+
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = E.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+ORDER BY
+	P.NAME_LAST_KEY
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
