@@ -1,0 +1,40 @@
+/***********
+** get the primary (principal) diagnosis that was entered in ED (based on ICD10-AMVEMD vocabulary)
+***********/
+
+select
+	d.encntr_id
+	, d.diagnosis_id
+	, d.diag_priority
+	, d.diagnosis_display
+	, diag_cat = uar_get_code_display(d.diagnostic_category_cd)
+	, ranking = uar_get_code_display(d.ranking_cd)
+	, d.ranking_cd
+	, d.reference_nbr
+	, status = uar_get_code_display(d.active_status_cd)
+	, vocab = uar_get_code_display(nom.vocab_axis_cd)
+	, src_vocab = uar_get_code_display(nom.source_vocabulary_cd)
+	, nom.source_vocabulary_cd
+;	, type = uar_get_code_display(nom.principle_type_cd)
+;	, d.diagnosis_group
+	, service = uar_get_code_display(d.clinical_service_cd)
+	, d.clinical_service_cd
+	, class = uar_get_code_display(d.diag_class_cd)
+	, type = uar_get_code_display(d.diag_type_cd)
+	, d.diag_type_cd
+	, d.updt_dt_tm "@SHORTDATETIME"
+	, d.beg_effective_dt_tm "@SHORTDATETIME"
+	, d.end_effective_dt_tm "@SHORTDATETIME"
+	, p.name_full_formatted
+from diagnosis d
+	, (left join prsnl p on p.person_id = d.updt_id)
+	, (left join nomenclature nom on nom.nomenclature_id = d.nomenclature_id)
+
+where d.diag_type_cd = 3538766 ;Principal Dx
+	and d.ranking_cd = 3310 ;Primary
+	and nom.vocab_axis_cd = 10425 ;diagnosis
+	and nom.source_vocabulary_cd = 79828951 ;ICD10-AMVEMD
+	and d.active_ind = 1
+	and d.encntr_id = xxxx ;<----- put encounter ID here
+
+with time = 60
