@@ -11,13 +11,9 @@ Kind regards,
 Paolo
  */
 	  PATIENT = P.NAME_FULL_FORMATTED
-    , N_CODE = N.SOURCE_IDENTIFIER
-    , N_SOURCE_STRING_N = N.SOURCE_STRING
-    , FASTING_EVENT_TYPE = UAR_GET_CODE_DISPLAY(C_E_FASTING.EVENT_CD)
-    , FASTING_EVENT_START = C_E_FASTING.EVENT_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
-    , FASTING_DATE = FORMAT(CNVTDATE2(SUBSTRING(3, 8, C_E_FASTING.RESULT_VAL), "YYYYMMDD"), "DD/MMM/YYYY ;;D")
-    , FASTING_TIME =  CONCAT(SUBSTRING(11, 2, C_E_FASTING.RESULT_VAL), ":", SUBSTRING(13, 2, C_E_FASTING.RESULT_VAL))
-	, PATIENT_URN = P_A.ALIAS
+    , PATIENT_URN = P_A.ALIAS
+    , D.DIAGNOSIS_DISPLAY
+	, UAR_GET_CODE_DISPLAY(D.DIAG_TYPE_CD)
 	, GENDER = UAR_GET_CODE_DISPLAY(P.SEX_CD)
 	, AGE = CNVTAGE(P.BIRTH_DT_TM)
 	, ENCOUNTER_NO = E_A.ALIAS
@@ -41,7 +37,6 @@ Paolo
 FROM
 	SURGICAL_CASE   			S_C
 	, SURG_CASE_PROCEDURE   	S_C_P
-    , CLINICAL_EVENT   			C_E_FASTING
 	, ORDER_CATALOG_SYNONYM   	O_C_S
 	, ENCOUNTER					E
 	, ENCNTR_ALIAS   			E_A
@@ -50,7 +45,7 @@ FROM
 	, PERSON   					P
 	, PERSON_ALIAS   			P_A
     , DIAGNOSIS                 D
-    , NOMENCLATURE              N
+
 
 PLAN S_C ;SURGICAL_CASE
 	WHERE
@@ -89,17 +84,6 @@ JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
     ; effective FIN NBRs only
 	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
 
-JOIN C_E_FASTING ;CLINICAL_EVENT
-	WHERE C_E_FASTING.ENCNTR_ID = E.ENCNTR_ID
-    AND C_E_FASTING.VIEW_LEVEL = 1
-    AND C_E_FASTING.EVENT_CD IN
-    (
-
-          152219385.00	;Fasting Food
-        , 152219381.00	;Fasting Fluid
-       ; , 152429777.00	;Fasting Status
-    )
-
 JOIN PR_SURGEON ;PRSNL
 	WHERE PR_SURGEON.PERSON_ID = OUTERJOIN(S_C_P.PRIMARY_SURGEON_ID)
 	AND PR_SURGEON.ACTIVE_IND = 1
@@ -134,39 +118,11 @@ JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
 
 JOIN D ; DIAGNOSIS
     WHERE D.ENCNTR_ID = OUTERJOIN(S_C.ENCNTR_ID)
+    AND D.ACTIVE_IND = OUTERJOIN(1)
+    AND D.DIAGNOSIS_DISPLAY != ""
 
-JOIN N;NOMENCLATURE
-	WHERE N.NOMENCLATURE_ID = OUTERJOIN(D.NOMENCLATURE_ID)
-    AND N.NOMENCLATURE_ID != OUTERJOIN(NULL)
-    AND N.ACTIVE_STATUS_CD = OUTERJOIN(188)
-    AND (N.SOURCE_IDENTIFIER = OUTERJOIN("S72*") OR N.SOURCE_IDENTIFIER = OUTERJOIN("S324*"))
-    AND N.ACTIVE_IND = OUTERJOIN(1)
 
 ORDER BY
 	E.ENCNTR_ID	DESC
 
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 15
-
-
-/*NOTES
-  152429777.00	Fasting Status
-  152219385.00	Fasting Food
-  152219381.00	Fasting Fluid
-
-    ; AND N.SOURCE_IDENTIFIER IN ; ICD10 codes
-    ;     (
-    ;     "S324" ,    ;Fracture of acetabulum
-    ;     "S7200",    ;Fracture of neck of femur, part unspecified
-    ;     "S7201",    ;Fracture of intracapsular section of femur
-    ;     "S7202",    ;Fracture of upper epiphysis (separation) of femur
-    ;     "S7203",    ;Fracture of subcapital section of femur
-    ;     "S7204",   ;Fracture of midcervical section of femur
-    ;     "S7205",   ;Fracture of base of neck of femur
-    ;     "S7208",   ;Fracture of other parts of neck of femur (including head of femur)
-    ;     "S7210",   ;Fracture of trochanteric section of femur, unspecified
-    ;     "S7211",   ;Fracture of intertrochanteric section of femur
-    ;     "S722"    ;Subtrochanteric fracture
-    ;     )
-
-
- */
