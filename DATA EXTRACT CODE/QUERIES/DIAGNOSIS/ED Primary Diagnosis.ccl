@@ -7,6 +7,7 @@ select
 	, d.diagnosis_id
 	, d.diag_priority
 	, d.diagnosis_display
+	, ccm.source_identifier
 	, diag_cat = uar_get_code_display(d.diagnostic_category_cd)
 	, ranking = uar_get_code_display(d.ranking_cd)
 	, d.ranking_cd
@@ -15,6 +16,8 @@ select
 	, vocab = uar_get_code_display(nom.vocab_axis_cd)
 	, src_vocab = uar_get_code_display(nom.source_vocabulary_cd)
 	, nom.source_vocabulary_cd
+	, nom.concept_cki
+	, nom.concept_identifier
 ;	, type = uar_get_code_display(nom.principle_type_cd)
 ;	, d.diagnosis_group
 	, service = uar_get_code_display(d.clinical_service_cd)
@@ -29,12 +32,14 @@ select
 from diagnosis d
 	, (left join prsnl p on p.person_id = d.updt_id)
 	, (left join nomenclature nom on nom.nomenclature_id = d.nomenclature_id)
+	, (left join cmt_cross_map ccm on ccm.concept_cki = nom.concept_cki)
 
 where d.diag_type_cd = 3538766 ;Principal Dx
 	and d.ranking_cd = 3310 ;Primary
 	and nom.vocab_axis_cd = 10425 ;diagnosis
 	and nom.source_vocabulary_cd = 79828951 ;ICD10-AMVEMD
+	and ccm.source_vocabulary_cd = 9353305 ;ICD10-AM No Dots
 	and d.active_ind = 1
-	and d.encntr_id = xxxx ;<----- put encounter ID here
+	and d.encntr_id = 53755950 ;<----- put encounter ID here
 
 with time = 60
