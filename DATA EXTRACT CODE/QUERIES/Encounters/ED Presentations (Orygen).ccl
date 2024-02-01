@@ -1,7 +1,7 @@
 select
 	ENC_ID = enc.encntr_id
 	, URNo = ea_URN.alias
-	, Active_Status = uar_get_code_display(enc.active_status_cd)
+;	, Active_Status = uar_get_code_display(enc.active_status_cd)
 	, AGE_AT_PRESENTATION = floor(datetimediff(enc.arrive_dt_tm, P.BIRTH_DT_TM, 9))
 	, GENDER = uar_get_code_display(p.sex_cd)
 	, POSTCODE = pcode.Postcode
@@ -9,18 +9,19 @@ select
 	, ARRIVAL_TIME = enc.arrive_dt_tm "@SHORTDATETIME"
 ;	, REG_TIME = enc.reg_dt_tm "@SHORTDATETIME"
 	, ARRIVAL_MODE = uar_get_code_display(enc.admit_mode_cd)
-	, triage_cat = triage_cat.result_val
+	, TRIAGE_CAT = triage_cat.result_val
 	, SYMPTOM = enc.reason_for_visit ;VISIT COMPLAINT from Triage powerform
 	, TRIAGE_DESC = triage_desc.result_val
 	, TRIAGE_TEXT = triage_txt.triage_text
-	, ED_DIAGNOSIS = d.diagnosis
+	, ED_DIAGNOSIS_DESC = d.diagnosis
+	, ED_DIAG_ICD10 = d.icd10
 ;	, IP_DISCH_DISP = uar_get_code_display(enc.disch_disposition_cd)
 	, ED_DISCH_DISP = uar_get_code_display(c_out.checkout_disposition_cd)
-	, TRIAGE_DATE_TIME = enc.triage_dt_tm  "@SHORTDATETIME"
-	, Dr_TIME_SEEN = dr_seen.start_time "@SHORTDATETIME"
-	, IP_BED_REQ = ip_bed_req.IP_req_time "@SHORTDATETIME"
-	, IP_ADMIT = enc.inpatient_admit_dt_tm "@SHORTDATETIME"
-	, ED_DEPART = if(enc.inpatient_admit_dt_tm != null) format(enc.inpatient_admit_dt_tm, "dd/mm/yyyy hh:mm:ss")
+;	, TRIAGE_DATE_TIME = enc.triage_dt_tm  "@SHORTDATETIME"
+	, Dr_SEEN_TIME = dr_seen.start_time "@SHORTDATETIME"
+	, IP_BED_REQ_TIME = ip_bed_req.IP_req_time "@SHORTDATETIME"
+	, IP_ADMIT_TIME = enc.inpatient_admit_dt_tm "@SHORTDATETIME"
+	, ED_DEPART_TIME = if(enc.inpatient_admit_dt_tm != null) format(enc.inpatient_admit_dt_tm, "dd/mm/yyyy hh:mm:ss")
 		else format(enc.depart_dt_tm, "dd/mm/yyyy hh:mm:ss") endif
 	, INJURY_PLACE = injury_place.result_val
 	, INJURY_INTENT = injury_intent.result_val
@@ -62,7 +63,7 @@ from encounter enc
 		with SQLTYPE("F8","vc50","DQ8")
 
 		) arrived on arrived.encntr_id = enc.encntr_id
-		and arrived.arrived_dt >= cnvtdatetime("01-aug-2023 00:00:00") and arrived.arrived_dt < cnvtdatetime("01-sep-23 00:00:00")
+		and arrived.arrived_dt >= cnvtdatetime("01-aug-2023 00:00:00") and arrived.arrived_dt < cnvtdatetime("01-nov-23 00:00:00")
 ;		and arrived.arrived_dt >= cnvtdatetime("01-jan-2024 00:00:00")
 	)
 
@@ -363,18 +364,21 @@ from encounter enc
 		select
 			encntr = d.encntr_id
 			, diagnosis = d.diagnosis_display
+			, ICD10 = ccm.source_identifier
 			, row_num = row_number() over (partition by d.encntr_id order by d.beg_effective_dt_tm asc)
 		from diagnosis d
 			,(inner join nomenclature nom on nom.nomenclature_id = d.nomenclature_id)
+			,(left join cmt_cross_map ccm on ccm.concept_cki = nom.concept_cki)
 
 		where d.diag_type_cd = 3538766 ;Principal Dx
 			and d.ranking_cd = 3310 ;Primary
 			and d.active_ind = 1
 			and nom.vocab_axis_cd = 10425 ;diagnosis
 			and nom.source_vocabulary_cd = 79828951 ;ICD10-AMVEMD
+			and ccm.source_vocabulary_cd = 9353305 ;ICD10-AM No Dots
 ;			and d.encntr_id = 53755950
 
-		with SQLTYPE("f8","VC255","i2")
+		with SQLTYPE("f8","VC255","vc20","i2")
 		) d on d.encntr = enc.encntr_id and d.row_num = 1
 	)
 
@@ -414,12 +418,8 @@ from encounter enc
 
 
 	where enc.active_ind = 1
-;	and exists (select 1 from encntr_loc_hist elh where elh.encntr_id = enc.encntr_id
-;		and elh.admit_type_cd in (79848699 /*Emergency presentation*/));, 309203 /*Admission from ED*/))
 ;	and enc.encntr_id = 53762881
 ;		and enc.encntr_id in (54105786,54509535,54293214)
 
 
 with	time = 300
-
-
