@@ -14,7 +14,8 @@ select
 	, TRIAGE_DESC = triage_desc.result_val
 	, TRIAGE_TEXT = triage_txt.triage_text
 	, ED_DIAGNOSIS = d.diagnosis
-	, DISCH_DISP = uar_get_code_display(enc.disch_disposition_cd) ;<--- *****need to update to look at PM Transactions***** <---
+;	, IP_DISCH_DISP = uar_get_code_display(enc.disch_disposition_cd)
+	, ED_DISCH_DISP = uar_get_code_display(c_out.checkout_disposition_cd)
 	, TRIAGE_DATE_TIME = enc.triage_dt_tm  "@SHORTDATETIME"
 	, Dr_TIME_SEEN = dr_seen.start_time "@SHORTDATETIME"
 	, IP_BED_REQ = ip_bed_req.IP_req_time "@SHORTDATETIME"
@@ -61,7 +62,7 @@ from encounter enc
 		with SQLTYPE("F8","vc50","DQ8")
 
 		) arrived on arrived.encntr_id = enc.encntr_id
-		and arrived.arrived_dt >= cnvtdatetime("01-aug-2023 00:00:00") and arrived.arrived_dt < cnvtdatetime("01-nov-23 00:00:00")
+		and arrived.arrived_dt >= cnvtdatetime("01-aug-2023 00:00:00") and arrived.arrived_dt < cnvtdatetime("01-sep-23 00:00:00")
 ;		and arrived.arrived_dt >= cnvtdatetime("01-jan-2024 00:00:00")
 	)
 
@@ -355,6 +356,7 @@ from encounter enc
 
 	/***********
 	** get the primary (principal) diagnosis that was entered under emergency medicine
+	** still don't know how to get the ICD10 code
 	***********/
 
 	, (left join(
@@ -370,17 +372,54 @@ from encounter enc
 			and d.active_ind = 1
 			and nom.vocab_axis_cd = 10425 ;diagnosis
 			and nom.source_vocabulary_cd = 79828951 ;ICD10-AMVEMD
+;			and d.encntr_id = 53755950
 
 		with SQLTYPE("f8","VC255","i2")
 		) d on d.encntr = enc.encntr_id and d.row_num = 1
 	)
 
+
+	/***********
+	** get the discharge disposition from the checkin table.  Possible to have multiple if data errors
+	** exist, so need to get row_number() to get the first one
+	***********/
+
+	, (left join
+		(
+			select
+				co.encntr_id
+				, co.checkout_disposition_cd
+			from
+			(
+				(select
+					ti.encntr_id
+					, row_num = row_number() over (partition by ti.encntr_id order by tci.checkin_dt_tm asc)
+					, tci.checkout_disposition_cd
+				from tracking_checkin tci
+					, (inner join tracking_item ti on ti.tracking_id = tci.tracking_id)
+				where ti.active_ind = 1
+					and tci.active_ind = 1
+					and tci.tracking_group_cd in (151886115 /*ED FH*/, 151974417 /*ED SH*/, 151886117 /*ED WTN*/)
+;					and ti.encntr_id = 53762881
+;				order by ti.encntr_id asc, tci.checkin_dt_tm asc
+
+				with SQLTYPE("F8", "i2", "f8")
+				) co
+			)
+
+			where co.row_num = 1
+			with SQLTYPE("f8", "f8")
+		) c_out on c_out.encntr_id = enc.encntr_id
+	)
+
+
 	where enc.active_ind = 1
 ;	and exists (select 1 from encntr_loc_hist elh where elh.encntr_id = enc.encntr_id
 ;		and elh.admit_type_cd in (79848699 /*Emergency presentation*/));, 309203 /*Admission from ED*/))
-;	and enc.encntr_id = 53936242
-;	and enc.encntr_id = 55074798
+;	and enc.encntr_id = 53762881
 ;		and enc.encntr_id in (54105786,54509535,54293214)
 
 
 with	time = 300
+
+
