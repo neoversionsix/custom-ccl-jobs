@@ -1,0 +1,102 @@
+SELECT
+	INTERFACE = "POWERCHART ONLY, ORDERS THROUGH SURGINET NOT INCLUDED"
+	, PATIENT = P.NAME_FULL_FORMATTED
+    ; , FAKE_TEST_PATIENT =
+        ; IF (P.NAME_LAST_KEY="TESTWHS") "Y"
+        ; ELSE "N"
+        ; ENDIF
+	, PATIENT_URN = P_A.ALIAS
+	, ENCOUNTER_ = E_A.ALIAS
+	, ITEM = O.ORDER_MNEMONIC
+	, ORDERED_TIME = O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+    , ENCOUNTER_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
+    , ORDERED_BY = PR.NAME_FULL_FORMATTED
+
+FROM
+    ORDER_ACTION          	O_A
+	, ORDERS                O
+	, ENCOUNTER             E
+    , PRSNL                 PR
+    , PERSON				P
+    , PERSON_ALIAS          P_A
+    , ENCNTR_ALIAS          E_A
+
+PLAN O ; ORDERS
+	WHERE
+    O.CATALOG_CD IN /* Given Orderables below */
+        (
+            SELECT
+                O.CATALOG_CD
+            FROM
+                ORDER_CATALOG   O
+            WHERE
+                CNVTUPPER(O.PRIMARY_MNEMONIC) = "*CRITERIA LED DISCHARGE*"
+        )
+    /* Time filter */
+    AND O.ORIG_ORDER_DT_TM >= CNVTLOOKBEHIND("1, Y")
+
+
+JOIN O_A ; ORDER_ACTION
+    WHERE O.ORDER_ID = O_A.ORDER_ID
+    /* We want to find out who placed the New Order */
+    AND O_A.ACTION_TYPE_CD IN(2534); New Order
+    AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+    /* Time filter */
+    AND O_A.ACTION_DT_TM >= CNVTLOOKBEHIND("1, Y")
+
+/* Joining PRSNL for New order from order action */
+JOIN PR;PRSNL
+    WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID);X.UPDT_ID
+    AND PR.ACTIVE_IND = OUTERJOIN(1)
+
+JOIN E ; ENCOUNTER
+	WHERE E.ENCNTR_ID = O.ENCNTR_ID
+    AND E.ACTIVE_IND = 1
+    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    AND E.LOC_FACILITY_CD != 4038465.00
+
+/* Patient Identifiers such as URN Medicare no etc */
+JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
+    WHERE P_A.PERSON_ID = E.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
+    /* Patient URN */
+    ; AND
+    ; P_A.ALIAS = "ENTERURN#" ; ENTER URN!
+
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = E.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+;Encounter Alias
+JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+	/* active FIN NBRs only */
+    AND E_A.ACTIVE_IND = 1
+    /* effective FIN NBRs only */
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+
+ORDER BY
+    O.PERSON_ID
+	, O.ORDER_ID
+
+WITH TIME = 200,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT
