@@ -1,44 +1,20 @@
-WHERE
-;C.PERFORMED_PRSNL_ID = 12974024
-
-
 SELECT DISTINCT
 /*
-I am currently working in the Anaesthetics Department and completing an ethics-approved audit on adult patients awaiting emergency surgery for hip fractures. Previously, this data could be extracted from iPM with help from the Performance Unit. However, with the move towards EMR, this data set can no longer be extracted from iPM.
-I would like to request someone to help me with extracting data from EMR to complete this audit.
-Could I please have someone to help me with the following to include in the data set?
-- A record of adult patients over the age of 18 who underwent emergency hip fracture surgery from 7/8/23 to 7/11/23. I have a set of Hip Fracture Codes to link operation episodes for these patients.
-- From these patients, the anaesthetic start time would need to be recorded. (Usually in the intraop record or anaesthetic record)
-- Fasting food and Fasting fluid start times would need to be recorded also (this can be found in the periop passport to surgery documentation under Interactive View and Fluid Balance tab on EMR).
-Could a member of the EMR staff please assist me with this data extraction? I am happy to be contacted to discuss further.
-Kind regards,
-Paolo
+This will give filter for encounters with certain surgeries
+and then provide ANAESTHESIA times for those encounters
+
  */
 	  PATIENT = P.NAME_FULL_FORMATTED
-    , PATIENT_URN = P_A.ALIAS
-    ; , D.DIAGNOSIS_DISPLAY
-	; , UAR_GET_CODE_DISPLAY(D.DIAG_TYPE_CD)
-    , CLINICAL_EVENT_TYPE = UAR_GET_CODE_DISPLAY(C_E_FASTING.EVENT_CD)
-    , VAL = C_E_ANAESTHESIA.RESULT_VAL
 	, GENDER = UAR_GET_CODE_DISPLAY(P.SEX_CD)
 	, AGE = CNVTAGE(P.BIRTH_DT_TM)
+    , PATIENT_URN = P_A.ALIAS
 	, ENCOUNTER_NO = E_A.ALIAS
     , ENCOUNTER_LOC = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
     , ENCOUNTER_UNIT = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
-	, SURG_SCHED_TYPE = UAR_GET_CODE_DISPLAY(S_C.SCHED_TYPE_CD)
-	, PROCEDURE = O_C_S.MNEMONIC
-	, SURGEON = PR_SURGEON.NAME_FULL_FORMATTED
-	, ANESTHETIST = PR_ANESTHETIST.NAME_FULL_FORMATTED
-	, SURG_LOCATION = UAR_GET_CODE_DISPLAY(S_C.SURG_OP_LOC_CD)
-	, SURG_AREA = UAR_GET_CODE_DISPLAY(S_C_P.SURG_AREA_CD)
-	, SURG_SCHED_START = S_C.SCHED_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
-	, SURG_START = S_C.SURG_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
-	, SURG_PROC_START = S_C_P.PROC_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
-	, SURG_SCHEDULED_DURATION = S_C.SCHED_DUR
-	, SURG_DURATION = S_C_P.PROC_DUR_MIN
-	, SURG_STOP = S_C.SURG_STOP_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
-	, E_DISCH_DISPOSITION_DISP = UAR_GET_CODE_DISPLAY(E.DISCH_DISPOSITION_CD)
-	, E_DISCH_TO_LOCTN_DISP = UAR_GET_CODE_DISPLAY(E.DISCH_TO_LOCTN_CD)
+    , ENCOUNTER_CLINICAL_EVENT = UAR_GET_CODE_DISPLAY(C_E_ANAESTHESIA.EVENT_CD)
+    , C_E_ANAESTHESIA.EVENT_END_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+
+
 
 FROM
 	SURGICAL_CASE   			S_C
@@ -139,12 +115,6 @@ JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
     AND
     ; Active Only
     P_A.ACTIVE_IND = 1
-
-JOIN D ; DIAGNOSIS
-    WHERE D.ENCNTR_ID = OUTERJOIN(S_C.ENCNTR_ID)
-    AND D.ACTIVE_IND = OUTERJOIN(1)
-    AND D.DIAGNOSIS_DISPLAY != ""
-
 
 ORDER BY
 	E.ENCNTR_ID	DESC
