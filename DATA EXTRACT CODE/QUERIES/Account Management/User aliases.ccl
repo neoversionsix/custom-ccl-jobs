@@ -1,0 +1,21 @@
+select
+	p.person_id
+	, p.name_full_formatted
+	, person_position = uar_get_code_display(p.position_cd)
+	, person_active_flag = p.active_ind
+	, person_status = uar_get_code_display(p.active_status_cd)
+	, alias_status = uar_get_code_display(pa.active_status_cd)
+	, alias_type = uar_get_code_display(pa.prsnl_alias_type_cd)
+	, alias_pool = uar_get_code_display(pa.alias_pool_cd)
+	, pa.alias
+	, updated = format(pa.updt_dt_tm, "dd/mm/yyyy hh:mm")
+	, updated_by = p_upd.name_full_formatted
+from
+	prsnl_alias pa
+	, (left join prsnl p on pa.person_id = p.person_id)
+	, (left join prsnl p_upd on pa.updt_id = p_upd.person_id)
+
+;where pa.alias in ('xxxx') ;where xxxx is the alias value you're searching for
+where p.username = "xxxxx" ;put in the username of person you're searching for
+
+with maxrec = 100, time = 10
