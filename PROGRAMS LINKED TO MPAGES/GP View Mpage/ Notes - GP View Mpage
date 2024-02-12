@@ -1,0 +1,9 @@
+used: wh_vic_gp_details
+to create: wh_vic_gp_details_2
+
+- Bug was that it was only displaying the most recent active GP for the patients encounter
+updated to display the most recent active GP for the patient (not encounter specific)
+
+- moved from ccluserdir to cust_script folder
+
+- added a _2 to program name.
