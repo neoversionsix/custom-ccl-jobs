@@ -9,6 +9,17 @@ Could I please have someone to help me with the following to include in the data
 Could a member of the EMR staff please assist me with this data extraction? I am happy to be contacted to discuss further.
 Kind regards,
 Paolo
+
+Also, with regards to the number, that’s definitely far less patients that I had anticipated given that I had previously done this audit over the same timeframe earlier in the year.
+I looked through the data surgery catalogue. Could I please ask for this code to be included as part of the surgeries filtered?
+•	Hemiarthroplasty hip
+•	Hemiarthroplasty of hip
+•	Hemiarthroplasty of hip by anterior approach
+•	Prosthetic hemiarthroplasty of hip
+•	Internal fixation using intramedullary nail
+•	Intramedullary nailing of femur
+
+
  */
 	  PATIENT = P.NAME_FULL_FORMATTED
     , FASTING_EVENT_TYPE = UAR_GET_CODE_DISPLAY(C_E_FASTING.EVENT_CD)
@@ -63,9 +74,22 @@ JOIN S_C_P ;SURG_CASE_PROCEDURE
 
 JOIN O_C_S ;ORDER_CATALOG_SYNONYM
 	WHERE O_C_S.SYNONYM_ID = (S_C_P.SYNONYM_ID)
-    AND	O_C_S.MNEMONIC_KEY_CAP = ("*FRACTURE*")
-	AND O_C_S.MNEMONIC_KEY_CAP IN ("*ACETABULUM*", "*FEMUR*")
-
+    AND
+        (
+        O_C_S.MNEMONIC_KEY_CAP = ("*FRACTURE*") AND O_C_S.MNEMONIC_KEY_CAP IN ("*ACETABULUM*", "*FEMUR*")
+        )
+    OR
+        (
+        O_C_S.MNEMONIC_KEY_CAP IN
+            (
+            "HEMIARTHROPLASTY HIP"
+            , "HEMIARTHROPLASTY OF HIP"
+            , "HEMIARTHROPLASTY OF HIP BY ANTERIOR APPROACH"
+            , "PROSTHETIC HEMIARTHROPLASTY OF HIP"
+            , "INTERNAL FIXATION USING INTRAMEDULLARY NAIL"
+            , "INTRAMEDULLARY NAILING OF FEMUR"
+            )
+        )
 
 ; JOIN C_E_SURGERY ;CLINICAL_EVENT
 	; WHERE C_E_SURGERY.EVENT_ID = OUTERJOIN(S_C_P.EVENT_ID)
@@ -139,7 +163,8 @@ ORDER BY
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 15
 
 
-/*NOTES
+/*
+OTHER NOTES
   152429777.00	Fasting Status
   152219385.00	Fasting Food
   152219381.00	Fasting Fluid
@@ -158,6 +183,4 @@ WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 15
     ;     "S7211",   ;Fracture of intertrochanteric section of femur
     ;     "S722"    ;Subtrochanteric fracture
     ;     )
-
-
  */
