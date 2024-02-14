@@ -11,7 +11,7 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
 ;INITIAL VARIABLES
     DECLARE FINALHTML_VAR = VC with NoConstant(" "),Protect
     DECLARE CSS_VAR = VC with NoConstant(" "),Protect
-    DECLARE TITLE_VAR = VC with Constant("Medication Administration Scanner Override Reason - IN TESTING/DEVELOPMENT"),Protect
+    DECLARE TITLE_VAR = VC with Constant("Medication Administration Scanner Override Reason"),Protect
     DECLARE REPORT_DESC_VAR = VC with NoConstant(""),Protect
     DECLARE ACCURACY_NOTES_VAR = VC with NoConstant(""),Protect
     DECLARE FH_LOCATION_CD_VAR = F8 with constant(85758822.00),protect
@@ -26,17 +26,20 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         ,"<br>"
         ,"It is useful for estimating how many"
         ," times the wristbands were scanned/not-scanned when administering medications."
+        ,"<br>"
+        ,"Please read notes on data accuracy in the footer of this report."
     )
     SET ACCURACY_NOTES_VAR = BUILD2(
-         "These values will not be 100% Accurate."
+         "These values will probably not be 100% Accurate."
         , " Some reasonable assumptions needed to be made when developing this report."
-        ," Testing was conducted but can't be 100% conclusive"
-        ,"<br>Known Limitations:<br>&nbsp;&nbsp;&nbsp;&nbsp;" 
-        ,"- Totals for the first table (WH Medication Administration Error Totals) include fake 'test' patient totals."
-        ,"<br>&nbsp;&nbsp;&nbsp;&nbsp;"
+        ,"<br>Known Limitations:<br>&nbsp;&nbsp;&nbsp;&nbsp;"
         ,"- Not all data is recorded. This can depend on clinical workflow."
         ,"<br>&nbsp;&nbsp;&nbsp;&nbsp;"
+        ,"- Surginet is not included (Medication Administrations given in the Operating theater)"
+        ,"<br>&nbsp;&nbsp;&nbsp;&nbsp;"
         ,"- Patient location data is not 100% accurate (related to Encounter Location History table data recording) "
+        ,"<br>&nbsp;&nbsp;&nbsp;&nbsp;"
+        ,"- Testing was conducted but can't be 100% conclusive"
     )
     SET CSS_VAR = BUILD2(
         "table, th, td {"
@@ -71,7 +74,7 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
     SET FINALHTML_VAR = BUILD2(
             FINALHTML_VAR
             , "<br>"
-            , "<h2>WESTERN HEALTH TOTALS</h2>"
+            , '<h2 style="background-color: lightblue;">Western Health Totals</h2>'
     )
 ;Organisation Medication Administration Errors Totals
     SELECT INTO "NL:"
@@ -120,9 +123,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -171,9 +174,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -216,7 +219,7 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
     SET FINALHTML_VAR = BUILD2(
             FINALHTML_VAR
             , "<BR><BR>"
-            , "<h2>FOOTSCRAY HOSPITAL</h2>"
+            , '<h2 style="background-color: lightblue;">Footscray Hospital</h2>'
     )
 ;Footscray Scan Totals
     SELECT INTO "NL:"
@@ -232,9 +235,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -284,9 +287,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -342,9 +345,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -396,9 +399,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -443,7 +446,7 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
     SET FINALHTML_VAR = BUILD2(
             FINALHTML_VAR
             , "<BR><BR>"
-            , "<h2>SUNSHINE HOSPITAL</h2>"
+            , '<h2 style="background-color: lightblue;">Sunshine Hospital</h2>'
     )
 ;Sunshine Scan Totals
     SELECT INTO "NL:"
@@ -459,9 +462,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -511,9 +514,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -569,9 +572,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -623,9 +626,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -670,7 +673,7 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
     SET FINALHTML_VAR = BUILD2(
             FINALHTML_VAR
             , "<BR><BR>"
-            , "<h2>WILLIAMSTOWN HOSPITAL</h2>"
+            , '<h2 style="background-color: lightblue;">Williamstown Hospital</h2>'
     )
 ;Williamstown Scan Totals
     SELECT INTO "NL:"
@@ -686,9 +689,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -738,9 +741,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -796,9 +799,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
@@ -850,9 +853,9 @@ WITH OUTDEV, STA_DATE_TM, END_DATE_TM
         , MED_ADMIN_EVENT   MAE
         , ENCOUNTER   E
     PLAN O
-        WHERE 
+        WHERE
             O.CATALOG_TYPE_CD =2516 ;Pharmacy Orders
-            AND 
+            AND
             O.ORDER_STATUS_CD = 2543 ; Completed Orders
             AND
             O.UPDT_DT_TM  ; Time Restriction
