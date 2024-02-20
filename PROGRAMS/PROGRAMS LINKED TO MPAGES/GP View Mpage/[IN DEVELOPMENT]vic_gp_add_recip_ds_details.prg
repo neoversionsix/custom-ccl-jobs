@@ -25,6 +25,12 @@
 	  003 Sep 2016 Grant W				RNET changes:
 	  									Display both HEALTHLINK and RNET identifiers
 	  									in GP Details / Electronic Identifier
+
+;    *020 Feb 2024 Jason Whittle		Bug Fix - Changing Latest GP to pull from
+										PERSON_PRSNL_RELTN and no longer from ENCNTR_PRSNL_RELTN. This is
+										because it's actually stored in the PERSON_PRSNL_RELTN table.
+
+
 ;~DE~*******************************************************************************/
 
 drop program vic_gp_add_recip_ds_details:dba go
