@@ -43,7 +43,7 @@ create program vic_gp_add_patient_details:dba
   )
 
 
- declare EA_MRN_CD = f8 with Constant(uar_get_code_by("MEANING",319,"MRN")),protect
+declare EA_MRN_CD = f8 with Constant(uar_get_code_by("MEANING",319,"MRN")),protect
 declare addr_cd = f8 with protect, constant(uar_get_code_by("MEANING",212,"HOME"))
 
 
