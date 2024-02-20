@@ -89,7 +89,8 @@ declare ENCNTR_ID = f8 with constant(request->visit[1].encntr_id), protect
 declare PERSON_ID = f8 with noconstant(request->person[1].person_id), protect ;002
 
 declare FAX_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",333,"FAXDISCHARGESUMMARY")), protect
-declare GP_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",333,"GENERALPRACTITIONER")), protect
+declare GP_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",331,"PRIMARYCAREPHYSICIAN")), protect
+;declare GP_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",333,"GENERALPRACTITIONER")), protect
 declare REFERDOC_CD = f8 with constant(uar_get_code_by("MEANING",333,"REFERDOC")), protect
 declare PRSNL_CD = f8 with constant(uar_get_code_by("MEANING",213,"PRSNL")), protect
 declare BUSINESS_ADDR_CD = f8 with constant(uar_get_code_by("MEANING",212,"BUSINESS")), protect
@@ -116,7 +117,7 @@ declare PCEHR_UDF_CD = f8 with constant(uar_get_code_by("MEANING", 356, "PCEHR_P
 select into "nl:"
 from encounter e
 	, encounter e2
-	, encntr_prsnl_reltn epr
+	, person_prsnl_reltn epr ;encntr_prsnl_reltn
 	, prsnl pl
 	, person_name pn
 
