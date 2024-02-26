@@ -1,0 +1,148 @@
+select ;distinct	; recorded patient problems
+	domain = concat( trim(curdomain) ,' (', format(sysdate,"yyyymmdd hhmm;3;q"), ")" )
+	, current_facility = if (e_curr.encntr_id > 0) uar_get_code_display(e_curr.loc_facility_cd)
+	else "no current facility"
+	endif
+	, current_unit = if (e_curr.encntr_id > 0) uar_get_code_display(e_curr.loc_nurse_unit_cd)
+	else "no current unit"
+	endif
+	, current_visit_no = ea_visit.alias
+	, UR_number = prsn_a_URN.alias
+	, patient_id = prob.person_id
+	, patient_name = prsn.name_full_formatted ; "xxxx"
+	, problem_original_recorder = p_prob_rec.name_full_formatted
+	, problem_original_recorded_date = format(prob_parent.data_status_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, comment = if(prob_com.problem_comment_id > 0) concat(format(prob_com.comment_dt_tm, "dd/mm/yyyy hh:mm")
+	,  " - "
+	, trim(p_prob_com.name_full_formatted)
+	, ": "
+	, char(34)
+	, trim(substring(1,500,prob_com.problem_comment))	; swap with below if 'inconsistent datatypes: expected - got CLOB' error message is returned
+;	, trim(sqlpassthru("dbms_lob.substr(prob_com.problem_comment,500,1)",500))
+	, char(34)
+	)
+	else ""
+	endif
+	, comment_last_update = format(prob_com.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, comment_last_updater = p_prob_com.name_full_formatted
+	, problem_comment_id = if(prob_com.problem_comment_id > 0) cnvtstring(prob_com.problem_comment_id)
+	else ""
+	endif
+	, classification = uar_get_code_display(prob.classification_cd)
+	, annotated_display = prob.annotated_display
+	, onset_date = format(prob.onset_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, life_cycle_status = uar_get_code_display(prob.life_cycle_status_cd)
+	, responsible_provider = p_prob_pro.name_full_formatted
+	, last_reviewed = if(prob_a.updt_id > 1)  concat(format(prob_a.action_dt_tm, "dd/mm/yyyy")	; ignore when updt_id = 0 or 1, as these are system updates
+	, " - "
+	, trim(p_prob_a.name_full_formatted)
+	)
+	else "-"
+	endif
+	, prob_instance_last_updated_by = p_prob.name_full_formatted
+	, prob_instance_last_updated = format(prob.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, prob_instance_active = prob.active_ind
+	, prob_instance_end_date = format(prob.end_effective_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, prob_instance_id = prob.problem_instance_id
+	, prob_problem_id = prob.problem_id
+	, nomenclature_terminology = uar_get_code_display(n_prob.source_vocabulary_cd)
+	, nomenclature_term = n_prob.source_string
+	, nomenclature_active = if (n_prob.active_ind = 1 and n_prob.end_effective_dt_tm > sysdate)  1
+	else 0
+	endif
+	, nomenclature_id = prob.nomenclature_id
+	, problem_rank = dense_rank() over (partition by 0
+	order by
+;	cv_prob_class.display_key
+;	, prob.onset_dt_tm
+;	, prob.nomenclature_id
+	prob_parent.data_status_dt_tm
+	, prob_parent.problem_id
+	)
+
+from
+	problem prob
+	, (left join prsnl p_prob on p_prob.person_id = prob.updt_id)
+	, (left join problem_prsnl_r prob_rec on prob_rec.problem_id = prob.problem_id
+	and prob_rec.problem_reltn_cd = 3321	; 'Recorder' from code set 12038
+	)
+	, (left join prsnl p_prob_rec on p_prob_rec.person_id = prob_rec.problem_reltn_prsnl_id)
+	, (left join problem_prsnl_r prob_pro on prob_pro.problem_id = prob.problem_id
+	and prob_pro.problem_reltn_cd = 3322	; 'Provider' from code set 12038
+	)
+	, (left join prsnl p_prob_pro on p_prob_pro.person_id = prob_pro.problem_reltn_prsnl_id)
+	, (left join person prsn on prsn.person_id = prob.person_id)
+	, (left join person_alias prsn_a_URN on prsn_a_URN.person_id = prob.person_id
+	and prsn_a_URN.alias_pool_cd = 9569589	; WHS UR Number
+	and prsn_a_URN.active_ind = 1	; active URNs only
+	and prsn_a_URN.end_effective_dt_tm > sysdate	; effective URNs only
+	)
+	, (left join nomenclature n_prob on n_prob.nomenclature_id = prob.nomenclature_id)
+	, (left join problem_comment prob_com on prob_com.problem_id = prob.problem_id
+	and prob.active_ind = 1	; only return comments for the active instance
+	)
+	, (left join prsnl p_prob_com on p_prob_com.person_id = prob_com.updt_id)
+	, (inner join problem_action prob_a on prob_a.problem_action_id = (select max(prob_a2.problem_action_id)	; inner join required for nested select to function
+	from problem_action prob_a2
+	where prob_a2.problem_instance_id = prob.problem_instance_id
+	)
+	)
+	, (left join prsnl p_prob_a on p_prob_a.person_id = prob_a.updt_id)
+	, (left join problem_discipline prob_d on prob_d.problem_id = prob.problem_id)
+	, (left join prsnl p_prob_d on p_prob_d.person_id = prob_d.updt_id)
+	, (left join code_value cv_prob_class on cv_prob_class.code_value = prob.classification_cd)
+	, (left join problem prob_parent on prob_parent.problem_instance_id = prob.problem_id)
+	, (left join encounter e_curr on e_curr.person_id = prob.person_id
+	and e_curr.encntr_type_cd in (309308, 309310)	; 'Inpatient' and 'Emergency' from codeset 71
+	and e_curr.active_ind = 1
+	and e_curr.arrive_dt_tm < sysdate	; patient arrived in the past
+	and e_curr.depart_dt_tm = null	; but has not yet departed
+	)
+	, (left join encntr_alias ea_visit on ea_visit.encntr_id = e_curr.encntr_id
+	and ea_visit.encntr_alias_type_cd = 1077	; 'FIN NBR' from code set 319
+	and ea_visit.active_ind = 1	; active FIN NBRs only
+	and ea_visit.end_effective_dt_tm > sysdate	; effective FIN NBRs only
+	)
+
+plan	prob
+where	prob.problem_id > 0
+and	prob.active_ind = 1	; active problems only (database row is active)
+;and	prob.end_effective_dt_tm > sysdate	; effective problems only
+;and	prob.life_cycle_status_cd = 3301	; 'Active' from code set 12030
+;and	prob.nomenclature_id in (42076570, 42076563, 42076557, 42076551, 10268861)	; four COVID-19 problems, and 'Infection screening'
+;and	prob.person_id = 1234567
+join	p_prob
+join	prob_rec
+join	p_prob_rec
+join	prob_pro
+join	p_prob_pro
+join	prsn
+join	prsn_a_URN
+;where	prsn_a_URN.alias = "123456"	; URN
+join	n_prob
+join	prob_com
+join	p_prob_com
+join	prob_a
+join	p_prob_a
+join	prob_d
+join	p_prob_d
+join	cv_prob_class
+join	prob_parent
+;where	prob_parent.data_status_dt_tm between cnvtdatetime("15-JUN-2020") and cnvtdatetime("15-JUL-2020")
+join	e_curr
+join	ea_visit
+;where	ea_visit.alias = "IPE123456"	; enter visit number here
+
+order by
+;	cv_prob_class.display_key	; default PowerChart sort on an individual patient record
+;	, prob.onset_dt_tm
+;	, prob.annotated_display
+;	, prob.nomenclature_id
+	prob_parent.data_status_dt_tm
+	, prob_parent.problem_id
+	, prob.data_status_dt_tm
+	, prob_a.action_dt_tm
+	, prob_com.comment_dt_tm
+	, 0	; used for select distinct
+
+with	time = 180

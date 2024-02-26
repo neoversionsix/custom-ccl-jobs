@@ -1,0 +1,115 @@
+select ;distinct	; recorded patient diagnoses
+	UR_number = ea_URN.alias
+	, patient_name = p.name_full_formatted ;"xxxx"
+	, patient_id = diag.person_id
+	, encntr_dates = concat(format(e_orig.arrive_dt_tm, "dd/mm/yy hh:mm"), " - ", format(e_orig.depart_dt_tm, "dd/mm/yy hh:mm"))
+	, visit_no = ea_visit.alias
+	, diag.encntr_id
+	, treating_team = uar_get_code_display(e_orig.med_service_cd)
+	, facility_at_time_of_diagnosis = uar_get_code_display(e_orig.loc_facility_cd)
+	, unit_at_time_of_diagnosis =if(elh.loc_nurse_unit_cd > 0) uar_get_code_display(elh.loc_nurse_unit_cd)
+	else uar_get_code_display(e_orig.loc_nurse_unit_cd)
+	endif
+	, diagnosis_active_date = format(diag.active_status_dt_tm,  "dd/mm/yyyy hh:mm")
+	, diagnosis_recorder = if(diag.contributor_system_cd = 469 and p_diag.name_full_formatted = null) cnvtstring(diag.diag_prsnl_id)	; 'PowerChart' contributor_system (ie user-recorded diagnosis)
+	elseif(diag.contributor_system_cd = 469)  p_diag.name_full_formatted	; 'PowerChart' contributor_system (ie user-recorded diagnosis)
+	else uar_get_code_display(diag.contributor_system_cd)	; Contributor System-recorded diagnosis
+	endif
+	, comment = trim(substring(1,500,diag_com.long_blob))	; swap with below if 'inconsistent datatypes: expected - got CLOB' error message is returned
+;	, comment = trim(sqlpassthru("dbms_lob.substr(diag_com.long_blob,500,1)",500))
+	, comment_id = if(diag.long_blob_id > 0) cnvtstring(diag.long_blob_id)
+	else ""
+	endif
+	, diag_type = uar_get_code_display(diag.diag_type_cd)
+	, annotated_display = if(diag.diagnosis_display = " ") n_d.source_string
+	else diag.diagnosis_display
+	endif
+	, vocabulary = uar_get_code_display(n_d.source_vocabulary_cd)
+	, date = format(diag.diag_dt_tm,  "dd/mm/yyyy")
+	, confirmation = uar_get_code_display(diag.confirmation_status_cd)
+	, responsible_provider = diag.diag_prsnl_name
+	, last_review = format(diag_a.action_dt_tm,  "dd/mm/yyyy hh:mm")
+	, clinical_service = uar_get_code_display(diag.clinical_service_cd)
+	, classification = uar_get_code_display(diag.classification_cd)
+	, ranking = uar_get_code_display(diag.ranking_cd)
+	, qualifier = uar_get_code_display(diag.conditional_qual_cd)
+	, severity = uar_get_code_display(diag.severity_cd)
+	, status = uar_get_code_display(diag.active_status_cd)
+	, certainty = uar_get_code_display(diag.certainty_cd)
+	, probability = diag.probability
+	, nomenclature_display = n_d.source_string
+	, diag.nomenclature_id
+	, diag.diagnosis_id
+	, diag.diagnosis_group
+	, diagnosis_rank = dense_rank() over (partition by 0
+	order by
+	if(diag.diagnosis_group >0) diag.diagnosis_group
+	else diag.diagnosis_id
+	endif
+	, diag.diagnosis_id
+	)
+
+from
+	diagnosis diag
+	, (left join prsnl p_diag on p_diag.person_id = diag.diag_prsnl_id)
+	, (left join nomenclature n_d on n_d.nomenclature_id = diag.nomenclature_id)
+	, (left join long_blob diag_com on diag_com.long_blob_id = diag.long_blob_id)
+	, (left join prsnl p_diag_com on p_diag_com.person_id = diag_com.updt_id)
+	, (left join diagnosis_action diag_a on diag_a.diagnosis_id = diag.diagnosis_id)
+;	, (left join diagnosis_history diag_h on diag_h.diagnosis_id = diag.diagnosis_id)
+	, (left join encounter e_orig on e_orig.encntr_id = diag.encntr_id)
+	, (left join encntr_alias ea_URN on ea_URN.encntr_id = diag.encntr_id
+	and ea_URN.encntr_alias_type_cd = 1079	; 'URN' from code set 319
+	and ea_URN.active_ind = 1	; active URNs only
+	and ea_URN.end_effective_dt_tm > sysdate	; effective URNs only
+	)
+	, (left join encntr_alias ea_visit on ea_visit.encntr_id = diag.encntr_id
+	and ea_visit.encntr_alias_type_cd = 1077	; 'FIN NBR' from code set 319
+	and ea_visit.active_ind = 1	; active FIN NBRs only
+	and ea_visit.end_effective_dt_tm > sysdate	; effective FIN NBRs only
+	)
+	, (left join encntr_loc_hist elh on elh.encntr_id = diag.encntr_id
+	and elh.active_ind = 1	; to remove inactive rows that seem to appear for unknown reason(s)
+	and elh.pm_hist_tracking_id > 0	; to remove duplicate row that seems to occur at discharge
+	and elh.beg_effective_dt_tm < diag.active_status_dt_tm	; encounter location began before order was placed
+	and elh.end_effective_dt_tm >  diag.active_status_dt_tm	; encounter location ended after order was placed
+	)
+	, (left join person p on p.person_id = diag.person_id)
+
+plan	diag
+where	diag.diagnosis_id > 0
+;and	diag.active_ind = 1	; active disgnoses only
+;and 	diag.active_status_dt_tm between cnvtdatetime("01-JAN-2022") and cnvtdatetime("31-DEC-2022")	; between dates
+;and	diag.diag_type_cd = 3538766	; 'Principal Dx' from code set 17
+;and	diag.end_effective_dt_tm > sysdate	; effective disgnoses only
+;and	diag.nomenclature_id = 123456
+;and	diag.nomenclature_id in ( select n.nomenclature_id
+;	from nomenclature n
+;	where n.source_string_keycap = "*FEMUR*FRACTURE*"
+;	OR n.source_string_keycap = "*HIP*FRACTURE*"
+;	OR n.source_string_keycap = "*FRACTURE*FEMUR*"
+;	OR n.source_string_keycap = "*FRACTURE*HIP*"	
+;	)
+join	p_diag
+join	n_d
+join	diag_com
+join	p_diag_com
+join	diag_a
+;join	diag_h
+join	e_orig
+; where	e_orig.med_service_cd = 1234567	;codeset 34 - treating team
+join	ea_URN
+;where	ea_URN.alias = "123456"
+join	ea_visit
+join	elh
+join	p
+
+order by
+	if(diag.diagnosis_group >0) diag.diagnosis_group
+	else diag.diagnosis_id
+	endif
+	, diag.diagnosis_id
+	, 0
+
+with	time = 240
+;	 , maxrec = 1000
