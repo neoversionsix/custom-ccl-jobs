@@ -1,5 +1,5 @@
 select ;distinct	; recorded patient problems
-	domain = concat( trim(curdomain) ,' (', format(sysdate,"yyyymmdd hhmm;3;q"), ")" )
+	domain = concat( trim(curdomain) ,' (', format(sysdate,"dd/mmm/yyyy hh:mm;3;q"), ")" )
 	, current_facility = if (e_curr.encntr_id > 0) uar_get_code_display(e_curr.loc_facility_cd)
 	else "no current facility"
 	endif
@@ -32,6 +32,7 @@ select ;distinct	; recorded patient problems
 	, annotated_display = prob.annotated_display
 	, onset_date = format(prob.onset_dt_tm, "dd/mm/yyyy hh:mm:ss")
 	, life_cycle_status = uar_get_code_display(prob.life_cycle_status_cd)
+	, status_updater = p_status.name_full_formatted
 	, responsible_provider = p_prob_pro.name_full_formatted
 	, last_reviewed = if(prob_a.updt_id > 1)  concat(format(prob_a.action_dt_tm, "dd/mm/yyyy")	; ignore when updt_id = 0 or 1, as these are system updates
 	, " - "
@@ -63,6 +64,7 @@ select ;distinct	; recorded patient problems
 from
 	problem prob
 	, (left join prsnl p_prob on p_prob.person_id = prob.updt_id)
+	, (left join prsnl p_status on p_status.person_id = prob.data_status_prsnl_id)
 	, (left join problem_prsnl_r prob_rec on prob_rec.problem_id = prob.problem_id
 	and prob_rec.problem_reltn_cd = 3321	; 'Recorder' from code set 12038
 	)
@@ -82,7 +84,7 @@ from
 	and prob.active_ind = 1	; only return comments for the active instance
 	)
 	, (left join prsnl p_prob_com on p_prob_com.person_id = prob_com.updt_id)
-	, (inner join problem_action prob_a on prob_a.problem_action_id = (select max(prob_a2.problem_action_id)	; inner join required for nested select to function
+	, (inner join problem_action prob_a on prob_a.problem_action_id = (select max(prob_a2.problem_action_id); inner join required for nested select to function
 	from problem_action prob_a2
 	where prob_a2.problem_instance_id = prob.problem_instance_id
 	)
@@ -112,6 +114,7 @@ and	prob.life_cycle_status_cd != 3301	; Not 'Active' from code set 12030
 ;and	prob.nomenclature_id in (42076570, 42076563, 42076557, 42076551, 10268861)	; four COVID-19 problems, and 'Infection screening'
 ;and	prob.person_id = 1234567
 join	p_prob
+join 	p_status
 join	prob_rec
 join	p_prob_rec
 join	prob_pro
@@ -130,7 +133,7 @@ join	cv_prob_class
 join	prob_parent
 ;where	prob_parent.data_status_dt_tm between cnvtdatetime("15-JUN-2020") and cnvtdatetime("15-JUL-2020")
 join	e_curr
-		where e_curr.encntr_id > 0
+		where e_curr.encntr_id > 0 ; Current Patients only (removes outerjoin to blank encounter matches)
 join	ea_visit
 ;where	ea_visit.alias = "IPE123456"	; enter visit number here
 
