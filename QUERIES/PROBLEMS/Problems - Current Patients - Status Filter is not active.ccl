@@ -108,7 +108,7 @@ plan	prob
 where	prob.problem_id > 0
 and	prob.active_ind = 1	; active problems only (database row is active)
 ;and	prob.end_effective_dt_tm > sysdate	; effective problems only
-;and	prob.life_cycle_status_cd = 3301	; 'Active' from code set 12030
+and	prob.life_cycle_status_cd != 3301	; Not 'Active' from code set 12030
 ;and	prob.nomenclature_id in (42076570, 42076563, 42076557, 42076551, 10268861)	; four COVID-19 problems, and 'Infection screening'
 ;and	prob.person_id = 1234567
 join	p_prob
@@ -119,7 +119,7 @@ join	p_prob_pro
 join	prsn
 join	prsn_a_URN
 ;where	prsn_a_URN.alias = "123456"	; URN
-join	n_prob
+join	n_prob where n_prob.source_string = "Infectious Risk*" ; "Infectious Risk" problems only
 join	prob_com
 join	p_prob_com
 join	prob_a
@@ -130,6 +130,7 @@ join	cv_prob_class
 join	prob_parent
 ;where	prob_parent.data_status_dt_tm between cnvtdatetime("15-JUN-2020") and cnvtdatetime("15-JUL-2020")
 join	e_curr
+		where e_curr.encntr_id > 0
 join	ea_visit
 ;where	ea_visit.alias = "IPE123456"	; enter visit number here
 
