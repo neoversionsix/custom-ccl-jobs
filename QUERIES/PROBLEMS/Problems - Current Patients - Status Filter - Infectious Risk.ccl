@@ -32,7 +32,9 @@ select ;distinct	; recorded patient problems
 	, annotated_display = prob.annotated_display
 	, onset_date = format(prob.onset_dt_tm, "dd/mm/yyyy hh:mm:ss")
 	, life_cycle_status = uar_get_code_display(prob.life_cycle_status_cd)
+	, status_update =  format(prob.STATUS_UPDT_DT_TM,"dd/mmm/yyyy hh:mm;3;q")
 	, status_updater = p_status.name_full_formatted
+	, status_updater_position = uar_get_code_display(p_status.POSITION_CD)
 	, responsible_provider = p_prob_pro.name_full_formatted
 	, last_reviewed = if(prob_a.updt_id > 1)  concat(format(prob_a.action_dt_tm, "dd/mm/yyyy")	; ignore when updt_id = 0 or 1, as these are system updates
 	, " - "
