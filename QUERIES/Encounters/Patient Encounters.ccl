@@ -15,8 +15,8 @@ select
 	, arrival = format(e.arrive_dt_tm,"DD/MM/YYYY HH:mm:SS")
 	, triage = e.triage_dt_tm "@SHORTDATETIME"
 	, admit_decision = e.admit_decision_dt_tm "@SHORTDATETIME"
-	, depart = e.depart_dt_tm "@SHORTDATETIME"
 	, inpatient_admit = e.inpatient_admit_dt_tm "@SHORTDATETIME"
+	, depart = e.depart_dt_tm "@SHORTDATETIME"
 	, discharge = format(e.disch_dt_tm,"DD/MM/YYYY HH:mm:SS")
 	, enc_facility = uar_get_code_display(e.loc_facility_cd)
 	, Building = uar_get_code_description(e.loc_building_cd)
