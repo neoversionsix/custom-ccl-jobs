@@ -33,8 +33,8 @@
 
 ;~DE~*******************************************************************************/
 
-drop program vic_gp_add_recip_ds_details:dba go
-create program vic_gp_add_recip_ds_details:dba
+drop program vic_gp_add_recip_ds_details_2:dba go
+create program vic_gp_add_recip_ds_details_2:dba
 
 
 ; Include standard rtf includes
@@ -116,35 +116,25 @@ declare PCEHR_UDF_CD = f8 with constant(uar_get_code_by("MEANING", 356, "PCEHR_P
 ; Latest person GP
 select into "nl:"
 from encounter e
-	, encounter e2
-	, person_prsnl_reltn epr ;encntr_prsnl_reltn
+	;, encounter e2
+	, person_prsnl_reltn p_p_r ;previously encntr_prsnl_reltn
 	, prsnl pl
 	, person_name pn
 
-plan e where e.encntr_id = ENCNTR_ID
+plan pn where pn.person_id = PERSON_ID
 
 join e2 where e2.person_id = e.person_id+0
 ;and e2.organization_id = e.organization_id;should look across  all encounters for the patient
 ;regardless of organization
 and e2.active_ind = 1
 
-join epr where epr.encntr_id = e2.encntr_id
-and epr.encntr_prsnl_r_cd = GP_CD
-and epr.active_ind = 1
-and epr.end_effective_dt_tm = cnvtdatetime("31-DEC-2100")
-and epr.beg_effective_dt_tm = (select max(epr1.beg_effective_dt_tm)
-								from encntr_prsnl_reltn epr1
-									, encounter e3
+join p_p_r where p_p_r.person_id = e2.encntr_id
+and p_p_r.encntr_prsnl_r_cd = GP_CD
+and p_p_r.active_ind = 1
+and p_p_r.end_effective_dt_tm >= cnvtdatetime(curdate, curtime)
+and p_p_r.beg_effective_dt_tm <= cnvtdatetime(curdate, curtime)
 
-								where e3.person_id = e.person_id
-								and e3.active_ind = 1 ;must be on a noncancelled encounter
-														and epr1.encntr_id = e3.encntr_id
-								and epr1.encntr_prsnl_r_cd = GP_CD
-								and epr1.active_ind = 1
-								and epr1.end_effective_dt_tm = cnvtdatetime("31-DEC-2100")
-								)
-
-join pl where pl.person_id = outerjoin(epr.prsnl_person_id)
+join pl where pl.person_id = outerjoin(p_p_r.prsnl_person_id)
 
 join pn where pn.person_id = outerjoin(pl.person_id)
 and pn.name_type_cd = outerjoin(PRSNL_CD)
@@ -152,7 +142,7 @@ and pn.active_ind = outerjoin(1)
 and pn.beg_effective_dt_tm <= outerjoin(cnvtdatetime(curdate,curtime3))
 and pn.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
 
-order by epr.beg_effective_dt_tm desc
+order by p_p_r.beg_effective_dt_tm desc
 		, pl.person_id
 
 head report
@@ -168,7 +158,7 @@ head pl.person_id
 		enc->gps[cnt].name_middle = pn.name_middle
 		enc->gps[cnt].name_last = pl.name_last
 	else
-		enc->gps[cnt].name_free_text = epr.ft_prsnl_name
+		enc->gps[cnt].name_free_text = p_p_r.ft_prsnl_name
 	endif
 	enc->gps[cnt].latest_gp_flag = 1
 
@@ -181,18 +171,18 @@ with nocounter
 
 ; Load Encounter GP and Referring Doctor
 select into "nl:"
-sorter = if(epr.encntr_prsnl_r_cd = GP_CD) 1 else 2 endif
+sorter = if(p_p_r.encntr_prsnl_r_cd = GP_CD) 1 else 2 endif
 from encntr_prsnl_reltn epr
 	, prsnl pl
 	, person_name pn
 
-plan epr where epr.encntr_id = ENCNTR_ID
+plan epr where p_p_r.encntr_id = ENCNTR_ID
 ;and c = GP_CD
-and epr.encntr_prsnl_r_cd in (GP_CD,REFERDOC_CD)
-;and epr.prsnl_person_id != 0.0
-;and epr.end_effective_dt_tm = cnvtdatetime("31-DEC-2100");removed because inactive were not pulling for default statement
+and p_p_r.encntr_prsnl_r_cd in (GP_CD,REFERDOC_CD)
+;and p_p_r.prsnl_person_id != 0.0
+;and p_p_r.end_effective_dt_tm = cnvtdatetime("31-DEC-2100");removed because inactive were not pulling for default statement
 
-join pl where pl.person_id = outerjoin(epr.prsnl_person_id)
+join pl where pl.person_id = outerjoin(p_p_r.prsnl_person_id)
 
 join pn where pn.person_id = outerjoin(pl.person_id)
 and pn.name_type_cd = outerjoin(PRSNL_CD)
@@ -202,7 +192,7 @@ and pn.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
 
 order by
 	sorter
-	, epr.beg_effective_dt_tm desc
+	, p_p_r.beg_effective_dt_tm desc
 
 	, pl.person_id
 
@@ -210,7 +200,7 @@ head report
 	cnt = enc->cnt
 
 head sorter
-	if(epr.active_ind = 1 and epr.end_effective_dt_tm = cnvtdatetime("31-DEC-2100"))
+	if(p_p_r.active_ind = 1 and p_p_r.end_effective_dt_tm = cnvtdatetime("31-DEC-2100"))
 		cnt = cnt+1
 		stat = alterlist(enc->gps,cnt) ; should only be 1 GP
 		if(pl.person_id > 0.0)
@@ -220,9 +210,9 @@ head sorter
 			enc->gps[cnt].name_middle = pn.name_middle
 			enc->gps[cnt].name_last = pl.name_last
 		else
-			enc->gps[cnt].name_free_text = epr.ft_prsnl_name
+			enc->gps[cnt].name_free_text = p_p_r.ft_prsnl_name
 		endif
-		if(epr.encntr_prsnl_r_cd = GP_CD)
+		if(p_p_r.encntr_prsnl_r_cd = GP_CD)
 			enc->gps[cnt].enc_gp_flag = 1
 			enc->gps[cnt].person_id = pl.person_id
 		else
@@ -230,7 +220,7 @@ head sorter
 			enc->gps[cnt].ref_person_id = pl.person_id
 		endif
 	else
-		if(epr.encntr_prsnl_r_cd = GP_CD and epr.end_effective_dt_tm < cnvtdatetime("31-DEC-2100"))
+		if(p_p_r.encntr_prsnl_r_cd = GP_CD and p_p_r.end_effective_dt_tm < cnvtdatetime("31-DEC-2100"))
 			enc->inactive_gp_flag = 1
 		endif
 	endif
@@ -267,17 +257,17 @@ endif
  /*
 ; Other FAX Relationships
 select into "nl:"
-from encntr_prsnl_reltn epr
+from encntr_prsnl_reltn p_p_r
 	, prsnl pl
 	, person_name pn
 
-plan epr where epr.encntr_id = ENCNTR_ID
-and epr.encntr_prsnl_r_cd = FAX_CD
-and epr.active_ind = 1
-and epr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
-and epr.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+plan p_p_r where p_p_r.encntr_id = ENCNTR_ID
+and p_p_r.encntr_prsnl_r_cd = FAX_CD
+and p_p_r.active_ind = 1
+and p_p_r.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
+and p_p_r.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
 
-join pl where pl.person_id = outerjoin(epr.prsnl_person_id)
+join pl where pl.person_id = outerjoin(p_p_r.prsnl_person_id)
 
 join pn where pn.person_id = outerjoin(pl.person_id)
 and pn.name_type_cd = outerjoin(PRSNL_CD)
@@ -287,7 +277,7 @@ and pn.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
 
 order by
 	pl.person_id
-	, epr.beg_effective_dt_tm
+	, p_p_r.beg_effective_dt_tm
 
 head report
 	cnt = enc->cnt
@@ -302,7 +292,7 @@ head pl.person_id
 		enc->gps[cnt].name_middle = pn.name_middle
 		enc->gps[cnt].name_last = pl.name_last
 	else
-		enc->gps[cnt].name_free_text = epr.ft_prsnl_name
+		enc->gps[cnt].name_free_text = p_p_r.ft_prsnl_name
 	endif
 	enc->gps[cnt].fax_flag = 1
 
