@@ -1,0 +1,45 @@
+SELECT
+    IRON_STUDIES_COUNT = COUNT (DISTINCT O.ORDER_ID)
+
+FROM
+	  ORDERS                O
+	, ENCOUNTER             E
+    , PERSON				P
+
+PLAN O ; ORDERS
+	WHERE
+    O.CATALOG_CD IN /* Given Orderables below */
+        (
+            SELECT
+                O.CATALOG_CD
+            FROM
+                ORDER_CATALOG   O
+            WHERE
+                CNVTUPPER(O.PRIMARY_MNEMONIC) = "IRON (FE) STUDIES BLOOD"
+        )
+    /* Time filter */
+    AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME("01-JUL-2021")
+    AND O.ORIG_ORDER_DT_TM <= CNVTDATETIME("30-JUN-2023 23:59.59")
+
+JOIN E ; ENCOUNTER
+	WHERE E.ENCNTR_ID = O.ENCNTR_ID
+    AND E.ACTIVE_IND = 1
+    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    AND E.LOC_FACILITY_CD != 4038465.00
+    ;Encounter Type Filter
+    AND E.ENCNTR_TYPE_CD = 309308.00 ;Inpatient
+
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = E.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+WITH TIME = 20,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT
