@@ -37,8 +37,8 @@ drop program vic_gp_add_recip_ds_details:dba go
 create program vic_gp_add_recip_ds_details:dba
 
 ; Include standard rtf includes
-%i cclsource:ma_rtf_tags.inc
-%i cclsource:vic_ds_common_fonts.inc
+%i cust_script:ma_rtf_tags.inc
+%i cust_script:vic_ds_common_fonts.inc
 
 record enc (
   1 consent_flag = c1
@@ -119,8 +119,15 @@ from encounter e
 	, prsnl pl
 	, person_name pn
 
-plan p_r_r ;person_prsnl_reltn
-	where p_r_r.person_id = PERSON_ID ; related to this patient
+plan e where e.encntr_id = ENCNTR_ID
+
+join e2
+	where e2.person_id = e.person_id+0
+	and e2.active_ind = 1
+
+
+join p_r_r ;person_prsnl_reltn
+	where p_r_r.person_id = e2.person_id ; related to this patient
 	and p_r_r.active_ind = 1 ; active
 	and p_r_r.PERSON_PRSNL_R_CD = 1115.00 ; Primary Care Physician
 	and p_r_r.BEG_EFFECTIVE_DT_TM =
