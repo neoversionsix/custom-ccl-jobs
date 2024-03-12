@@ -123,13 +123,12 @@ plan p_r_r ;person_prsnl_reltn
 	where p_r_r.person_id = PERSON_ID ; related to this patient
 	and p_r_r.active_ind = 1 ; active
 	and p_r_r.PERSON_PRSNL_R_CD = 1115.00 ; Primary Care Physician
-	and p_r_r.
 	and p_r_r.BEG_EFFECTIVE_DT_TM =
 		(
 			select max (p_r_r_inlinez.beg_effective_dt_tm)
 			from person_prsnl_reltn p_r_r_inline
 			where
-				p_r_r_inline.person_id = PERSON_ID
+				p_r_r_inline.person_id = PERSON_ID ; related to this patient
 				and p_r_r_inline.active_ind = 1 ; active
 				and p_r_r_inline.PERSON_PRSNL_R_CD = 1115.00 ; Primary Care Physician
 		)
@@ -159,7 +158,7 @@ and epr.beg_effective_dt_tm = (select max(epr1.beg_effective_dt_tm)
 								)
 */
 
-join pl where pl.person_id = outerjoin(epr.prsnl_person_id)
+join pl where pl.person_id = outerjoin(p_r_r.prsnl_person_id)
 
 join pn where pn.person_id = outerjoin(pl.person_id)
 and pn.name_type_cd = outerjoin(PRSNL_CD)
@@ -167,7 +166,7 @@ and pn.active_ind = outerjoin(1)
 and pn.beg_effective_dt_tm <= outerjoin(cnvtdatetime(curdate,curtime3))
 and pn.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
 
-order by epr.beg_effective_dt_tm desc
+order by p_r_r.beg_effective_dt_tm desc
 		, pl.person_id
 
 head report
@@ -183,7 +182,7 @@ head pl.person_id
 		enc->gps[cnt].name_middle = pn.name_middle
 		enc->gps[cnt].name_last = pl.name_last
 	else
-		enc->gps[cnt].name_free_text = epr.ft_prsnl_name
+		enc->gps[cnt].name_free_text = p_r_r.ft_prsnl_name
 	endif
 	enc->gps[cnt].latest_gp_flag = 1
 
