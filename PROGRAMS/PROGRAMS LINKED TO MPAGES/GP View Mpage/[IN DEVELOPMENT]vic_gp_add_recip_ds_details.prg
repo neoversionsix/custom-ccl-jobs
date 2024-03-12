@@ -125,7 +125,7 @@ plan p_r_r ;person_prsnl_reltn
 	and p_r_r.PERSON_PRSNL_R_CD = 1115.00 ; Primary Care Physician
 	and p_r_r.BEG_EFFECTIVE_DT_TM =
 		(
-			select max (p_r_r_inlinez.beg_effective_dt_tm)
+			select max (p_r_r_inline.beg_effective_dt_tm)
 			from person_prsnl_reltn p_r_r_inline
 			where
 				p_r_r_inline.person_id = PERSON_ID ; related to this patient
