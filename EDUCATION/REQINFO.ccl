@@ -1,0 +1,7 @@
+/*
+
+TO get current person ID
+
+ */
+
+where p.person_id = reqinfo->updt_id

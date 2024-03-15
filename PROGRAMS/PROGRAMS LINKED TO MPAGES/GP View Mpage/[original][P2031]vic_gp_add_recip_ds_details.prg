@@ -25,20 +25,16 @@
 	  003 Sep 2016 Grant W				RNET changes:
 	  									Display both HEALTHLINK and RNET identifiers
 	  									in GP Details / Electronic Identifier
-
-
-;    *020 Feb 2024 Jason Whittle		Bug Fix - Changing Latest GP to pull from
-										PERSON_PRSNL_RELTN and no longer from ENCNTR_PRSNL_RELTN. This is
-										because it's actually stored in the PERSON_PRSNL_RELTN table.
-
 ;~DE~*******************************************************************************/
 
 drop program vic_gp_add_recip_ds_details:dba go
 create program vic_gp_add_recip_ds_details:dba
 
+
 ; Include standard rtf includes
-%i cust_script:ma_rtf_tags.inc
-%i cust_script:vic_ds_common_fonts.inc
+%i cclsource:ma_rtf_tags.inc
+%i cclsource:vic_ds_common_fonts.inc
+
 
 record enc (
   1 consent_flag = c1
@@ -112,40 +108,44 @@ declare PCEHR_UDF_CD = f8 with constant(uar_get_code_by("MEANING", 356, "PCEHR_P
 
 ; Latest person GP
 select into "nl:"
-from
-	  encounter e
-	, person_prsnl_reltn p_r_r
+from encounter e
+	, encounter e2
+	, encntr_prsnl_reltn epr
 	, prsnl pl
 	, person_name pn
 
 plan e where e.encntr_id = ENCNTR_ID
 
-join p_r_r ;person_prsnl_reltn
-	where p_r_r.person_id = e.person_id ; related to this patient
-	and p_r_r.active_ind = 1 ; active
-	and p_r_r.PERSON_PRSNL_R_CD = 1115.00 ; Primary Care Physician
-	and p_r_r.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
-	and p_r_r.BEG_EFFECTIVE_DT_TM =
-		(
-			select max (p_r_r_inline.beg_effective_dt_tm)
-			from person_prsnl_reltn p_r_r_inline
-			where
-				p_r_r_inline.person_id = e.person_id ; related to this patient
-				and p_r_r_inline.active_ind = 1 ; active
-				and p_r_r_inline.PERSON_PRSNL_R_CD = 1115.00 ; Primary Care Physician
-				and p_r_r_inline.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
-		)
+join e2 where e2.person_id = e.person_id+0
+;and e2.organization_id = e.organization_id;should look across  all encounters for the patient
+;regardless of organization
+and e2.active_ind = 1
 
+join epr where epr.encntr_id = e2.encntr_id
+and epr.encntr_prsnl_r_cd = GP_CD
+and epr.active_ind = 1
+and epr.end_effective_dt_tm = cnvtdatetime("31-DEC-2100")
+and epr.beg_effective_dt_tm = (select max(epr1.beg_effective_dt_tm)
+								from encntr_prsnl_reltn epr1
+									, encounter e3
 
-join pl where pl.person_id = outerjoin(p_r_r.prsnl_person_id)
+								where e3.person_id = e.person_id
+								and e3.active_ind = 1 ;must be on a noncancelled encounter
+														and epr1.encntr_id = e3.encntr_id
+								and epr1.encntr_prsnl_r_cd = GP_CD
+								and epr1.active_ind = 1
+								and epr1.end_effective_dt_tm = cnvtdatetime("31-DEC-2100")
+								)
+
+join pl where pl.person_id = outerjoin(epr.prsnl_person_id)
 
 join pn where pn.person_id = outerjoin(pl.person_id)
-	and pn.name_type_cd = outerjoin(PRSNL_CD)
-	and pn.active_ind = outerjoin(1)
-	and pn.beg_effective_dt_tm <= outerjoin(cnvtdatetime(curdate,curtime3))
-	and pn.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
+and pn.name_type_cd = outerjoin(PRSNL_CD)
+and pn.active_ind = outerjoin(1)
+and pn.beg_effective_dt_tm <= outerjoin(cnvtdatetime(curdate,curtime3))
+and pn.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
 
-order by p_r_r.beg_effective_dt_tm desc
+order by epr.beg_effective_dt_tm desc
 		, pl.person_id
 
 head report
@@ -154,20 +154,20 @@ head report
 head pl.person_id
 	cnt = cnt+1
 	stat = alterlist(enc->gps,cnt) ; should only be 1 GP
-	if(pl.person_id > 0.0) ; if p_r_r.prsnl_person_id is filled out get name from other tables
+	if(pl.person_id > 0.0)
 		enc->gps[cnt].person_id = pl.person_id
 		enc->gps[cnt].name_title = pn.name_prefix
 		enc->gps[cnt].name_first = pl.name_first
 		enc->gps[cnt].name_middle = pn.name_middle
 		enc->gps[cnt].name_last = pl.name_last
 	else
-		enc->gps[cnt].name_free_text = p_r_r.ft_prsnl_name ; use name on person_prsnl_reltn table
+		enc->gps[cnt].name_free_text = epr.ft_prsnl_name
 	endif
 	enc->gps[cnt].latest_gp_flag = 1
 
 foot report
 	enc->cnt = cnt
-	PERSON_ID = e.person_id ;002 - to save looking it up again
+ 	PERSON_ID = e.person_id ;002 - to save looking it up again
 with nocounter
 
 

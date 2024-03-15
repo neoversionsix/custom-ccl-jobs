@@ -1,0 +1,47 @@
+SELECT
+	pl_person_id = pl.person_id
+	, p_r_r_PERSON_ID = p_r_r.PERSON_ID
+	, p_r_r_prsnl_PERSON_ID = p_r_r.PRSNL_PERSON_ID
+	, pn_PERSON_ID = pn.PERSON_ID
+	, name_title = pn.name_prefix
+	, name_first = pl.name_first
+	, name_middle = pn.name_middle
+	, name_last = pl.name_last
+	, name_free_text = p_r_r.ft_prsnl_name
+	, p_r_r.*
+
+FROM
+	person_prsnl_reltn   p_r_r
+	, prsnl   pl
+	, person_name   pn
+
+plan p_r_r ;person_prsnl_reltn
+	where p_r_r.person_id = (select person_id from person_alias where alias = "1613166") ; related to this patient
+	and p_r_r.active_ind = 1 ; active
+	and p_r_r.PERSON_PRSNL_R_CD = 1115.00 ; Primary Care Physician
+	and p_r_r.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+	and p_r_r.BEG_EFFECTIVE_DT_TM =
+		(
+			select max (p_r_r_inline.beg_effective_dt_tm)
+			from person_prsnl_reltn p_r_r_inline
+			where
+				p_r_r_inline.person_id = (select person_id from person_alias where alias = "1613166") ; related to this patient
+				and p_r_r_inline.active_ind = 1 ; active
+				and p_r_r_inline.PERSON_PRSNL_R_CD = 1115.00 ; Primary Care Physician
+				and p_r_r_inline.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+		)
+
+
+join pl where pl.person_id = outerjoin(p_r_r.PRSNL_PERSON_ID)
+
+join pn where pn.person_id = outerjoin(pl.person_id)
+and pn.name_type_cd =      outerjoin(614387.00) ;outerjoin(PRSNL_CD)
+and pn.active_ind = outerjoin(1)
+and pn.beg_effective_dt_tm <= outerjoin(cnvtdatetime(curdate,curtime3))
+and pn.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
+
+ORDER BY
+	p_r_r.beg_effective_dt_tm   DESC
+	, pl.person_id
+
+WITH TIME = 1
