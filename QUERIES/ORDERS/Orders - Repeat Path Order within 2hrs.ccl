@@ -55,3 +55,6 @@ where o_orig.active_ind = 1
 order by o_orig.person_id asc, o_orig.current_start_dt_tm asc, o_orig.order_id asc
 
 WITH time = 120, format(date,"@SHORTDATETIME")
+
+
+
