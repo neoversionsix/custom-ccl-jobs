@@ -1,30 +1,23 @@
-;looks at whether an order has been repeated within 2hrs.  If an order is repeated,
-;it populates the prior order details on the right.
+;return count by year and month of all repeat orders based on parameters in o_prior join condition
 
 SELECT
-	URN = p_urn.alias
-	, o_orig.order_id
-	, p.name_full_formatted
-	, o_orig.order_mnemonic
-	, o_orig.ordered_as_mnemonic
-	, order_status = uar_get_code_display(o_orig.order_status_cd)
-	, dept_status = uar_get_code_display(o_orig.dept_status_cd)
-	, o_orig.orig_order_dt_tm
-	, o_orig.current_start_dt_tm
-	, o_prior.order_id
-	, o_prior.orig_order_dt_tm
-	, o_prior.current_start_dt_tm
-	, time_diff_mins = datetimediff(o_orig.current_start_dt_tm, o_prior.current_start_dt_tm, 4)
+	yr = datetimepart(o_orig.current_start_dt_tm, 1)
+	, mth = datetimepart(o_orig.current_start_dt_tm, 2)
+
+	;distinct count because some orders have mulitple prior orders within timeframe
+	, repeat_orders = count (distinct o_orig.order_id)
 
 FROM
 	orders o_orig
-	, (left join orders o_prior on o_prior.person_id = o_orig.person_id
+
+	;inner join on orders but only where the current order had a prior order within timeframe
+	, (inner join orders o_prior on o_prior.person_id = o_orig.person_id
 		and o_prior.catalog_cd = 7347904 ;FBE
 		and o_prior.order_id != o_orig.order_id
 		and o_prior.order_id < o_orig.order_id
 		and o_prior.discontinue_ind = 0
-		and o_prior.current_start_dt_tm <= o_orig.current_start_dt_tm
-		and o_prior.current_start_dt_tm > (o_orig.current_start_dt_tm - 2/24)
+		and o_prior.current_start_dt_tm <= o_orig.current_start_dt_tm ;include orders with same start time
+		and o_prior.current_start_dt_tm > (o_orig.current_start_dt_tm - 2/24) ;within 2hrs
 		and o_orig.order_status_cd not in (
 			2542		;Cancelled
 			, 2544		;Deleted
@@ -32,12 +25,6 @@ FROM
 			, 2552		;Suspended
 			, 614538)	;Transfer/Canceled
 		  )
-	, (left join person p on p.person_id = o_orig.person_id)
-	, (left join person_alias p_urn on p_urn.person_id = o_orig.person_id
-		and p_urn.person_alias_type_cd = 10 ; URN
-		and p_urn.active_ind = 1 ;active URN only
-		and p_urn.end_effective_dt_tm > sysdate ;effective URN only
-	  )
 
 where o_orig.active_ind = 1
 	and o_orig.catalog_cd = 7347904 ;FBE
@@ -46,15 +33,23 @@ where o_orig.active_ind = 1
 		, 2544		;Deleted
 		, 2545		;Discontinued
 		, 2552		;Suspended
-		, 614538)	;Transfer/Canceled
+		, 614538)	;Transfer/Cancelled
 ;	and o_orig.orig_order_dt_tm between cnvtdatetime(curdate,0) and cnvtdatetime(curdate+1,0)
 ;	and o_orig.orig_order_dt_tm >= cnvtdatetime("12-mar-2024 00:00:00") and o_orig.orig_order_dt_tm < cnvtdatetime("13-mar-2024 00:00:00")
-	and o_orig.current_start_dt_tm >= cnvtdatetime("12-mar-2024 00:00:00") and o_orig.current_start_dt_tm < cnvtdatetime("13-mar-2024 00:00:00")
+	and o_orig.current_start_dt_tm >= cnvtdatetime("01-apr-2018 00:00:00")
+	and o_orig.current_start_dt_tm < cnvtdatetime("01-apr-2024 00:00:00")
 	and o_orig.discontinue_ind = 0
 
-order by o_orig.person_id asc, o_orig.current_start_dt_tm asc, o_orig.order_id asc
+group by
+;	format(o_orig.current_start_dt_tm, "YYYYMM")
+	datetimepart(o_orig.current_start_dt_tm, 1)
+	, datetimepart(o_orig.current_start_dt_tm, 2)
 
-WITH time = 120, format(date,"@SHORTDATETIME")
+order by
+	datetimepart(o_orig.current_start_dt_tm, 1) desc
+	, datetimepart(o_orig.current_start_dt_tm, 2) desc
+
+WITH time = 240
 
 
 
