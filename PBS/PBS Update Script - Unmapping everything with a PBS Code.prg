@@ -1,8 +1,9 @@
 /* REMOVE INCORRECT PBS MAPPINGS--------------------------------
-Note: This may unmap multiple rows because it select the PBS drug,
+Note: This may unmap multiple rows
 Use when you have mapped an incorrect PBS Code
 eg if you wanted to upmap everything with "13Q" you would find it's
 corresponding P_O_M.PBS_DRUG_ID and then use that to unmap it
+put the id in the last line of the where clause
 
 */
 UPDATE INTO PBS_OCS_MAPPING P_O_M
