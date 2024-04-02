@@ -1,0 +1,87 @@
+;return duplicate orders within timeframe - to be used for few months - not for large volumes of data
+
+SELECT
+	o_orig.person_id
+	, o_orig.order_id
+	, o_enc_type = uar_get_code_display(o_enc.encntr_type_cd)
+	, order_cat = uar_get_code_display(o_orig.catalog_cd)
+;	, o_orig.order_mnemonic
+	, o_orig.ordered_as_mnemonic
+	, order_status = uar_get_code_display(o_orig.order_status_cd)
+	, dept_status = uar_get_code_display(o_orig.dept_status_cd)
+	, o_orig.orig_order_dt_tm
+	, o_orig.current_start_dt_tm
+;	, o_orig.updt_id
+	, p_upd_o.name_full_formatted
+	, prior_order_status = uar_get_code_display(o_prior.order_status_cd)
+	, prior_order_id = o_prior.order_id
+	, p_enc_type = uar_get_code_display(p_enc.encntr_type_cd)
+	, prior_active = o_prior.active_ind
+	, prior_order_dt = o_prior.orig_order_dt_tm
+	, prior_start_dt = o_prior.current_start_dt_tm
+	, p_upd_p.name_full_formatted
+	, time_diff_mins = datetimediff(o_orig.current_start_dt_tm, o_prior.current_start_dt_tm, 4)
+;	, prior_order_status = uar_get_code_display(o_prior.order_status_cd)
+;	, prior_order_status_cd = o_prior.order_status_cd
+;	, check = if(o_prior.order_status_cd = 2542) 1 else 0 endif
+	, rnk = rank() over(partition by o_orig.person_id order by o_orig.person_id, o_orig.current_start_dt_tm asc, o_orig.order_id)
+
+FROM
+	orders o_orig
+
+	;inner join on orders but only where the current order had a prior order within timeframe
+	, (left join orders o_prior on o_prior.person_id = o_orig.person_id
+		and o_prior.catalog_cd = 7347904 ;FBE
+;		and o_prior.catalog_cd = 7349660 ;UEC
+		and o_prior.order_id != o_orig.order_id
+		and o_prior.order_id < o_orig.order_id
+;		and o_prior.discontinue_ind = 0
+		and o_prior.current_start_dt_tm <= o_orig.current_start_dt_tm ;include orders with same start time
+		and o_prior.current_start_dt_tm > (o_orig.current_start_dt_tm - 2/24) ;within 2hrs for FBE
+;		and o_prior.current_start_dt_tm > (o_orig.current_start_dt_tm - 5/24) ;within 5hrs for UEC
+		and
+		(	o_prior.order_status_cd not in
+			(	2542		;Cancelled
+				, 2544		;Deleted
+				, 2545		;Discontinued
+				, 2552		;Suspended
+				, 614538	;Transfer/Canceled
+			)
+			or (o_prior.order_status_cd = 2545 /*Discontinued*/ and o_prior.updt_id = 1) ;updt_id = 1 is SYSTEM, SYSTEM
+		)
+	)
+
+	, (left join encounter o_enc on o_enc.encntr_id = o_orig.encntr_id
+		and o_enc.encntr_type_cd = 309308 /*inpatient only*/)
+	, (left join encounter p_enc on p_enc.encntr_id = o_prior.encntr_id
+		and p_enc.encntr_type_cd = 309308 /*inpatient only*/)
+	, (left join prsnl p_upd_o on p_upd_o.person_id = o_orig.updt_id)
+	, (left join prsnl p_upd_p on p_upd_p.person_id = o_prior.updt_id)
+
+
+
+where o_orig.active_ind = 1
+	and o_orig.catalog_cd = 7347904 ;FBE
+;	and o_orig.catalog_cd = 7349660 ;UEC
+	and
+	(	o_orig.order_status_cd not in
+		(	2542		;Cancelled
+			, 2544		;Deleted
+			, 2545		;Discontinued
+			, 2552		;Suspended
+			, 614538	;Transfer/Cancelled
+		)
+		or (o_orig.order_status_cd = 2545 /*Discontinued*/ and o_orig.updt_id = 1) ;updt_id = 1 is SYSTEM, SYSTEM
+	)
+	and o_orig.current_start_dt_tm >= cnvtdatetime("01-apr-2024 00:00:00")
+	and o_orig.current_start_dt_tm < cnvtdatetime("02-apr-2024 00:00:00")
+;	and o_orig.discontinue_ind = 0
+;	and o_orig.person_id not in (select p.person_id from person p where p.name_last_key like "*TESTWHS*")
+
+order by
+	o_orig.person_id, o_orig.current_start_dt_tm asc, o_orig.order_id, o_prior.current_start_dt_tm asc, o_prior.order_id
+
+WITH time = 120, format(date,"@SHORTDATETIME")
+
+
+
