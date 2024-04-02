@@ -1,13 +1,10 @@
-SELECT		;RETRIEVES CODES THAT NEED TO BE MAPPED THIS MONTH.
+SELECT
 /*
+RETRIEVES CODES THAT NEED TO BE MAPPED THIS MONTH.
 Notes:
-Faras contibuted updated/improved my original code in a previous version
 This will pull back the items that need to be mapped this month. It
-assumes that the package was installed recently. It will pull back items
-for the last installed package
-
-UPDATES
-28 FEB 2024 - Jason Whittle updated the order by section for easier mapping.
+assumes that the package was installed recently - because it brings back items with the most
+recent begin effective time from PBS_DRUG.
 */
     MAP_PBS_DRUG_ID_ = P_D.PBS_DRUG_ID
 	; , DOMAIN = CURDOMAIN
