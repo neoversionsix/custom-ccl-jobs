@@ -655,19 +655,7 @@ with nocounter, check
 ;call echorecord(enc)
 
 
-; Create RTF Output.
-call ApplyFont(active_fonts->header_patient_name)
-if(enc->consent_flag = "N")
-	call PrintText("No GP Consent",1,0,1)
-    call NextLine(2)
-elseif(enc->consent_flag != "Y")
-	call PrintText("GP Consent Unknown",1,0,1)
-	call NextLine(2)
-else
-		call PrintText("GP Consent Given",1,0,1)
-    call NextLine(2)
-endif
-
+/*CREATE RTF OUTPUT.*/
 ;002* print myHealthRecord consent
 if (PCEHR_UDF_CD > 0)
 	if(enc->MyHealth_consent = "YES")
