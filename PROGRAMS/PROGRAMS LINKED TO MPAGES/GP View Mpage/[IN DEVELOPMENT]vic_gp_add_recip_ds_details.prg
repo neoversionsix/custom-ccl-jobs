@@ -609,50 +609,7 @@ detail
 
 with nocounter, check
 
-; Load Healthlink Identifier
-;select into "nl:"
-;from prsnl_alias pa
-;
-;plan pa where expand(idx,1,enc->cnt,pa.person_id,enc->gps[idx].person_id)
-;and pa.alias_pool_cd in (ARGUS_CD, HEALTHLINK_CD)
-;and pa.active_ind = 1
-;and pa.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
-;and pa.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
-;and pa.person_id+0 > 0.0
-;
-;order by pa.person_id
-;		, pa.beg_effective_dt_tm desc
-;
-;head report
-;	pos = 0
-;
-;head pa.person_id
-;	pos = locateval(idx,1,enc->cnt,pa.person_id,enc->gps[idx].person_id)
-;
-; 		if (enc->gps[pos].referring_gp_flag !=1)
-;		while(pos > 0)
-;
-;			enc->gps[pos].helthelink = trim(cnvtalias(pa.alias, pa.alias_pool_cd))
-;
-;			if(pa.prsnl_alias_type_cd = ARGUS_CD)
-;				enc->gps[pos].helthlink_flag = 0
-;			else
-;			enc->gps[pos].helthlink_flag = 1
-;			endif
-;
-;		pos = locateval(idx,pos+1,enc->cnt,pa.person_id,enc->gps[idx].person_id)
-;
-;		endwhile
-; 	endif
-;foot report
-;	null
-;
-;with nocounter
 
-;003 ---
-
-
-;call echorecord(enc)
 
 
 /*CREATE RTF OUTPUT.*/
@@ -823,19 +780,6 @@ if(enc->cnt > 0)
 				endif
 				call NextLine(1)
 			endif
-
-
-;			if(enc->gps[x].helthelink > " ")
-;				if(enc->gps[x].helthlink_flag = 1)
-;					set outstring = concat("Healthlink - ",enc->gps[x].helthelink)
-;				else
-;					set outstring = concat("Argus - ",enc->gps[x].helthelink)
-;				endif
-;				call PrintLabeledDataFixed("Electronic Identifier: ",outstring,30)
-;				call NextLine(1)
-;			endif
-
-			;003 ---
 
 			call NextLine(1)
 		else
