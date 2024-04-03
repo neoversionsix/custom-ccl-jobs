@@ -823,14 +823,6 @@ if(ref_gp_heading_flag = 0)
 	call NextLine(2)
 endif
 
-if(add_rec_heading_flag = 0)
-	call ApplyFont(active_fonts->header_patient_name)
-	call PrintText("Additional Recipients",1,0,1)
-	call NextLine(1)
-	set add_rec_heading_flag = 1
-	call ApplyFont(active_fonts->normal)
-	call PrintText("**No additional recipients entered for this visit**",0,0,0)
-endif
 
 ;else
 ;	call ApplyFont(active_fonts->normal)
