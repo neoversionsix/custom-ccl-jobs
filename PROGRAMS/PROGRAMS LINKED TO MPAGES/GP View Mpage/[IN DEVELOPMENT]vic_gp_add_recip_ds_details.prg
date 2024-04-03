@@ -667,11 +667,6 @@ if(enc->cnt > 0)
 				call NextLine(2)
 				set dont_print_flag = 1
 			endif
-		elseif(add_rec_heading_flag = 0)
-			call ApplyFont(active_fonts->header_patient_name)
-			call PrintText("Additional Recipients",1,0,1)
-			call NextLine(1)
-			set add_rec_heading_flag = 1
 		endif
 
 		; Name
