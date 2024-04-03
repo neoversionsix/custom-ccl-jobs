@@ -799,19 +799,6 @@ if(latest_gp_heading_flag = 0)
 	call NextLine(2)
 endif
 
-if(enc_gp_heading_flag = 0)
-	call ApplyFont(active_fonts->header_patient_name)
-	call PrintText("Visit GP Details",1,0,1)
-	call NextLine(1)
-	set enc_gp_heading_flag = 1
-	call ApplyFont(active_fonts->normal)
-	if(enc->inactive_gp_flag = 1)
-		call PrintText("**No Active GP for this visit**",0,0,0)
-	else
-		call PrintText("**No GP for this visit**",0,0,0)
-	endif
-	call NextLine(2)
-endif
 
 if(ref_gp_heading_flag = 0)
 	call ApplyFont(active_fonts->header_patient_name)
