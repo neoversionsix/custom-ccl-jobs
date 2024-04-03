@@ -196,7 +196,6 @@ and pn.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
 order by
 	sorter
 	, epr.beg_effective_dt_tm desc
-
 	, pl.person_id
 
 head report
