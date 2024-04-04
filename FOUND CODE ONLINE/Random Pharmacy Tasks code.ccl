@@ -1,0 +1,101 @@
+
+select
+	;  e_orig.encntr_id
+	;, e_orig.person_id
+	  URN = ea_URN.alias
+	, Visit_no = ea_visit.alias
+	;,e_orig.active_ind
+	, p.name_full_formatted
+;	, p.birth_dt_tm
+	, Encounter_start = nullval(e_orig.arrive_dt_tm,e_orig.reg_dt_tm) "@SHORTDATETIME"
+	, encounter_end = nullval(e_orig.depart_dt_tm,e_orig.disch_dt_tm) "@SHORTDATETIME"
+	, encntr_type = uar_get_code_display(e_orig.encntr_type_cd)
+	, e_orig.encntr_type_cd
+	;, encntr_type_class = uar_get_code_display(e_orig.encntr_type_class_cd)
+	, encntr_status = uar_get_code_display(e_orig.encntr_status_cd)
+	;, admit_type = uar_get_code_display(e_orig.admit_type_cd)
+	, location_facility = uar_get_code_display(e_orig.loc_facility_cd)
+	, med_service = uar_get_code_display(e_orig.med_service_cd)
+	, location_nurse_unit = uar_get_code_display(e_orig.loc_nurse_unit_cd)
+	, location = uar_get_code_display(e_orig.location_cd)
+	, location_room = uar_get_code_display(e_orig.loc_room_cd)
+	, location_bed = uar_get_code_display(e_orig.loc_bed_cd)
+
+	, o.order_id
+	, o.catalog_type_cd
+	, o.originating_encntr_id
+	, o.encntr_id
+	, o.template_order_flag
+	, o.template_order_id
+	, original_order_date = format(o.orig_order_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, ordered_as_mnemonic = o.ordered_as_mnemonic
+	, contributor_system = uar_get_code_display(o.contributor_system_cd)
+	, order_status = uar_get_code_display(o.order_status_cd)
+	, dept_status = uar_get_code_display(o.dept_status_cd)
+	, order_detail_display = o.order_detail_display_line
+
+	, o.clinical_display_line
+	, o.current_start_dt_tm
+	, ta.task_status_cd
+	, x.reference_task_id
+
+	, order_status_last_update = format(o.status_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, order_status_last_updater = if(o.order_id > 0 and o.status_prsnl_id = 0) "0"
+	else p_o_stat.name_full_formatted
+	endif
+	, order_last_update = format(o.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, order_last_updater = if(o.order_id > 0 and o.updt_id = 0) "0"
+	else p_o.name_full_formatted
+	endif
+
+
+
+
+from 	encounter e_orig
+	,(left join orders o on o.encntr_id = e_orig.encntr_id
+		or o.originating_encntr_id = e_orig.encntr_id and o.encntr_id = 0
+		)
+	,(left join prsnl p_o on p_o.person_id = o.updt_id)
+	,(left join prsnl p_o_stat on p_o_stat.person_id = o.status_prsnl_id)
+	,(left join person p on p.person_id = e_orig.person_id)
+
+	,(left join encntr_alias ea_URN on ea_URN.encntr_id = e_orig.encntr_id
+	and ea_URN.encntr_alias_type_cd = 1079	; 'URN' from code set 319
+	and ea_URN.active_ind = 1	; active URNs only
+	and ea_URN.end_effective_dt_tm > sysdate	; effective URNs only
+	)
+	,(left join encntr_alias ea_visit on ea_visit.encntr_id = e_orig.encntr_id
+	and ea_visit.encntr_alias_type_cd = 1077	; 'FIN NBR' from code set 319
+	and ea_visit.active_ind = 1	; active FIN NBRs only
+	and ea_visit.end_effective_dt_tm > sysdate	; effective FIN NBRs only
+	)
+
+	,(left join task_activity ta on ta.order_id = o.order_id)
+	,(left join order_task_xref x on x.catalog_cd = o.catalog_cd)
+
+plan 	e_orig
+
+join 	o
+	where (
+	o.orig_order_dt_tm
+	between cnvtdatetime( cnvtdate2 ( "07-MAR-2024" ,"dd-mmm-yyyy" ), cnvttime2('16:00:01',"HH:MM:SS"))
+	and cnvtdatetime( cnvtdate2 ( "08-MAR-2024" ,"dd-mmm-yyyy" ), cnvttime2('02:00:01',"HH:MM:SS"))
+;	and o.catalog_type_cd = 2516
+	)
+
+join 	p_o
+join 	p_o_stat
+join 	p
+join 	ea_URN
+
+;	where ea_URN.alias in ('1798283')
+join 	ea_visit
+join 	ta
+join 	x
+
+Order by e_orig.arrive_dt_tm,e_orig.reg_dt_tm
+	,o.orig_order_dt_tm
+
+
+
+with 	time = 250, uar_code(d), format(date,";;q")
