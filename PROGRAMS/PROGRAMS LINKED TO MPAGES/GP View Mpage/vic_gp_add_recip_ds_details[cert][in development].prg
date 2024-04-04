@@ -172,7 +172,7 @@ with nocounter
 
 
 
-; Load Encounter GP and Referring Doctor
+; Load Patienns GP and Referring Doctor
 select into "nl:"
 sorter = if(epr.encntr_prsnl_r_cd = GP_CD) 1 else 2 endif
 from encntr_prsnl_reltn epr
@@ -206,7 +206,6 @@ head sorter
 		cnt = cnt+1
 		stat = alterlist(enc->gps,cnt) ; should only be 1 GP
 		if(pl.person_id > 0.0)
-
 			enc->gps[cnt].name_title = pn.name_prefix
 			enc->gps[cnt].name_first = pl.name_first
 			enc->gps[cnt].name_middle = pn.name_middle
@@ -255,54 +254,6 @@ if (PCEHR_UDF_CD > 0)
 endif
 ; *002
 
-
- /*
-; Other FAX Relationships
-select into "nl:"
-from encntr_prsnl_reltn epr
-	, prsnl pl
-	, person_name pn
-
-plan epr where epr.encntr_id = ENCNTR_ID
-and epr.encntr_prsnl_r_cd = FAX_CD
-and epr.active_ind = 1
-and epr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3)
-and epr.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
-
-join pl where pl.person_id = outerjoin(epr.prsnl_person_id)
-
-join pn where pn.person_id = outerjoin(pl.person_id)
-and pn.name_type_cd = outerjoin(PRSNL_CD)
-and pn.active_ind = outerjoin(1)
-and pn.beg_effective_dt_tm <= outerjoin(cnvtdatetime(curdate,curtime3))
-and pn.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
-
-order by
-	pl.person_id
-	, epr.beg_effective_dt_tm
-
-head report
-	cnt = enc->cnt
-
-head pl.person_id
-	cnt = cnt+1
-	stat = alterlist(enc->gps,cnt) ; should only be 1 GP
-	if(pl.person_id > 0.0)
-		enc->gps[cnt].person_id = pl.person_id
-		enc->gps[cnt].name_title = pn.name_prefix
-		enc->gps[cnt].name_first = pl.name_first
-		enc->gps[cnt].name_middle = pn.name_middle
-		enc->gps[cnt].name_last = pl.name_last
-	else
-		enc->gps[cnt].name_free_text = epr.ft_prsnl_name
-	endif
-	enc->gps[cnt].fax_flag = 1
-
-foot report
-	enc->cnt = cnt
-
-with nocounter
- */
 
 ; Create string so not to qualify already fetched GP / FAX GP as an additional recipient.
 if(enc->cnt > 0)
@@ -662,8 +613,10 @@ if(enc->cnt > 0)
 
 			if(enc->gps[x].referring_gp_flag != 1)
 				call ApplyFont(active_fonts->normal)
-				call PrintText("**No Referring Dr(s) for this visit**",0,0,0)
-				call NextLine(2)
+				; Line below is commented out as it is printing under referring doctor when there is > 0 referring doctors
+				;call PrintText("**No Referring Dr(s) for this visit**",0,0,0)
+				; Line below is commented out as it is adding an extra line when there is no referring doctor
+				;call NextLine(2)
 				set dont_print_flag = 1
 			endif
 		endif
@@ -687,8 +640,10 @@ if(enc->cnt > 0)
 					set outstring = concat(outstring," ",trim(enc->gps[x].name_last))
 				endif
 				call PrintText(outstring,1,0,0)
+				call NextLine(1)
 			endif
-			call NextLine(1)
+			; Moving a couple of lines up
+			;call NextLine(1)
 
 			; Address
 			if(enc->gps[x].address_line_1 > " ")
@@ -806,7 +761,8 @@ if(ref_gp_heading_flag = 0)
 	set ref_gp_heading_flag = 1
 	call ApplyFont(active_fonts->normal)
 	call PrintText("**No Referring Dr(s) for this visit**",0,0,0)
-	call NextLine(2)
+	; Commenting the two lines out as this is now the end of the code
+	;call NextLine(2)
 endif
 
 
