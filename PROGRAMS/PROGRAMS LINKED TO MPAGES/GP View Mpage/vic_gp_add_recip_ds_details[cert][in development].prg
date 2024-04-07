@@ -170,9 +170,7 @@ foot report
 	PERSON_ID = e.person_id ;002 - to save looking it up again
 with nocounter
 
-
-
-; Load Patienns GP and Referring Doctor
+; Load Referring Doctor Only Previously included in the GP list
 select into "nl:"
 sorter = if(epr.encntr_prsnl_r_cd = GP_CD) 1 else 2 endif
 from encntr_prsnl_reltn epr
@@ -181,7 +179,8 @@ from encntr_prsnl_reltn epr
 
 plan epr where epr.encntr_id = ENCNTR_ID
 ;and c = GP_CD
-and epr.encntr_prsnl_r_cd in (GP_CD,REFERDOC_CD)
+;and epr.encntr_prsnl_r_cd in (GP_CD,REFERDOC_CD)
+and epr.encntr_prsnl_r_cd in (REFERDOC_CD)
 ;and epr.prsnl_person_id != 0.0
 ;and epr.end_effective_dt_tm = cnvtdatetime("31-DEC-2100");removed because inactive were not pulling for default statement
 
