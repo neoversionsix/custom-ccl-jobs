@@ -30,9 +30,11 @@
 drop program vic_gp_add_recip_ds_details:dba go
 create program vic_gp_add_recip_ds_details:dba
 
+
 ; Include standard rtf includes
 %i cclsource:ma_rtf_tags.inc
 %i cclsource:vic_ds_common_fonts.inc
+
 
 record enc (
   1 consent_flag = c1
