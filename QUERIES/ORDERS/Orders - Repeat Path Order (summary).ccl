@@ -1,11 +1,9 @@
-;return count by year and month of all repeat orders based on parameters in o_prior join condition
-
 SELECT
 	yr = datetimepart(o_orig.current_start_dt_tm, 1)
 	, mth = datetimepart(o_orig.current_start_dt_tm, 2)
 
 	;distinct count because some orders have mulitple prior orders within timeframe
-	, repeat_orders = count (distinct o_orig.order_id)
+	, FBE_within_2hrs = count (distinct o_orig.order_id)
 
 FROM
 	orders o_orig
@@ -15,33 +13,43 @@ FROM
 		and o_prior.catalog_cd = 7347904 ;FBE
 		and o_prior.order_id != o_orig.order_id
 		and o_prior.order_id < o_orig.order_id
-		and o_prior.discontinue_ind = 0
+;		and o_prior.discontinue_ind = 0
 		and o_prior.current_start_dt_tm <= o_orig.current_start_dt_tm ;include orders with same start time
 		and o_prior.current_start_dt_tm > (o_orig.current_start_dt_tm - 2/24) ;within 2hrs
-		and o_orig.order_status_cd not in (
-			2542		;Cancelled
-			, 2544		;Deleted
-			, 2545		;Discontinued
-			, 2552		;Suspended
-			, 614538)	;Transfer/Canceled
-		  )
+		and
+		(	o_prior.order_status_cd not in
+			(	2542		;Cancelled
+				, 2544		;Deleted
+				, 2545		;Discontinued
+				, 2552		;Suspended
+				, 614538	;Transfer/Canceled
+			)
+			or (o_prior.order_status_cd = 2545 /*Discontinued*/ and o_prior.updt_id = 1) ;updt_id = 1 is SYSTEM, SYSTEM
+		)
+	)
+	, (inner join encounter o_enc on o_enc.encntr_id = o_orig.encntr_id
+		and o_enc.encntr_type_cd = 309308 /*inpatient only*/)
+;	, (inner join encounter p_enc on p_enc.encntr_id = o_prior.encntr_id
+;		and p_enc.encntr_type_cd = 309308 /*inpatient only*/)
 
 where o_orig.active_ind = 1
 	and o_orig.catalog_cd = 7347904 ;FBE
-	and o_orig.order_status_cd not in (
-		2542		;Cancelled
-		, 2544		;Deleted
-		, 2545		;Discontinued
-		, 2552		;Suspended
-		, 614538)	;Transfer/Cancelled
-;	and o_orig.orig_order_dt_tm between cnvtdatetime(curdate,0) and cnvtdatetime(curdate+1,0)
-;	and o_orig.orig_order_dt_tm >= cnvtdatetime("12-mar-2024 00:00:00") and o_orig.orig_order_dt_tm < cnvtdatetime("13-mar-2024 00:00:00")
-	and o_orig.current_start_dt_tm >= cnvtdatetime("01-apr-2018 00:00:00")
+	and
+	(	o_orig.order_status_cd not in
+		(	2542		;Cancelled
+			, 2544		;Deleted
+			, 2545		;Discontinued
+			, 2552		;Suspended
+			, 614538	;Transfer/Cancelled
+		)
+		or (o_orig.order_status_cd = 2545 /*Discontinued*/ and o_orig.updt_id = 1) ;updt_id = 1 is SYSTEM, SYSTEM
+	)
+	and o_orig.current_start_dt_tm >= cnvtdatetime("01-nov-2018 00:00:00")
 	and o_orig.current_start_dt_tm < cnvtdatetime("01-apr-2024 00:00:00")
-	and o_orig.discontinue_ind = 0
+;	and o_orig.discontinue_ind = 0
+	and o_orig.person_id not in (select p.person_id from person p where p.name_last_key like "*TESTWHS*")
 
 group by
-;	format(o_orig.current_start_dt_tm, "YYYYMM")
 	datetimepart(o_orig.current_start_dt_tm, 1)
 	, datetimepart(o_orig.current_start_dt_tm, 2)
 
@@ -49,7 +57,4 @@ order by
 	datetimepart(o_orig.current_start_dt_tm, 1) desc
 	, datetimepart(o_orig.current_start_dt_tm, 2) desc
 
-WITH time = 240
-
-
-
+WITH time = 360
