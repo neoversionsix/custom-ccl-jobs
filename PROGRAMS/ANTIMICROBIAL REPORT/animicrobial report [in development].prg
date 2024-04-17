@@ -79,6 +79,34 @@
 		printuser_name = trim(p.name_full_formatted, 3)
 	with nocounter
 
+; GET ORDER ID'S BASED ON OEF'S FILLED OUT
+;Pharmacy Strength Med (Mandatory Indication AMS)
+;Pharmacy Strength Med (Restricted AMS)
+;Pharmacy Volume Med
+;Pharmacy Volume Med (Highly Restricted AMS)
+;Pharmacy Volume Med (Mandatory Indication AMS)
+;Pharmacy Volume Med (Restricted AMS)
+;GET ORDER ID'S BASED ON OEF'S FILLED OUT
+SELECT INTO "nl:"
+	O.ORDER_ID
+FROM
+	ORDER O
+	JOIN ORDER_EXTENDED_FORM OEF ON O.ORDER_ID = OEF.ORDER_ID
+PLAN O
+	WHERE
+		OEF.NAME IN ('Pharmacy Strength Med (Mandatory Indication AMS)',
+					 'Pharmacy Strength Med (Restricted AMS)',
+					 'Pharmacy Volume Med (Highly Restricted AMS)',
+					 'Pharmacy Volume Med (Mandatory Indication AMS)',
+					 'Pharmacy Volume Med (Restricted AMS)')
+DETAIL
+	pos = locateval(idx,1,data->cnt,O.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	if(pos > 0)
+		data->list[pos].ORDER_ID = O.ORDER_ID
+	endif
+WITH EXPAND = 2
+
+
 ;ENCOUNTER AND PERSON_IDS ADD JSON PATIENTS TO DATA RECORD
 	set stat = cnvtjsontorec($jsondata)
 	select into "nl:"
