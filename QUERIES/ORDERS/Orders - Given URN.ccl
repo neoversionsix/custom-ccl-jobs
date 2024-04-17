@@ -1,0 +1,120 @@
+SELECT
+    O.ORDER_ID
+	,O_CATALOG_TYPE_DISP = UAR_GET_CODE_DISPLAY(O.CATALOG_TYPE_CD)
+	, O_A.ACTION_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, O_A_ACTION_TYPE_DISP = UAR_GET_CODE_DISPLAY(O_A.ACTION_TYPE_CD)
+    , ORDER_STATUS = UAR_GET_CODE_DISPLAY(O_A.ORDER_STATUS_CD)
+	, ITEM_ORDERED = O.ORDER_MNEMONIC
+	, O_A.ORDER_DETAIL_DISPLAY_LINE
+	, PATIENT = P.NAME_FULL_FORMATTED
+	, PATIENT_URN = P_A.ALIAS
+	, ENCOUNTER_ = E_A.ALIAS
+	, ORDERED_TIME = O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+	, ENCOUNTER_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
+	, PERSONELL_OA = PR.NAME_FULL_FORMATTED
+
+
+FROM
+	ORDER_ACTION   O_A
+	, ORDERS   O
+	, ENCOUNTER   E
+	, PRSNL   PR
+	, PERSON   P
+	, PERSON_ALIAS   P_A
+	, ENCNTR_ALIAS   E_A
+
+PLAN O ; ORDERS
+	WHERE
+    ; Time filter ;
+    O.ORIG_ORDER_DT_TM >= CNVTDATETIME("01-JAN-2024")
+    ; Catalog type;
+    AND O.CATALOG_TYPE_CD= 2516
+    ;2513.00;	Laboratory
+    ;2516; Pharmacy
+
+
+    ; PATIENT FILTER ;
+    AND O.PERSON_ID =
+        (
+            SELECT P_A_URN.PERSON_ID
+            FROM PERSON_ALIAS P_A_URN
+            WHERE P_A_URN.ALIAS = "682417" ; URN
+            AND P_A_URN.PERSON_ALIAS_TYPE_CD = 10 ; URN TYPE
+            AND P_A_URN.ACTIVE_IND = 1  ; ACTIVE URNS ONLY
+            AND P_A_URN.END_EFFECTIVE_DT_TM > SYSDATE ; EFFECTIVE URNS ONLY
+        )
+    ; Orderable name filter
+    AND CNVTUPPER(O.ORDER_MNEMONIC) = "*MOX*"
+
+    ; Orderable Code filter ;
+    ; O.CATALOG_CD IN
+    ;     (
+    ;              93339229.00 ; Pain Service Referral
+    ;            , 90228280.00 ; Consult to Medical Specialty (MO Use Onl
+    ;     )
+    ;
+
+JOIN O_A ; ORDER_ACTION
+    WHERE O.ORDER_ID = O_A.ORDER_ID
+    ; We want to find out who placed the New Order
+    ; AND O_A.ACTION_TYPE_CD IN(2534); New Order
+     AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+    ; Action Time filter ;
+    ;AND O_A.ACTION_DT_TM >= CNVTDATETIME("01-JAN-2024")
+
+; Joining PRSNL for New order from order action ;
+JOIN PR;PRSNL
+    WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID);X.UPDT_ID
+    AND PR.ACTIVE_IND = OUTERJOIN(1)
+
+JOIN E ; ENCOUNTER
+	WHERE E.ENCNTR_ID = O.ENCNTR_ID
+    AND E.ACTIVE_IND = 1
+    ; Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital ;
+    AND E.LOC_FACILITY_CD != 4038465.00
+
+; Patient Identifiers such as URN Medicare no etc ;
+JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
+    WHERE P_A.PERSON_ID = E.PERSON_ID
+    AND
+    ; this filters for the UR Number Alias' only ;
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    ; Effective Only ;
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    ; Active Only ;
+    P_A.ACTIVE_IND = 1
+    ; Patient URN ;
+    ; AND
+    ; P_A.ALIAS = "ENTERURN#" ; ENTER URN!
+
+; Patients ;
+JOIN P;PERSON
+	WHERE P.PERSON_ID = E.PERSON_ID
+    ; Remove Inactive Patients ;
+    AND P.ACTIVE_IND = 1
+    ; Remove Fake 'Test' Patients ;
+    ;AND P.NAME_LAST_KEY != "*TESTWHS*"
+    ; Remove Ineffective Patients ;
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+; Encounter Identifiers such as the Financial Number ;
+JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+    ;  'FIN/ENCOUNTER/VISIT NBR' from code set 319 ;
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+	; active FIN NBRs only ;
+    AND E_A.ACTIVE_IND = 1
+    ; effective FIN NBRs only ;
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+
+ORDER BY
+	O.PERSON_ID
+	, O.ORDER_ID
+
+WITH TIME = 20,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT
