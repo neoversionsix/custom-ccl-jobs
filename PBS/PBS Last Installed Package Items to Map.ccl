@@ -1,7 +1,6 @@
 SELECT		;RETRIEVES CODES THAT NEED TO BE MAPPED THIS MONTH.
 /*
 Notes:
-Faras contibuted updated/improved my original code in a previous version
 This will pull back the items that need to be mapped this month. It
 assumes that the package was installed recently. It will pull back items
 for the last installed package
