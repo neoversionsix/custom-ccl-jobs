@@ -1,0 +1,45 @@
+These are the OEF's to filter on:
+
+
+TABLE: ORDER_ENTRY_FORMAT
+OE_FORMAT_NAME                                          OE_FORMAT_ID
+Pharmacy Strength Med (Restricted AMS)                  87593615.00
+Pharmacy Volume Med (Highly Restricted AMS)             87593616.00
+Pharmacy Volume Med (Mandatory Indication AMS)          114116163.00
+Pharmacy Volume Med (Restricted AMS)                    87593617.00
+
+TABLE: ORDERS
+    ORDER_STATUS_CD = 
+       2548.00	InProcess
+       2550.00	Ordered
+
+- MUST Be current patients
+
+
+
+
+
+
+SELECT DISTINCT
+	O.ORDER_ID
+	, O_ORDER_STATUS_DISP = UAR_GET_CODE_DISPLAY(O.ORDER_STATUS_CD)
+	, O.ORDER_MNEMONIC
+	, O.ORDER_DETAIL_DISPLAY_LINE
+	, O.OE_FORMAT_ID
+
+FROM
+	ORDERS   O
+	
+WHERE
+	O.OE_FORMAT_ID IN (
+	  87593615.00	;Pharmacy Strength Med (Restricted AMS)
+	, 87593616.00	;Pharmacy Volume Med (Highly Restricted AMS)
+	, 114116163.00 	;Pharmacy Volume Med (Mandatory Indication AMS)
+	, 87593617.00 	;Pharmacy Volume Med (Restricted AMS)
+	)
+	AND O.ORDER_STATUS_CD IN (
+		   2548.00	;InProcess
+		 , 2550.00	;Ordered
+	)
+	
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 30

@@ -1,8 +1,6 @@
 SELECT
-/*
-LIST OF CURRENT PATIENTS
- */
-    PATIENT_URN = PA.ALIAS
+    O.ORDER_ID
+    , PATIENT_URN = PA.ALIAS
     , PATIENT_NAME = P.NAME_FULL_FORMATTED
     , E.ENCNTR_ID
 
@@ -36,7 +34,7 @@ PLAN E;ENCOUNTER
 ;       and E.ARRIVE_DT_TM > CNVTDATETIME("01-Jan-2018 00:00:00.00")
 
         ; PATIENT TYPE FILTER
-        ; E.ENCNTR_TYPE_CD = 309308 ; Only inpatient encounters
+        E.ENCNTR_TYPE_CD = 309308 ; Only inpatient encounters
 
 JOIN P;PERSON
 	WHERE P.PERSON_ID = E.PERSON_ID
@@ -53,7 +51,22 @@ JOIN PA;PERSON_ALIAS
     AND
     PA.END_EFFECTIVE_DT_TM > SYSDATE
 
+JOIN O;ORDERS
+    WHERE O.PERSON
+	O.OE_FORMAT_ID IN
+        (
+        87593615.00	;Pharmacy Strength Med (Restricted AMS)
+        , 87593616.00	;Pharmacy Volume Med (Highly Restricted AMS)
+        , 114116163.00 	;Pharmacy Volume Med (Mandatory Indication AMS)
+        , 87593617.00 	;Pharmacy Volume Med (Restricted AMS)
+        )
+	AND O.ORDER_STATUS_CD IN
+        (
+        2548.00	;InProcess
+        , 2550.00	;Ordered
+        )
+
 ORDER BY
     E.ENCNTR_ID
 
-WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 120
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 20
