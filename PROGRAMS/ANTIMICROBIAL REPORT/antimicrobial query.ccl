@@ -1,5 +1,6 @@
-SELECT
+SELECT DISTINCT
     O.ORDER_ID
+    , O.ORDER_MNEMONIC
     , PATIENT_URN = PA.ALIAS
     , PATIENT_NAME = P.NAME_FULL_FORMATTED
     , E.ENCNTR_ID
@@ -8,6 +9,7 @@ FROM
     ENCOUNTER       E
     , PERSON        P
     , PERSON_ALIAS  PA
+    , ORDERS        O
 
 
 PLAN E;ENCOUNTER
@@ -27,14 +29,15 @@ PLAN E;ENCOUNTER
                 OR
                 E.REG_DT_TM < CNVTDATETIME(CURDATE, CURTIME3)
             )
-            ; Turned up at most 2 years ago
-            AND E.ARRIVE_DT_TM > cnvtlookbehind("2,Y")
-
-        ; ARRIVE TIME FILTER
-;       and E.ARRIVE_DT_TM > CNVTDATETIME("01-Jan-2018 00:00:00.00")
+            ; Arrived up at most 5 years ago - Removing anomalous data
+            AND E.ARRIVE_DT_TM > cnvtlookbehind("5,Y")
 
         ; PATIENT TYPE FILTER
-        E.ENCNTR_TYPE_CD = 309308 ; Only inpatient encounters
+        AND E.ENCNTR_TYPE_CD IN ; Inpatient and Emergency Encounters Only
+            (
+            309308 ; Inpatient
+            , 309310.00 ; Emergency
+            )
 
 JOIN P;PERSON
 	WHERE P.PERSON_ID = E.PERSON_ID
@@ -52,21 +55,24 @@ JOIN PA;PERSON_ALIAS
     PA.END_EFFECTIVE_DT_TM > SYSDATE
 
 JOIN O;ORDERS
-    WHERE O.PERSON
-	O.OE_FORMAT_ID IN
+    WHERE O.ENCNTR_ID = E.ENCNTR_ID
+	AND O.OE_FORMAT_ID IN
         (
         87593615.00	;Pharmacy Strength Med (Restricted AMS)
         , 87593616.00	;Pharmacy Volume Med (Highly Restricted AMS)
         , 114116163.00 	;Pharmacy Volume Med (Mandatory Indication AMS)
         , 87593617.00 	;Pharmacy Volume Med (Restricted AMS)
         )
-	AND O.ORDER_STATUS_CD IN
+	; Only orders that are in process or ordered
+    AND O.ORDER_STATUS_CD IN
         (
         2548.00	;InProcess
-        , 2550.00	;Ordered
+        , 2550.00	;ORDERED
         )
+	AND O.TEMPLATE_ORDER_ID 	= 0  ;NO CHILD ORDERS
+    AND O.ORIG_ORD_AS_FLAG 		= 0   ;NORMAL ORDER (NOT DISCHARGE PRESCRIPTION, PATIENT OWN MEDS ETC)
 
 ORDER BY
     E.ENCNTR_ID
 
-WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 20
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 60
