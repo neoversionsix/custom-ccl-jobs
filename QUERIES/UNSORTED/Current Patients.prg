@@ -32,6 +32,7 @@ PLAN E;ENCOUNTER
             ; Turned up at most 2 years ago
             AND E.ARRIVE_DT_TM > cnvtlookbehind("2,Y")
 
+
         ; ARRIVE TIME FILTER
 ;       and E.ARRIVE_DT_TM > CNVTDATETIME("01-Jan-2018 00:00:00.00")
 

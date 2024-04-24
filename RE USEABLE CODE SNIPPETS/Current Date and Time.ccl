@@ -1,0 +1,2 @@
+SELECT format(sysdate,"dd/mmm/yyyy hh:mm;3;q")
+FROM DUMMYT D
