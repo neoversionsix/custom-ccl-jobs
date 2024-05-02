@@ -1,6 +1,4 @@
-;return duplicate orders within timeframe - to be used for few months - not for large volumes of data
-
-SELECT
+SELECT ;return duplicate orders within timeframe - to be used for few months - not for large volumes of data
 	o_orig.person_id
 	, URN = p_urn.alias
 	, o_orig.order_id
