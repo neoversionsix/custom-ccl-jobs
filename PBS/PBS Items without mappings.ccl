@@ -53,15 +53,17 @@ JOIN	P_L ; PBS_LISTING
         /* Don't map the private hospital codes etc */
         AND P_L.DRUG_TYPE_MEAN NOT IN ("DB", "HS", "IN", "PQ", "TY")
         /* Don't map dental and optometrist codes */
-        AND P_L.PBS_ITEM_CODE IN
+    AND	P_L.PBS_ITEM_CODE NOT IN
         (
             SELECT PBS_ITEM_CODE FROM PBS_PRESCRIBER
             WHERE PRESCRIBER_TYPE_CD IN
             (
-                86244504.00	;Medical Practitioner
-                , 86244510.00	;Nurse Practitioner
-                , 86244507.00	;Midwife
+                SELECT CV.CODE_VALUE FROM CODE_VALUE CV
+                WHERE CV.CODE_SET = 4386008
+                ;DON'T MAP DENTAL AND OPTOMETRIST CODES
+                AND CV.DISPLAY_KEY IN ("DENTALPRACTITIONER", "OPTOMETRICALPRACTITIONER")
             )
+            AND	END_EFFECTIVE_DT_TM = CNVTDATETIME("31-DEC-2100")
         )
 
 ORDER BY P_I.BEG_EFFECTIVE_DT_TM DESC
