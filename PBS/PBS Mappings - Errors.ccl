@@ -39,10 +39,10 @@ PLAN	P_L
                 (
                     SELECT CV.CODE_VALUE FROM CODE_VALUE CV
                     WHERE CV.CODE_SET = 4386008
-                    AND CV.CDF_MEANING IN ("M", "W", "N")
+                    AND CV.CDF_MEANING IN ("M", "W", "N"); Medical Officer, Midwife, Nurse
                 )
             )
-        AND	P_P_0.END_EFFECTIVE_DT_TM > SYSDATE
+        AND	P_P_0.END_EFFECTIVE_DT_TM > SYSDATE ; Active mappings only
 	)
 
 JOIN P_P    WHERE P_P.PBS_ITEM_CODE = P_L.PBS_ITEM_CODE
