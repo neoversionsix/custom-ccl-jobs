@@ -1,0 +1,5 @@
+; PBS codes are in the two tables below, change the switch to check the
+; other table
+SELECT PBS_CODE = P_L.PBS_ITEM_CODE
+FROM  PBS_PRESCRIBER P_L ;PBS_PRESCRIBER P_L
+WHERE P_L.PBS_ITEM_CODE IN ("7709R", "7530H") ;PUT IN ITEM CODE HERE
