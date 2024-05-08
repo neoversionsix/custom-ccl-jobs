@@ -1,0 +1,45 @@
+SELECT
+	PATIENT = P.NAME_FULL_FORMATTED
+    ; , FAKE_TEST_PATIENT =
+        ; IF (P.NAME_LAST_KEY="TESTWHS") "Y"
+        ; ELSE "N"
+        ; ENDIF
+	, PATIENT_URN = P_A.ALIAS
+	, P_SEX_DISP = UAR_GET_CODE_DISPLAY(P.SEX_CD)
+	, P.BIRTH_DT_TM
+	, P.CREATE_DT_TM
+
+FROM
+	PERSON   P
+	, PERSON_ALIAS   P_A
+
+/* Patients */
+PLAN P;PERSON
+	WHERE
+    /* Remove Inactive Patients */
+    P.ACTIVE_IND = 1
+    /* Only 'Test' Patients */
+    AND P.NAME_LAST_KEY = "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+/* Patient Identifiers such as URN Medicare no etc */
+JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
+    WHERE P_A.PERSON_ID = P.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
+    /* Patient URN */
+    ; AND
+    ; P_A.ALIAS = "ENTERURN#" ; ENTER URN!
+
+WITH TIME = 5,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT
