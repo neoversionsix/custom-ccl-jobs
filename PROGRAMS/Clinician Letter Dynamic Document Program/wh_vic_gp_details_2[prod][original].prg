@@ -24,7 +24,7 @@ record encntr_info
   1 gp_name             = vc
   1 gp_address_line_1   = vc
   1 gp_address_line_2   = vc
-  1 gp_address_line_3	= vc
+  1 gp_address_line_3	  = vc
   1 gp_city             = vc
   1 gp_state            = vc
   1 gp_country          = vc
