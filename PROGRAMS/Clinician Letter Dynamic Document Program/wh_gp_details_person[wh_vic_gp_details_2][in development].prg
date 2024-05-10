@@ -35,12 +35,6 @@ RECORD ENCNTR_INFO
   1 GP_FAX              = VC
 )
 
-declare GPVISIT_VAR       = f8 with constant(uar_get_code_by("DISPLAYKEY",333,"GENERALPRACTITIONER")),protect
-declare PHONE_TYPE_CD_FAX_VAR   = f8 with constant(uar_get_code_by("DISPLAYKEY",43,"FAXBUSINESS")) ,protect
-declare PHONE_TYPE_CD_BUS_VAR = f8 with constant(uar_get_code_by("DISPLAYKEY",43,"BUSINESS")) ,protect
-declare ADDRBUSINESS_VAR   = f8 with constant(uar_get_code_by("DISPLAYKEY",212,"BUSINESS"))
-declare PERSON_ID_VAR = f8 with noconstant(request->person[1].person_id), protect ;002
-
 /*MY CODE */
 DECLARE PERSON_PRSNL_R_CD_VAR = f8 with constant(1115.00),protect ; Code for: Primary Care Physician
 DECLARE NAME_TYPE_CD_VAR = f8 with constant(614387.00),protect ; Personnel
