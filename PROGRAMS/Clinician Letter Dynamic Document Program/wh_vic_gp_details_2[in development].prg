@@ -36,8 +36,8 @@ record encntr_info
 )
 
 declare GPVISIT_VAR       = f8 with constant(uar_get_code_by("DISPLAYKEY",333,"GENERALPRACTITIONER")),protect
-declare FAXBUSINESS_VAR   = f8 with constant(uar_get_code_by("DISPLAYKEY",43,"FAXBUSINESS")) ,protect
-declare PHONEBUSINESS_VAR = f8 with constant(uar_get_code_by("DISPLAYKEY",43,"BUSINESS")) ,protect
+declare PHONE_TYPE_CD_FAX_VAR   = f8 with constant(uar_get_code_by("DISPLAYKEY",43,"FAXBUSINESS")) ,protect
+declare PHONE_TYPE_CD_BUS_VAR = f8 with constant(uar_get_code_by("DISPLAYKEY",43,"BUSINESS")) ,protect
 declare ADDRBUSINESS_VAR   = f8 with constant(uar_get_code_by("DISPLAYKEY",212,"BUSINESS"))
 declare PERSON_ID_VAR = f8 with noconstant(request->person[1].person_id), protect ;002
 
@@ -133,16 +133,15 @@ JOIN PH ; PHONE
 ;For Patient  URN
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
     WHERE P_A.PERSON_ID = P_P_R.PERSON_ID
-    AND
     ;this filters for the UR Number Alias' only */
-   	P_A.ALIAS_POOL_CD = ALIAS_POOL_CD_VAR
-	AND
+   	AND P_A.ALIAS_POOL_CD = ALIAS_POOL_CD_VAR
     ;Effective Only
-	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
-    AND
+	  AND P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
     ;Active Only
-    P_A.ACTIVE_IND = 1
+    AND P_A.ACTIVE_IND = 1
 
+; Loop over the table and
+; Save the data retrieved from the database into the record
 DETAIL
     IF (P_P_R.PRSNL_PERSON_ID = 0)
         ENCNTR_INFO->GP_NAME = P_P_R.FT_PRSNL_NAME
@@ -156,138 +155,66 @@ DETAIL
     ENCNTR_INFO->GP_STATE = A.STATE
     ENCNTR_INFO->GP_ZIPCODE = TRIM(A.ZIPCODE,3)
     ENCNTR_INFO->GP_COUNTRY = A.COUNTRY
-    IF (PH.PHONE_TYPE_CD = PHONEBUSINESS_VAR)
+    IF (PH.PHONE_TYPE_CD = PHONE_TYPE_CD_BUS_VAR)
         ENCNTR_INFO->GP_PHONE = PH.PHONE_NUM
-    ELSEIF (PH.PHONE_TYPE_CD = FAXBUSINESS_VAR)
+    ELSEIF (PH.PHONE_TYPE_CD = PHONE_TYPE_CD_FAX_VAR)
         ENCNTR_INFO->GP_FAX = PH.PHONE_NUM
     ENDIF
 
-WITH MAXREC = 2, TIME = 20
+WITH
+  TIME = 120
+  ;DONTCARE=A,
+  ;OUTERJOIN=D2
 
-; OLD CODE BELOW
-select into "nl:"
-from
-  ;encntr_prsnl_reltn epr, ; JW - deactivating this table
-  person_prsnl_reltn P_P_R, ; JW - using this table instead
-  person pr,
-  dummyt d1,
-  address a,
-  dummyt d2,
-  phone p
-plan
-  epr
-where
-  epr.encntr_id =
-    (select encntr_id from encounter where person_id = PERSON_ID_VAR and active_ind=1) and
-  epr.ENCNTR_PRSNL_R_CD = GPVISIT_VAR and
-  epr.active_ind = 1 and
-  epr.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime3) and
-  epr.end_effective_dt_tm > cnvtdatetime(curdate,curtime3) and
-  epr.beg_effective_dt_tm =
-      (
-      select max(epr1.beg_effective_dt_tm)
-    from encntr_prsnl_reltn epr1
-      where
-      epr1.encntr_prsnl_r_cd = GPVISIT_VAR
-      and epr1.active_ind = 1
-      and epr1.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
-        and epr1.encntr_id in
-          (select encntr_id from encounter where person_id = PERSON_ID_VAR and active_ind=1)
-      )
-join
-  pr
-where
-  pr.person_id = epr.prsnl_person_id
-join
-  d1
-join
-  a
-where
-  a.parent_entity_id = pr.person_id and
-  a.address_type_cd = ADDRBUSINESS_VAR and
-  a.active_ind =1 and
-  (a.end_effective_dt_tm > cnvtdatetime(curdate,curtime3) or
-   a.end_effective_dt_tm = null)
-join
-  d2
-join
-  p
-where
-  p.parent_entity_id = a.parent_entity_id and
-  p.active_ind = 1 and
-  (p.end_effective_dt_tm > cnvtdatetime(curdate,curtime3) or
-   p.end_effective_dt_tm = null)
-detail
-  if(epr.prsnl_person_id = 0)
-    encntr_info->gp_name = epr.ft_prsnl_name
-  else
-    encntr_info->gp_name = pr.name_full_formatted
-  endif
-  encntr_info->gp_address_line_1  = a.street_addr
-  encntr_info->gp_address_line_2  = a.street_addr2
-  encntr_info->gp_address_line_3  = a.street_addr3
-  encntr_info->gp_city            = a.city
-  encntr_info->gp_state           = a.state
-  encntr_info->gp_zipcode         = trim(a.zipcode,3)
-  if(p.phone_type_cd = PHONEBUSINESS_VAR)
-    encntr_info->gp_phone = p.phone_num
-  elseif (p.phone_type_cd = FAXBUSINESS_VAR)
-    encntr_info->gp_fax = p.phone_num
-  endif
-with
-  dontcare=a,
-  outerjoin=d2
+; DISPLAY THE DATA ON THE FRONT END
+CALL ECHORECORD(ENCNTR_INFO)
+CALL APPLYFONT(ACTIVE_FONTS->NORMAL)
 
-; REUSE THIS CODE
-call echorecord(encntr_info)
+; GP NAME
+CALL PRINTTEXT("NAME: ",0,0,0)
+DECLARE TEMPNAME = VC
+SET TEMPNAME = TRIM(ENCNTR_INFO->GP_NAME,3)
+CALL PRINTTEXT(BUILD2(TEMPNAME),0,0,0)
+;CALL PRINTTEXT(BUILD2(" ",ENCNTR_INFO->GP_NAME))
+CALL NEXTLINE(1)
 
-call ApplyFont(active_fonts->normal)
+; ADDRESS
+DECLARE TEMPSTR = VC
+CALL PRINTTEXT("ADDRESS:",0,0,0)
+SET TEMPSTR = BUILD2(" ",TRIM(ENCNTR_INFO->GP_ADDRESS_LINE_1,3))
+IF(TEXTLEN(ENCNTR_INFO->GP_ADDRESS_LINE_2) > 1)
+  SET TEMPSTR = BUILD2(TEMPSTR,", ",TRIM(ENCNTR_INFO->GP_ADDRESS_LINE_2,3))
+ENDIF
+IF(TEXTLEN(ENCNTR_INFO->GP_ADDRESS_LINE_3) > 1)
+  SET TEMPSTR = BUILD2(TEMPSTR,", ",TRIM(ENCNTR_INFO->GP_ADDRESS_LINE_3,3))
+ENDIF
+IF(TEXTLEN(ENCNTR_INFO->GP_CITY) > 1)
+  SET TEMPSTR = BUILD2(TEMPSTR,", ",ENCNTR_INFO->GP_CITY)
+ENDIF
+IF(TEXTLEN(ENCNTR_INFO->GP_STATE) > 1)
+    SET TEMPSTR = BUILD2(TEMPSTR,", ",ENCNTR_INFO->GP_STATE)
+ENDIF
+IF(TEXTLEN(ENCNTR_INFO->GP_ZIPCODE) > 1)
+  SET TEMPSTR = BUILD2(TEMPSTR," ",ENCNTR_INFO->GP_ZIPCODE)
+ENDIF
+IF(TEXTLEN(ENCNTR_INFO->GP_COUNTRY) > 1)
+  SET TEMPSTR = BUILD2(TEMPSTR,", ",ENCNTR_INFO->GP_COUNTRY)
+ENDIF
+CALL PRINTTEXT(TEMPSTR,0,0,0)
+CALL NEXTLINE(1)
 
-  ; gp name
-  call PrintText("Name: ",0,0,0)
-  declare tempName = vc
-  set tempName = trim(encntr_info->gp_name,3)
-  call PrintText(build2(tempName),0,0,0)
-  ;call PrintText(build2(" ",encntr_info->gp_name))
-  call NextLine(1)
+; PHONE
+CALL PRINTTEXT("PHONE:",0,0,0)
+CALL PRINTTEXT(BUILD2(" ",ENCNTR_INFO->GP_PHONE),0,0,0)
 
-  ; address
-  declare tempStr = vc
-  call PrintText("Address:",0,0,0)
-  set tempStr = build2(" ",trim(encntr_info->gp_address_line_1,3))
-  if(textlen(encntr_info->gp_address_line_2) > 1)
-    set tempStr = build2(tempStr,", ",trim(encntr_info->gp_address_line_2,3))
-  endif
-  if(textlen(encntr_info->gp_address_line_3) > 1)
-    set tempStr = build2(tempStr,", ",trim(encntr_info->gp_address_line_3,3))
-  endif
-  if(textlen(encntr_info->gp_city) > 1)
-    set tempStr = build2(tempStr,", ",encntr_info->gp_city)
-  endif
-  if(textlen(encntr_info->gp_state) > 1)
-      set tempStr = build2(tempStr,", ",encntr_info->gp_state)
-  endif
-  if(textlen(encntr_info->gp_zipcode) > 1)
-    set tempStr = build2(tempStr," ",encntr_info->gp_zipcode)
-  endif
-  if(textlen(encntr_info->gp_country) > 1)
-    set tempStr = build2(tempStr,", ",encntr_info->gp_country)
-  endif
-  call PrintText(tempStr,0,0,0)
-  call NextLine(1)
+; FAX
+CALL PRINTTEXT("  FAX:",0,0,0)
+CALL PRINTTEXT(BUILD2(" ",ENCNTR_INFO->GP_FAX),0,0,0)
+CALL NEXTLINE(1)
 
-  ; phone
-  call PrintText("Phone:",0,0,0)
-  call PrintText(build2(" ",encntr_info->gp_phone),0,0,0)
+; Send the text to Output
+CALL FINISHTEXT(0)
+SET REPLY->TEXT = RTF_OUT->TEXT
 
-  ; fax
-  call PrintText("  Fax:",0,0,0)
-  call PrintText(build2(" ",encntr_info->gp_fax),0,0,0)
-  call NextLine(1)
-
-
-call FinishText(0)
-set reply->text = rtf_out->text
-
-end
-go
+END
+GO
