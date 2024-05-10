@@ -20,19 +20,19 @@ create program wh_gp_details_person
 %i cust_script:ma_rtf_tags.inc
 %i cust_script:vic_ds_common_fonts.inc
 
-free record encntr_info
-record encntr_info
+FREE RECORD ENCNTR_INFO
+RECORD ENCNTR_INFO
 (
-  1 gp_name             = vc
-  1 gp_address_line_1   = vc
-  1 gp_address_line_2   = vc
-  1 gp_address_line_3	  = vc
-  1 gp_city             = vc
-  1 gp_state            = vc
-  1 gp_country          = vc
-  1 gp_zipcode          = vc
-  1 gp_phone            = vc
-  1 gp_fax              = vc
+  1 GP_NAME             = VC
+  1 GP_ADDRESS_LINE_1   = VC
+  1 GP_ADDRESS_LINE_2   = VC
+  1 GP_ADDRESS_LINE_3	  = VC
+  1 GP_CITY             = VC
+  1 GP_STATE            = VC
+  1 GP_COUNTRY          = VC
+  1 GP_ZIPCODE          = VC
+  1 GP_PHONE            = VC
+  1 GP_FAX              = VC
 )
 
 declare GPVISIT_VAR       = f8 with constant(uar_get_code_by("DISPLAYKEY",333,"GENERALPRACTITIONER")),protect
