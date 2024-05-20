@@ -1,6 +1,6 @@
-	,(left join person_alias p_URN on p_URN.person_id = p.person_id
-		and p_URN.alias_pool_cd = 9569589 ;WHS UR Number
-		and p_URN.person_alias_type_cd = 10	; 'URN' from code set 319
-		and p_URN.active_ind = 1	; active URNs only
-		and p_URN.end_effective_dt_tm > sysdate	; effective URNs only
-	)
+JOIN P_A;PERSON_ALIAS
+    WHERE P_A.PERSON_ID = P_P_R.PERSON_ID
+	AND P_A.PERSON_ALIAS_TYPE_CD = 10 ; 'URN' FROM CODE SET 319
+    AND P_A.ALIAS_POOL_CD = 9569589.00 ; WHS UR Number
+	AND P_A.ACTIVE_IND = 1	; ACTIVE URNS ONLY
+	AND P_A.END_EFFECTIVE_DT_TM > SYSDATE	; EFFECTIVE URNS ONLY
