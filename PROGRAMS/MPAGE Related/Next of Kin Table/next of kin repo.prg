@@ -1,3 +1,28 @@
+
+/*****************************************************************************
+Jason Whittle: IN DEVELOPMENT
+
+*******************************************************************************/
+
+drop program vic_au_ds_send_status go
+create program vic_au_ds_send_status
+
+; Include standard rtf includes
+    %i cust_script:ma_rtf_tags.inc
+    %i cust_script:vic_ds_common_fonts.inc
+
+; Record Structures
+record RECORD_STRUCTURE_PERSONS (
+  1 COUNT_PERSONS = I4
+  1 LIST_PERSONS [*]
+    2 A_PERSON_ID = F8
+    2 A_NAME = vc
+    2 A_DOB = vc
+    2 A_SEX = vc
+    2 A_RELATIONSHIP = vc
+)
+
+
 record RECORD_PHONES (
   1 COUNT_PHONES = I4
   1 LIST_PHONES [*]
@@ -27,11 +52,6 @@ record RECORD_STRUCTURE_ADDRESSES (
 ; DECLARE VARIABLES
     DECLARE ENCNTR_ID_VAR = F8 WITH CONSTANT(REQUEST->VISIT[1].ENCNTR_ID), PROTECT
     DECLARE PATIENT_PERSON_ID_VAR = F8 WITH NOCONSTANT(0.00),PROTECT
-<<<<<<< HEAD
-    DECLARE COUNT_PERSONS = I4 WITH NOCONSTANT(0),PROTECT
-    DECLARE COUNTER_2 = I4 WITH NOCONSTANT(0),PROTECT
-=======
->>>>>>> 7a7aabe8ad26eb98c9ca5cf3bfe0a0f684a35bff
 
 ; Get the patient person id for the encounter
     SELECT INTO "NL:"
@@ -45,13 +65,8 @@ record RECORD_STRUCTURE_ADDRESSES (
     PATIENT_PERSON_ID_VAR = E.PERSON_ID
     WITH TIME = 10
 
-<<<<<<< HEAD
 ;Get Next of Kin Names, DOBs, Genders and Relationships
-=======
-; Get Distinct Patient Related Persons
->>>>>>> 7a7aabe8ad26eb98c9ca5cf3bfe0a0f684a35bff
     SELECT DISTINCT INTO "NL:"
-<<<<<<< HEAD
         NAME = TRIM(P.NAME_FULL_FORMATTED)
         , RELATIONSHIP = UAR_GET_CODE_DISPLAY(P_P_R.PERSON_RELTN_CD)
         , DOB = TRIM(DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY"))
@@ -77,38 +92,7 @@ record RECORD_STRUCTURE_ADDRESSES (
                 OR
                 P_P_R.BEG_EFFECTIVE_DT_TM IS NULL
             )
-=======
-        P_P_R.RELATED_PERSON_ID
-        , NAME = TRIM(P.NAME_FULL_FORMATTED)
-        , DOB = TRIM(DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY"))
-        , SEX = TRIM(UAR_GET_CODE_DISPLAY(P.SEX_CD))
-    FROM
-        PERSON_PERSON_RELTN     P_P_R
-        , PERSON                P
-    PLAN P_P_R ; PERSON_PERSON_RELTN
-        WHERE P_P_R.PERSON_ID = PATIENT_PERSON_ID_VAR; (SELECT E.PERSON_ID FROM ENCOUNTER E WHERE E.ENCNTR_ID = ENCNTR_ID_VAR)
-        AND P_P_R.ACTIVE_IND = 1
-        AND P_P_R.PERSON_RELTN_CD > 0
-        AND P_P_R.PERSON_RELTN_CD != 158 ; NOT 'Self'
-        AND
-            (
-                P_P_R.END_EFFECTIVE_DT_TM > SYSDATE
-                OR
-                P_P_R.END_EFFECTIVE_DT_TM IS NULL
-            )
-        AND
-            (
-                P_P_R.BEG_EFFECTIVE_DT_TM <= SYSDATE
-                OR
-                P_P_R.BEG_EFFECTIVE_DT_TM IS NULL
-            )
-    JOIN P;PERSON
-        WHERE P.PERSON_ID = P_P_R.RELATED_PERSON_ID
-        AND P.ACTIVE_IND = 1
-        AND P.END_EFFECTIVE_DT_TM > SYSDATE
->>>>>>> 7a7aabe8ad26eb98c9ca5cf3bfe0a0f684a35bff
 
-<<<<<<< HEAD
     JOIN P;PERSON
         WHERE P.PERSON_ID = P_P_R.RELATED_PERSON_ID
         AND P.ACTIVE_IND = 1
@@ -130,10 +114,6 @@ record RECORD_STRUCTURE_ADDRESSES (
 
 
 ;FULL QUERY
-=======
-
-;Get Next of Kin Names
->>>>>>> 7a7aabe8ad26eb98c9ca5cf3bfe0a0f684a35bff
     SELECT INTO "NL:"
 	NAME = TRIM(P.NAME_FULL_FORMATTED)
 	, RELATIONSHIP = UAR_GET_CODE_DISPLAY(P_P_R.PERSON_RELTN_CD)
@@ -220,3 +200,89 @@ record RECORD_STRUCTURE_ADDRESSES (
         RECORD_STRUCTURE_1->LIST_PERSONS[COUNT_PERSONS].A_ZIPCODE = ZIPCODE
     ;
     WITH time =10
+
+
+;Get NOK Phone numbers
+    SELECT INTO "NL:"
+        PHONE_NUMBER_TYPE = UAR_GET_CODE_DISPLAY(PH.PHONE_TYPE_CD)
+        , PHONE_NUMBER = TRIM(PH.PHONE_NUMBER)
+
+    FROM
+        PERSON_PERSON_RELTN     P_P_R
+        , PHONE   PH
+
+    PLAN P_P_R ; PERSON_PERSON_RELTN
+        WHERE P_P_R.PERSON_ID = PATIENT_PERSON_ID_VAR; (SELECT E.PERSON_ID FROM ENCOUNTER E WHERE E.ENCNTR_ID = ENCNTR_ID_VAR)
+        AND P_P_R.ACTIVE_IND = 1
+        AND P_P_R.PERSON_RELTN_CD > 0
+        AND P_P_R.PERSON_RELTN_CD != 158 ; NOT 'Self'
+        AND
+            (
+                P_P_R.END_EFFECTIVE_DT_TM > SYSDATE
+                OR
+                P_P_R.END_EFFECTIVE_DT_TM IS NULL
+            )
+        AND
+            (
+                P_P_R.BEG_EFFECTIVE_DT_TM <= SYSDATE
+                OR
+                P_P_R.BEG_EFFECTIVE_DT_TM IS NULL
+            )
+
+    JOIN PH;PHONE
+        WHERE PH.PARENT_ENTITY_ID = OUTERJOIN(P_P_R.RELATED_PERSON_ID)
+        AND PH.ACTIVE_IND = OUTERJOIN(1)
+        and PH.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)
+
+    HEAD REPORT
+        COUNTER_2 = 0
+        ;allocate memory to store information for 10 Phone Numbers
+        STAT = ALTERLIST(RECORD_STRUCTURE_2->LIST_2,10)
+    ;Loop through in the detail section and store variables
+
+    DETAIL
+        COUNTER_2 += 1
+        RECORD_STRUCTURE_2->LIST_2[COUNTER_2].A_PHONE_NUMBER_TYPE = PHONE_NUMBER_TYPE
+        RECORD_STRUCTURE_2->LIST_2[COUNTER_2].A_PHONE_NUMBER = PHONE_NUMBER
+    WITH time =10
+
+call ApplyFont(active_fonts->normal)
+
+FOR (X = 1 TO COUNT_PERSONS)
+    CALL PRINTLABELEDDATAFIXED("Name: ",RECORD_STRUCTURE_1->LIST_PERSONS[X].A_NAME,90)
+    CALL NEXTLINE(1)
+    CALL PRINTLABELEDDATAFIXED("Relationship: ",RECORD_STRUCTURE_1->LIST_PERSONS[X].A_RELATIONSHIP,90)
+    CALL NEXTLINE(1)
+    CALL PRINTLABELEDDATAFIXED("DOB: ",RECORD_STRUCTURE_1->LIST_PERSONS[X].A_DOB,90)
+    CALL NEXTLINE(1)
+    CALL PRINTLABELEDDATAFIXED("Sex: ",RECORD_STRUCTURE_1->LIST_PERSONS[X].A_SEX,90)
+    CALL NEXTLINE(1)
+    FOR (Y = 1 TO COUNTER_2)
+        CALL PRINTLABELEDDATAFIXED("Phone Type: ",RECORD_STRUCTURE_2->LIST_2[X].A_PHONE_NUMBER_TYPE,90)
+        CALL NEXTLINE(1)
+        CALL PRINTLABELEDDATAFIXED("Phone Number: ",RECORD_STRUCTURE_2->LIST_2[X].A_PHONE_NUMBER,90)
+        CALL NEXTLINE(1)
+    ENDFOR
+    CALL PRINTLABELEDDATAFIXED("Email: ",RECORD_STRUCTURE_1->LIST_PERSONS[X].A_EMAIL_ADDRESS,90)
+    CALL NEXTLINE(1)
+    CALL PRINTLABELEDDATAFIXED("Address: ",RECORD_STRUCTURE_1->LIST_PERSONS[X].A_ADDRESS_HOME,90)
+    CALL NEXTLINE(1)
+    CALL PRINTLABELEDDATAFIXED("City: ",RECORD_STRUCTURE_1->LIST_PERSONS[X].A_CITY,90)
+    CALL NEXTLINE(1)
+    CALL PRINTLABELEDDATAFIXED("State: ",RECORD_STRUCTURE_1->LIST_PERSONS[X].A_STATE,90)
+    CALL NEXTLINE(1)
+    CALL PRINTLABELEDDATAFIXED("Country: ",RECORD_STRUCTURE_1->LIST_PERSONS[X].A_COUNTRY,90)
+    CALL NEXTLINE(1)
+    CALL PRINTLABELEDDATAFIXED("Zipcode: ",RECORD_STRUCTURE_1->LIST_PERSONS[X].A_ZIPCODE,90)
+    CALL NEXTLINE(1)
+    CALL PRINTTEXT("------------------------------------------------------------------------------------",0,0,0)
+    CALL NEXTLINE(2)
+
+ENDFOR
+;call PrintText("**TESTING**",0,0,0)
+call FinishText(0)
+call echo(rtf_out->text)
+set reply->text = rtf_out->text
+
+end
+go
