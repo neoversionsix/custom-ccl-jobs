@@ -152,7 +152,7 @@ record RECORD_STRUCTURE_ADDRESSES (
         COUNT_PERSONS = 0
         ;allocate memory to store information for 50 Next of Kins
         STAT = ALTERLIST(RECORD_STRUCTURE_PERSONS->LIST_PERSONS,50)
-        
+
     ;Loop through in the detail section and store variables
     DETAIL
         COUNT_PERSONS += 1
