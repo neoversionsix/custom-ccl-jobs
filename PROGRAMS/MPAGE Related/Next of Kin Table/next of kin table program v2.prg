@@ -19,15 +19,6 @@ record RECORD_STRUCTURE_PERSONS (
     2 A_NAME = vc
     2 A_DOB = vc
     2 A_SEX = vc
-<<<<<<< HEAD
-=======
-)
-
-record RECORD_STRUCTURE_RELATIONSHIPS (
-  1 COUNT_RELATIONSHIPS = I4
-  1 LIST_RELATIONSHIPS [*]
-    2 A_PERSON_ID = F8
->>>>>>> 7a7aabe8ad26eb98c9ca5cf3bfe0a0f684a35bff
     2 A_RELATIONSHIP = vc
 )
 
@@ -61,11 +52,8 @@ record RECORD_STRUCTURE_ADDRESSES (
 ; DECLARE VARIABLES
     DECLARE ENCNTR_ID_VAR = F8 WITH CONSTANT(REQUEST->VISIT[1].ENCNTR_ID), PROTECT
     DECLARE PATIENT_PERSON_ID_VAR = F8 WITH NOCONSTANT(0.00),PROTECT
-<<<<<<< HEAD
     DECLARE COUNT_PERSONS = I4 WITH NOCONSTANT(0),PROTECT
     DECLARE COUNTER_2 = I4 WITH NOCONSTANT(0),PROTECT
-=======
->>>>>>> 7a7aabe8ad26eb98c9ca5cf3bfe0a0f684a35bff
 
 ; Get the patient person id for the encounter
     SELECT INTO "NL:"
@@ -79,13 +67,8 @@ record RECORD_STRUCTURE_ADDRESSES (
     PATIENT_PERSON_ID_VAR = E.PERSON_ID
     WITH TIME = 10
 
-<<<<<<< HEAD
 ;Get Next of Kin Names, DOBs, Genders and Relationships
-=======
-; Get Distinct Patient Related Persons
->>>>>>> 7a7aabe8ad26eb98c9ca5cf3bfe0a0f684a35bff
     SELECT DISTINCT INTO "NL:"
-<<<<<<< HEAD
         NAME = TRIM(P.NAME_FULL_FORMATTED)
         , RELATIONSHIP = UAR_GET_CODE_DISPLAY(P_P_R.PERSON_RELTN_CD)
         , DOB = TRIM(DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY"))
@@ -111,38 +94,7 @@ record RECORD_STRUCTURE_ADDRESSES (
                 OR
                 P_P_R.BEG_EFFECTIVE_DT_TM IS NULL
             )
-=======
-        P_P_R.RELATED_PERSON_ID
-        , NAME = TRIM(P.NAME_FULL_FORMATTED)
-        , DOB = TRIM(DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY"))
-        , SEX = TRIM(UAR_GET_CODE_DISPLAY(P.SEX_CD))
-    FROM
-        PERSON_PERSON_RELTN     P_P_R
-        , PERSON                P
-    PLAN P_P_R ; PERSON_PERSON_RELTN
-        WHERE P_P_R.PERSON_ID = PATIENT_PERSON_ID_VAR; (SELECT E.PERSON_ID FROM ENCOUNTER E WHERE E.ENCNTR_ID = ENCNTR_ID_VAR)
-        AND P_P_R.ACTIVE_IND = 1
-        AND P_P_R.PERSON_RELTN_CD > 0
-        AND P_P_R.PERSON_RELTN_CD != 158 ; NOT 'Self'
-        AND
-            (
-                P_P_R.END_EFFECTIVE_DT_TM > SYSDATE
-                OR
-                P_P_R.END_EFFECTIVE_DT_TM IS NULL
-            )
-        AND
-            (
-                P_P_R.BEG_EFFECTIVE_DT_TM <= SYSDATE
-                OR
-                P_P_R.BEG_EFFECTIVE_DT_TM IS NULL
-            )
-    JOIN P;PERSON
-        WHERE P.PERSON_ID = P_P_R.RELATED_PERSON_ID
-        AND P.ACTIVE_IND = 1
-        AND P.END_EFFECTIVE_DT_TM > SYSDATE
->>>>>>> 7a7aabe8ad26eb98c9ca5cf3bfe0a0f684a35bff
 
-<<<<<<< HEAD
     JOIN P;PERSON
         WHERE P.PERSON_ID = P_P_R.RELATED_PERSON_ID
         AND P.ACTIVE_IND = 1
@@ -164,10 +116,6 @@ record RECORD_STRUCTURE_ADDRESSES (
 
 
 ;FULL QUERY
-=======
-
-;Get Next of Kin Names
->>>>>>> 7a7aabe8ad26eb98c9ca5cf3bfe0a0f684a35bff
     SELECT INTO "NL:"
 	NAME = TRIM(P.NAME_FULL_FORMATTED)
 	, RELATIONSHIP = UAR_GET_CODE_DISPLAY(P_P_R.PERSON_RELTN_CD)
