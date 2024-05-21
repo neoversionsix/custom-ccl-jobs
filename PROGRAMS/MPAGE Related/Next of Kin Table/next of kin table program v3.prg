@@ -99,8 +99,8 @@ DECLARE COUNT_PHONES = I4 WITH NOCONSTANT(0),PROTECT
 ;Get Phone Numbers and number types for each Next of Kin
     SELECT DISTINCT INTO "NL:"
         R_PERSON_ID = P_P_R.RELATED_PERSON_ID
-        , PHONE_NUMBER_TYPE = UAR_GET_CODE_DISPLAY(P_PH.PHONE_TYPE_CD)
-        , PHONE_NUMBER = P_PH.PHONE_NUMBER
+        , PHONE_NUMBER_TYPE = TRIM(UAR_GET_CODE_DISPLAY(PH.PHONE_TYPE_CD))
+        , PHONE_NUMBER = TRIM(PH.PHONE_NUM)
     FROM
         PERSON_PERSON_RELTN     P_P_R
         , PHONE               PH
@@ -141,8 +141,6 @@ DECLARE COUNT_PHONES = I4 WITH NOCONSTANT(0),PROTECT
         RECORD_PHONES->LIST_PHONES[COUNT_PHONES].A_PHONE_NUMBER = PHONE_NUMBER
     WITH time =10
 
-
-
 call ApplyFont(active_fonts->normal)
 
 FOR (X = 1 TO COUNT_PERSONS)
@@ -160,10 +158,13 @@ FOR (X = 1 TO COUNT_PERSONS)
         CALL PRINTLABELEDDATAFIXED("Phone Number: ",RECORD_PHONES->LIST_PHONES[Y].A_PHONE_NUMBER,90)
         CALL NEXTLINE(1)
     ENDFOR
+    CALL NEXTLINE(1)
+ENDFOR
     CALL PRINTTEXT("------------------------------------------------------------------------------------",0,0,0)
     CALL NEXTLINE(2)
 
-ENDFOR
+
+
 ;call PrintText("**TESTING**",0,0,0)
 call FinishText(0)
 call echo(rtf_out->text)
