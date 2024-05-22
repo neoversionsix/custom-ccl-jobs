@@ -278,7 +278,7 @@ call ApplyFont(active_fonts->normal)
 
 ; Title for Next of Kins
 call ApplyFont(active_fonts->header_patient_name)
-CALL PRINTTEXT("NEXT OF KIN/S",1,0,0) ; BOLD, NO UNDERLINE, NO ITALICS
+CALL PRINTTEXT("Next of Kin Information",1,0,0) ; BOLD, NO UNDERLINE, NO ITALICS
 CALL NEXTLINE(1)
 CALL ApplyFont(active_fonts->normal)
 CALL PRINTTEXT("------------------------------------------------------------------------------------",0,0,0)
