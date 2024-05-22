@@ -147,7 +147,7 @@ DECLARE COUNT_ADDRESSES = I4 WITH NOCONSTANT(0),PROTECT
     JOIN PH;PHONE
         WHERE PH.PARENT_ENTITY_ID = P_P_R.RELATED_PERSON_ID
         AND PH.ACTIVE_IND = 1
-        AND PH.PHONE_NUM != "*@*"
+        AND PH.PHONE_NUM != "*@*" ; Do not include email addresses in the phone table
         AND PH.END_EFFECTIVE_DT_TM > SYSDATE
 
 
@@ -276,7 +276,7 @@ DECLARE COUNT_ADDRESSES = I4 WITH NOCONSTANT(0),PROTECT
 
 call ApplyFont(active_fonts->normal)
 
-; TITLE
+; Title for Next of Kins
 call ApplyFont(active_fonts->header_patient_name)
 CALL PRINTTEXT("NEXT OF KIN/S",1,0,0) ; BOLD, NO UNDERLINE, NO ITALICS
 CALL NEXTLINE(1)
@@ -284,14 +284,17 @@ CALL ApplyFont(active_fonts->normal)
 CALL PRINTTEXT("------------------------------------------------------------------------------------",0,0,0)
 CALL NEXTLINE(1)
 
+; Loop through the Next of Kins and print the information
 FOR (X = 1 TO COUNT_PERSONS)
-    CALL PRINTLABELEDDATAFIXED("Name: ",RECORD_PERSONS->LIST_PERSONS[X].A_NAME,90)
+    CALL PrintText("Name: ", 1, 0, 0)
+    CALL PrintText(RECORD_PERSONS->LIST_PERSONS[X].A_NAME, 0, 0, 0)
     CALL NEXTLINE(1)
-    CALL PRINTLABELEDDATAFIXED("Relationship: ",RECORD_PERSONS->LIST_PERSONS[X].A_RELATIONSHIP,90)
+    CALL PrintText("Relationship: ", 1, 0, 0)
+    CALL PrintText(RECORD_PERSONS->LIST_PERSONS[X].A_RELATIONSHIP, 0, 0, 0)
     ; CALL NEXTLINE(1)
-    ; CALL PRINTLABELEDDATAFIXED("DOB: ",RECORD_PERSONS->LIST_PERSONS[X].A_DOB,90)
+    ; CALL PRINTLABELEDDATAFIXED("DOB: ",RECORD_PERSONS->LIST_PERSONS[X].A_DOB,100)
     ; CALL NEXTLINE(1)
-    ; CALL PRINTLABELEDDATAFIXED("Sex: ",RECORD_PERSONS->LIST_PERSONS[X].A_SEX,90)
+    ; CALL PRINTLABELEDDATAFIXED("Sex: ",RECORD_PERSONS->LIST_PERSONS[X].A_SEX,100)
     CALL NEXTLINE(1)
     FOR (Y = 1 TO COUNT_PHONES)
         IF (RECORD_PHONES->LIST_PHONES[Y].A_PERSON_ID = RECORD_PERSONS->LIST_PERSONS[X].A_PERSON_ID)
@@ -305,7 +308,8 @@ FOR (X = 1 TO COUNT_PERSONS)
     ENDFOR
     FOR (Z = 1 TO COUNT_EMAILS)
         IF (RECORD_EMAILS->LIST_EMAILS[Z].A_PERSON_ID = RECORD_PERSONS->LIST_PERSONS[X].A_PERSON_ID)
-            CALL PRINTLABELEDDATAFIXED("Email: ",RECORD_EMAILS->LIST_EMAILS[Z].A_EMAIL, 100)
+            CALL PRINTTEXT("Email: ",1,0,0)
+            CALL PRINTTEXT(RECORD_EMAILS->LIST_EMAILS[Z].A_EMAIL,0,0,0)
             CALL NEXTLINE(1)
         ENDIF
     ENDFOR
@@ -330,8 +334,7 @@ FOR (X = 1 TO COUNT_PERSONS)
     CALL NEXTLINE(1)
 ENDFOR
 
-
-;call PrintText("**TESTING**",0,0,0)
+; Finish the text and send it to the output
 call FinishText(0)
 call echo(rtf_out->text)
 set reply->text = rtf_out->text
