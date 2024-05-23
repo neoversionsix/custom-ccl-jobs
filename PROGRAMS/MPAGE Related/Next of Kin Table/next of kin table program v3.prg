@@ -336,7 +336,7 @@ ENDFOR
 
 ; if the person has no next of kin print a message
 IF (COUNT_PERSONS = 0)
-    CALL PRINTTEXT("No Next of Kin Listed",1,1,0)
+    CALL PRINTTEXT("No Next of Kin Listed",1,0,0)
 ENDIF
 
 ; Finish the text and send it to the output
