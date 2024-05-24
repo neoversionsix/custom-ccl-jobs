@@ -143,11 +143,6 @@ with
 	) with protect
 
 
-
-
-
-
-
 ;Set printuser_name
 	select into "nl:"
 	from
@@ -169,7 +164,7 @@ with
 		(dummyt d1 with seq = evaluate(size(print_options->qual,5),0,1,size(print_options->qual,5)))
 	plan d1
 		where size(print_options->qual,5) > 0
-	order by encounter
+	;order by encounter
 
 	head report
 		cnt = 0
@@ -220,7 +215,7 @@ with
 	plan e
 		where expand(idx,1,data->cnt,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and e.active_ind = 1
-	order by e.ENCNTR_ID
+	;order by e.ENCNTR_ID
 
 	head e.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
@@ -246,7 +241,7 @@ with
 	select into "nl:"
 	FROM
 	DCP_SHIFT_ASSIGNMENT   D
-	, (LEFT JOIN PCT_CARE_TEAM P ON (P.PCT_CARE_TEAM_ID = D.PCT_CARE_TEAM_ID))
+	, PCT_CARE_TEAM P
 
 	PLAN D
 		WHERE
@@ -256,7 +251,7 @@ with
 			AND
 			D.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, curtime3)
 
-	JOIN P
+	JOIN P WHERE P.PCT_CARE_TEAM_ID = D.PCT_CARE_TEAM_ID
 
 	ORDER BY
 		D.BEG_EFFECTIVE_DT_TM
@@ -324,7 +319,7 @@ with
 		and ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime)
 		and ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime)
 		and ea.encntr_alias_type_cd = 319_URN_CD
-	order by ea.ENCNTR_ID
+	;order by ea.ENCNTR_ID
 
 	head ea.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
@@ -341,7 +336,7 @@ with
 	SELECT INTO "nl:"
 	FROM
 		ENCNTR_PRSNL_RELTN   EPR
-		, (LEFT JOIN PRSNL ON PRSNL.PERSON_ID = EPR.PRSNL_PERSON_ID)
+		, PRSNL PR
 	PLAN
 		EPR
 			WHERE
@@ -349,7 +344,8 @@ with
 				AND
 				EPR.ENCNTR_PRSNL_R_CD = 333_ADMITTINGDOCTOR_CD ; this code filters for addmitting dr
 	JOIN
-		PRSNL
+		PR;PRSNL
+		 WHERE PR.PERSON_ID = PR.PRSNL_PERSON_ID
 	head EPR.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,EPR.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
@@ -392,8 +388,7 @@ with
 				D.ACTIVE_IND = 1
 				AND
 				D.DIAG_TYPE_CD = 3538765 ;"Additional Dx"
-	ORDER BY
-		D.PERSON_ID, D.BEG_EFFECTIVE_DT_TM
+	ORDER BY D.PERSON_ID, D.BEG_EFFECTIVE_DT_TM
 	head D.PERSON_ID
 		pos = locateval(idx,1,data->cnt,D.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
@@ -424,9 +419,7 @@ with
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
 				AND CE.VIEW_LEVEL = 1
-	ORDER BY
-		CE.PERSON_ID
-		, CE.EVENT_END_DT_TM DESC
+	ORDER BY CE.PERSON_ID, CE.EVENT_END_DT_TM DESC
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
@@ -462,9 +455,7 @@ with
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
 				AND CE.VIEW_LEVEL = 1
-	ORDER BY
-		CE.PERSON_ID
-		, CE.EVENT_END_DT_TM DESC
+	ORDER BY CE.PERSON_ID, CE.EVENT_END_DT_TM DESC
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
@@ -500,9 +491,7 @@ with
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
 				AND CE.VIEW_LEVEL = 1
-	ORDER BY
-		CE.PERSON_ID
-		, CE.EVENT_END_DT_TM DESC
+	ORDER BY		CE.PERSON_ID		, CE.EVENT_END_DT_TM DESC
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
@@ -872,7 +861,7 @@ with
 			,"<td class=patient-info-wide>",data->list[x].patient_summary,"</td>"
 			,"</tr>"
 			,"<tr>"
-			,"<td class=patient-data-header-twofive>","Situational Awareness & Planning","</td>"
+			,"<td class=patient-data-header-twofive>","Situational Awareness<br>& Planning","</td>"
 			,"<td class=patient-info-wide>"
 		)
 			for(y = 1 to data->list[x].sit_aware_cnt)
@@ -1036,7 +1025,7 @@ with
 		,".patient-info-name {font-size: 115%; border: 1px solid #dddddd; font-weight: 500; background-color:lightgrey}"
 		,".bld {font-weight: bold}"
 		,".patient-data-header {font-weight: bold}"
-		,".patient-data-header-twofive {width: 25%; font-weight: bold}"
+		,".patient-data-header-twofive {width: auto; font-weight: bold}"
 		,".patient-data {width: 19%; border: 1px solid #dddddd}"
 		,".comment-box {height: 30px}"
 		,"</style> </head>"
