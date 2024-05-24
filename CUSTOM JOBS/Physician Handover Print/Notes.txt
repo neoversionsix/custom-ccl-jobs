@@ -1,0 +1,7 @@
+Cerner documentation for config
+
+https://wiki.cerner.com/display/public/reference/Configure+Custom+Printing+for+Physician+Handoff+Worklists#ConfigureCustomPrintingforPhysicianHandoffWorklists-ReviewAvailableData
+
+
+Forum:
+https://community.oracle.com/oraclehealth/discussion/comment/864423
