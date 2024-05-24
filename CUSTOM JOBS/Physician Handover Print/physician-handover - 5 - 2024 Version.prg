@@ -10,14 +10,18 @@ Date: May 2024
  */
 
 
-drop program whs_physician_handover go
-create program whs_physician_handover
+drop program wh_physician_handover go
+create program wh_physician_handover
 ; [1] changed 2 lines above: swapped "msj_ph_custom_print" with "whs_physician_handover" to identify the program name in
 ; in non-prod env without destroying the current print format
 prompt
 	"Output to File/Printer/MINE" = "MINE" ,
-	"JSON Request:" = ""
-with outdev ,jsondata
+	"JSON Request:" = "" ; jsondata is passed to this program from powerchart
+
+
+with
+	  outdev
+	, jsondata ; jsondata is passed to this program from powerchart
 
 ;Declare Constants
 	declare 319_URN_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",319,"URN")),protect
@@ -1028,8 +1032,8 @@ with outdev ,jsondata
 		,".printed-date {justify-content: flex-end;}"
 		,".column {font-weight: bold; width: 10%}"
 		,".patient-info {width: 10%; border: 1px solid #dddddd}"
-		,".patient-info-wide {border: 1px dotted}"
-		,".patient-info-name {font-size: 105%; border: 1px solid #dddddd; font-weight: 800; background-color:lightgrey}"
+		,".patient-info-wide {border: 1px solid #dddddd}"
+		,".patient-info-name {font-size: 115%; border: 1px solid #dddddd; font-weight: 500; background-color:lightgrey}"
 		,".bld {font-weight: bold}"
 		,".patient-data-header {font-weight: bold}"
 		,".patient-data-header-twofive {width: 25%; font-weight: bold}"
