@@ -1049,8 +1049,9 @@ with
 		, "PRINTED: "
 		,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
 		,"</span> </div> </div> </div>"
-		, "<h1>LIST_NAME: </h1>"
+		, "<h2>LIST_NAME: "
 		, displayed_list_name
+		, "</h2>"
 		,"<p class=print-title></p>"
 		,'<div><b><table style="width:100%"><tr><tr>'
 		,"</tr></tr></table></b></div>"
