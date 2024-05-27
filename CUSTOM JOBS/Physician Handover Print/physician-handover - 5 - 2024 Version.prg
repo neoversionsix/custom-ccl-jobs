@@ -53,6 +53,7 @@ with
 	declare finalhtml = vc with noconstant(" "),protect
 	declare newsize = i4 with noconstant(0),protect
 	declare printuser_name = vc with noconstant(" "),protect
+	declare displayed_list_name = vc with noconstant(" "),protect
 
 
 ;Declare Records
@@ -153,6 +154,14 @@ with
 	detail
 		printuser_name = trim(p.name_full_formatted, 3)
 
+	with nocounter
+
+;Get and Set Powerchart list_name
+	select into "nl:"
+	from
+		dummyt dt
+	head report
+		displayed_list_name = trim(print_options->list_name[1])
 	with nocounter
 
 ;Add json patients to data record
@@ -348,11 +357,11 @@ with
 				EPR.ENCNTR_PRSNL_R_CD = 333_ADMITTINGDOCTOR_CD ; this code filters for addmitting dr
 	JOIN
 		PR;PRSNL
-		 WHERE PR.PERSON_ID = PR.PRSNL_PERSON_ID
+		 WHERE PR.PERSON_ID = EPR.PRSNL_PERSON_ID
 	head EPR.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,EPR.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
-			data->list[pos].admittingdoctor = trim(PRSNL.NAME_FULL_FORMATTED,3)
+			data->list[pos].admittingdoctor = trim(PR.NAME_FULL_FORMATTED,3)
 		endif
 
 	foot EPR.ENCNTR_ID
@@ -1040,6 +1049,8 @@ with
 		, "PRINTED: "
 		,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
 		,"</span> </div> </div> </div>"
+		, "<h1>LIST_NAME: </h1>"
+		, displayed_list_name
 		,"<p class=print-title></p>"
 		,'<div><b><table style="width:100%"><tr><tr>'
 		,"</tr></tr></table></b></div>"
