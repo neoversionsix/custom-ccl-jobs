@@ -62,11 +62,8 @@ with
 	1 list[*]
 		2 PERSON_ID					= f8
 		2 ENCNTR_ID					= f8
-		2 unit_id					= f8
 		2 unit_disp					= vc
-		2 room_id					= f8
 		2 room_disp					= vc
-		2 bed_id					= f8
 		2 bed_disp					= vc
 		2 patient_name				= vc
 		2 age						= vc
@@ -118,7 +115,6 @@ with
 		2 medteams[*]
 		3 medteam					= vc
 		2 code_status				= vc
-		2 admit_dt_tm				= dq8
 		2 admit_dt_tm_disp			= vc
 		2 patient_summary			= vc
 		2 sit_aware_cnt				= i4
@@ -161,7 +157,7 @@ with
 	from
 		dummyt dt
 	head report
-		displayed_list_name = trim(print_options->list_name[1])
+		displayed_list_name = trim(print_options->list_name[1], 3)
 	with nocounter
 
 ;Add json patients to data record
@@ -224,21 +220,15 @@ with
 	plan e
 		where expand(idx,1,data->cnt,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and e.active_ind = 1
-	;order by e.ENCNTR_ID
+	order by e.ENCNTR_ID
 
 	head e.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
-			data->list[pos].unit_id = e.loc_nurse_unit_cd
 			data->list[pos].unit_disp = trim(uar_get_code_display(e.loc_nurse_unit_cd),3)
-			data->list[pos].room_id = e.loc_room_cd
 			data->list[pos].room_disp = trim(uar_get_code_display(e.loc_room_cd),3)
-			; E_LOC_BED_DISP = UAR_GET_CODE_DISPLAY(E.LOC_BED_CD)
-			data->list[pos].bed_id = e.loc_bed_cd
 			data->list[pos].bed_disp = trim(uar_get_code_display(e.loc_bed_cd),3)
-			data->list[pos].admit_dt_tm = e.reg_dt_tm
 			data->list[pos].admit_dt_tm_disp = format(e.reg_dt_tm,"dd mmm yyyy hh:mm;;q")
-			;[1] Changed format of admit time
 		endif
 
 	foot e.ENCNTR_ID
@@ -256,14 +246,11 @@ with
 		WHERE
 		expand(idx,1,data->cnt,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		AND D.ACTIVE_IND = 1
-		AND D.BEG_EFFECTIVE_DT_TM < CNVTDATETIME(CURDATE, curtime3)
-		AND	D.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, curtime3)
+		AND D.BEG_EFFECTIVE_DT_TM < sysdate
+		AND	D.END_EFFECTIVE_DT_TM > sysdate
 
 
 	JOIN P WHERE P.PCT_CARE_TEAM_ID = D.PCT_CARE_TEAM_ID
-		AND P.ACTIVE_IND = 1
-		AND P.BEGIN_EFFECTIVE_DT_TM < CNVTDATETIME(CURDATE, curtime3)
-		AND	P.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, curtime3)
 
 	ORDER BY
 		D.BEG_EFFECTIVE_DT_TM
@@ -328,8 +315,8 @@ with
 	plan ea
 		where expand(idx,1,data->cnt,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and ea.active_ind = 1
-		and ea.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime)
-		and ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime)
+		and ea.beg_effective_dt_tm <= sysdate
+		and ea.end_effective_dt_tm >= sysdate
 		and ea.encntr_alias_type_cd = 319_URN_CD
 	;order by ea.ENCNTR_ID
 
@@ -612,7 +599,7 @@ with
 	plan pi
 		where expand(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and pi.active_ind = 1
-		and pi.end_effective_dt_tm >= cnvtdatetime(curdate,curtime)
+		and pi.end_effective_dt_tm >= sysdate
 		and pi.ipass_data_type_cd = 4003147_ILLNESSSEVERITY_CD
 	join cv
 		where cv.code_value = pi.parent_entity_id
@@ -673,15 +660,15 @@ with
 	plan pi
 		where expand(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and pi.active_ind = 1
-		and pi.end_effective_dt_tm >= cnvtdatetime(curdate,curtime)
+		and pi.end_effective_dt_tm >= sysdate
 		and pi.ipass_data_type_cd in (
 			4003147_COMMENT_CD,
 			4003147_PATIENTSUMMARY_CD
 			)
 	join sn
 		where sn.sticky_note_id = pi.parent_entity_id
-		and sn.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime)
-		and sn.end_effective_dt_tm >= cnvtdatetime(curdate,curtime)
+		and sn.beg_effective_dt_tm <= sysdate
+		and sn.end_effective_dt_tm >= sysdate
 	join lt
 		where lt.long_text_id = outerjoin(sn.long_text_id)
 		and lt.active_ind = outerjoin(1)
@@ -722,7 +709,7 @@ with
 	plan pi
 		where expand(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and pi.active_ind = 1
-		and pi.end_effective_dt_tm >= cnvtdatetime(curdate,curtime)
+		and pi.end_effective_dt_tm >= sysdate
 		and pi.ipass_data_type_cd = 4003147_ACTION_CD
 	join ta
 		where ta.task_id = pi.parent_entity_id
@@ -762,8 +749,8 @@ with
 		where
 		expand(idx,1,data->cnt,a.PERSON_ID,data->list[idx].PERSON_ID)
 		and a.active_ind = 1
-		and a.beg_effective_dt_tm <= cnvtdatetime(curdate,curtime)
-		and (a.end_effective_dt_tm >= cnvtdatetime(curdate,curtime)
+		and a.beg_effective_dt_tm <= sysdate
+		and (a.end_effective_dt_tm >= sysdate
 			or a.end_effective_dt_tm = null)
 		and a.reaction_status_cd = 3299 ; 'Active' from code set 12025
 
@@ -1047,7 +1034,7 @@ with
 		,"</div> <div class=print-title> <span> Medical Worklist </span> </div>"
 		,"<div class=printed-date> <span>"
 		, "PRINTED: "
-		,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
+		,format(sysdate,"dd/mm/yyyy hh:mm;;d")
 		,"</span> </div> </div> </div>"
 		, "<h2>LIST_NAME: "
 		, displayed_list_name

@@ -63,7 +63,6 @@ record data (
     2 encntr_id			= f8
     2 unit_id			= f8
     2 unit_disp			= vc
-    2 room_id			= f8
     2 room_disp			= vc
     2 patient_name		= vc
     2 age				= vc
@@ -108,7 +107,7 @@ plan p
 
 detail
 	printuser_name = trim(p.name_full_formatted, 3)
-	
+
 with nocounter
 
 
@@ -125,24 +124,24 @@ order by encounter
 
 head report
 	cnt = 0
-	
+
 head encounter
 	cnt += 1
 	if(mod(cnt, 20) = 1)
 		stat = alterlist(data->list,cnt + 19)
 	endif
-	
+
 	data->list[cnt].encntr_id = print_options->qual[d1.seq].encntr_id
 	data->list[cnt].person_id = print_options->qual[d1.seq].person_id
 	data->list[cnt].age = trim(print_options->qual[d1.seq].pat_age,3)
-	
+
 foot encounter
 	null
-	
+
 foot report
 	data->cnt = cnt
 	stat = alterlist(data->list,cnt)
-	
+
 with nocounter
 
 
@@ -159,11 +158,11 @@ head p.person_id
 	if(pos > 0)
 		data->list[pos].patient_name = trim(p.name_full_formatted,3)
 		data->list[pos].gender = trim(uar_get_code_display(p.sex_cd),3)
-	endif	
-	
+	endif
+
 foot p.person_id
 	null
-	
+
 with expand = 2
 
 
@@ -186,10 +185,10 @@ head e.encntr_id
 		data->list[pos].admit_dt_tm = e.reg_dt_tm
 		data->list[pos].admit_dt_tm_disp = format(e.reg_dt_tm,"mm/dd/yy hh:mm;;q")
 	endif
-	
+
 foot e.encntr_id
 	null
-	
+
 with expand = 2
 
 
@@ -210,10 +209,10 @@ head ea.encntr_id
 	if(pos > 0)
 		data->list[pos].mrn = trim(cnvtalias(ea.alias, ea.alias_pool_cd),3)
 	endif
-	
+
 foot ea.encntr_id
 	null
-	
+
 with expand = 2
 
 
@@ -237,16 +236,16 @@ head pi.encntr_id
 	if(pos > 0)
 		data->list[pos].illness_severity = trim(cv.display,3)
 	endif
-	
+
 foot pi.encntr_id
 	null
-	
+
 with expand = 2
 
 
 ;Get Code Status
 select into "nl:"
-from 
+from
 	orders o
 	,order_detail od
 plan o
@@ -259,31 +258,31 @@ order by o.encntr_id, o.order_id, od.oe_field_id, od.action_sequence desc
 
 head o.encntr_id
 	pos = locatevalsort(idx,1,data->cnt,o.encntr_id,data->list[idx].encntr_id)
-	
+
 head o.order_id
 	null
-	
+
 head od.oe_field_id
 	if(pos > 0)
 		data->list[pos].code_status = trim(od.oe_field_display_value,3)
 	endif
-	
+
 foot od.oe_field_id
 	null
-	
+
 foot o.order_id
 	null
-	
+
 foot o.encntr_id
 	null
-	
+
 with expand = 2
 
 
 ;Get Patient Summary and Situation Awareness & Planning
 select into "nl:"
 	result = evaluate(sn.long_text_id,0,trim(sn.sticky_note_text,3),trim(lt.long_text,3))
-from 
+from
 	pct_ipass pi
 	,sticky_note sn
 	,long_text lt
@@ -307,7 +306,7 @@ order by pi.encntr_id, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
 head pi.encntr_id
 	pos = locatevalsort(idx,1,data->cnt,pi.encntr_id,data->list[idx].encntr_id)
 	cnt = 0
-	
+
 head pi.ipass_data_type_cd
 	if(pos > 0 and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD)
 		data->list[pos].patient_summary = result
@@ -317,18 +316,18 @@ detail
 	if(pos > 0 and pi.ipass_data_type_cd = 4003147_COMMENT_CD)
 		cnt += 1
 		stat = alterlist(data->list[pos]->sit_aware, cnt)
-		
+
 		data->list[pos]->sit_aware[cnt].comment = result
 	endif
-	
+
 foot pi.ipass_data_type_cd
 	if(pos > 0)
 		data->list[pos].sit_aware_cnt = cnt
 	endif
-	
+
 foot pi.encntr_id
 	null
-	
+
 with expand = 2
 
 
@@ -351,7 +350,7 @@ join lt
 	where lt.long_text_id = ta.msg_text_id
 	and lt.parent_entity_name = "TASK_ACTIVITY"
 	and lt.long_text != null
-order by pi.encntr_id, pi.begin_effective_dt_tm desc	
+order by pi.encntr_id, pi.begin_effective_dt_tm desc
 
 head pi.encntr_id
 	pos = locatevalsort(idx,1,data->cnt,pi.encntr_id,data->list[idx].encntr_id)
@@ -361,15 +360,15 @@ detail
 	if(pos > 0)
 		cnt += 1
 		stat = alterlist(data->list[pos]->actions, cnt)
-		
+
 		data->list[pos]->actions[cnt].action = trim(lt.long_text,3)
 	endif
-		
+
 foot pi.encntr_id
 	if(pos > 0)
 		data->list[pos].actions_cnt = cnt
 	endif
-	
+
 with expand = 2
 
 
@@ -394,15 +393,15 @@ order by a.person_id, result
 head a.person_id
 	pos = locateval(idx,1,data->cnt,a.person_id,data->list[idx].person_id)
 	cnt = 0
-	
+
 detail
 	if(pos > 0)
 		cnt += 1
 		stat = alterlist(data->list[pos]->allergies, cnt)
-		
+
 		data->list[pos]->allergies[cnt].allergy = result
-	endif	
-	
+	endif
+
 foot a.person_id
 	if(pos > 0)
 		data->list[pos].allergy_cnt = cnt
@@ -410,7 +409,7 @@ foot a.person_id
 
 with expand = 2
 call echojson(print_options,trim(concat(trim(logical("ccluserdir"),3),"/ph_print_testing.dat"),3))
- 
+
 
 ;Put data record into HTML for output
 call alterlist(html_log->list,data->cnt)
@@ -461,7 +460,7 @@ for(x = 1 to data->cnt)
 		endfor
 	set patienthtml = build2(patienthtml,"</td>","</tr>")
 	set patienthtml = build2(patienthtml,"</table>")
-	set patienthtml = build2(patienthtml,"<p>","Comments:","</p>","<div class=comment-box>","</div>","<hr>","</hr>")	
+	set patienthtml = build2(patienthtml,"<p>","Comments:","</p>","<div class=comment-box>","</div>","<hr>","</hr>")
 	set html_log->list[x].stop = textlen(trim(patienthtml,3)) + 1
 endfor
 
@@ -483,7 +482,7 @@ set finalhtml = build2(
 	,".patient-data-header {width: 17%; text-decoration: underline}"
 	,".patient-data {width: 19%}"
 	,".comment-box {height: 50px}"
-	,"</style> </head>"   
+	,"</style> </head>"
 	,"<div id = print-container> <div class=print-header> <div class=printed-by-user>"
 	,"<span> Printed By:  </span> <span>",printuser_name,"</span>"
 	,"</div> <div class=print-title> <span> Physician Handoff </span> </div>"
@@ -530,6 +529,6 @@ else
 endif
 
 
-#exit_script 
+#exit_script
 end
 go
