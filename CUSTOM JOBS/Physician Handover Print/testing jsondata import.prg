@@ -10,3 +10,30 @@ prompt
 with
 	  outdev
 	, jsondata ; jsondata is passed to this program from powerchart
+
+declare finalhtml = vc with noconstant(" "),protect
+declare jsontext = vc with noconstant(" "),protect
+
+set jsontext = $jsondata
+
+set finalhtml build2
+	(
+'<!DOCTYPE html>'
+,'<html lang="en">'
+,'<head>'
+    ,'<meta charset="UTF-8">'
+    ,'<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+    ,'<title>Hello Page</title>'
+,'</head>'
+,'<body>'
+    ,'<p>'
+	for (i = 1 to size(icu_stay->qual, 5))
+	,'</p>'
+,'</body>'
+,'</html>'
+	)
+; Send the finalhtml to the output device
+set _memory_reply_string = finalhtml
+
+end
+go

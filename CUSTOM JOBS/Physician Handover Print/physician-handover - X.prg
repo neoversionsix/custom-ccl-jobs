@@ -37,7 +37,7 @@ with outdev ,jsondata
 	declare 79_PENDING_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",79,"PENDING")),protect
 	declare 12025_CANCELED_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",12025,"CANCELED")),protect
 	declare 333_ADMITTINGDOCTOR_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",333,"ADMITTINGDOCTOR")),protect
-	
+
 	call echo(build2("319_URN_CD: ",319_URN_CD))
 	call echo(build2("4003147_ILLNESSSEVERITY_CD: ",4003147_ILLNESSSEVERITY_CD))
 	call echo(build2("200_CODESTATUS_CD: ",200_CODESTATUS_CD))
@@ -123,8 +123,8 @@ with outdev ,jsondata
 		3 allergy					= vc
 
 	) with protect
-	
-	
+
+
 	record html_log (
 	1 list[*]
 		2 start				= i4
@@ -138,15 +138,15 @@ with outdev ,jsondata
 		prsnl p
 	plan p
 		where p.PERSON_ID = reqinfo->updt_id
-	
+
 	detail
 		printuser_name = trim(p.name_full_formatted, 3)
-	
+
 	with nocounter
 
 ;Add json patients to data record
 	set stat = cnvtjsontorec($jsondata)
-	
+
 	select into "nl:"
 		encounter = print_options->qual[d1.seq].ENCNTR_ID
 	from
@@ -154,10 +154,10 @@ with outdev ,jsondata
 	plan d1
 		where size(print_options->qual,5) > 0
 	order by encounter
-	
+
 	head report
 		cnt = 0
-	
+
 	head encounter
 		cnt += 1
 		if(mod(cnt, 20) = 1)
@@ -166,14 +166,14 @@ with outdev ,jsondata
 		data->list[cnt].ENCNTR_ID = print_options->qual[d1.seq].ENCNTR_ID
 		data->list[cnt].PERSON_ID = print_options->qual[d1.seq].PERSON_ID
 		data->list[cnt].age = trim(print_options->qual[d1.seq].pat_age,3)
-	
+
 	foot encounter
 		null
-	
+
 	foot report
 		data->cnt = cnt
 		stat = alterlist(data->list,cnt)
-	
+
 	with nocounter
 
 
@@ -184,17 +184,17 @@ with outdev ,jsondata
 	plan p
 		where expand(idx,1,data->cnt,p.PERSON_ID,data->list[idx].PERSON_ID)
 	order by p.PERSON_ID
-	
+
 	head p.PERSON_ID
 		pos = locateval(idx,1,data->cnt,p.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].patient_name = trim(p.name_full_formatted,3)
 			data->list[pos].gender = trim(uar_get_code_display(p.sex_cd),3)
 		endif
-	
+
 	foot p.PERSON_ID
 		null
-	
+
 	with expand = 2
 
 ;Get encounter data
@@ -205,7 +205,7 @@ with outdev ,jsondata
 		where expand(idx,1,data->cnt,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and e.active_ind = 1
 	order by e.ENCNTR_ID
-	
+
 	head e.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
@@ -220,10 +220,10 @@ with outdev ,jsondata
 			data->list[pos].admit_dt_tm_disp = format(e.reg_dt_tm,"dd mmm yyyy hh:mm;;q")
 			;[1] Changed format of admit time
 		endif
-	
+
 	foot e.ENCNTR_ID
 		null
-	
+
 	with expand = 2
 
 
@@ -238,19 +238,19 @@ with outdev ,jsondata
 		and ea.end_effective_dt_tm >= cnvtdatetime(curdate,curtime)
 		and ea.encntr_alias_type_cd = 319_URN_CD
 	order by ea.ENCNTR_ID
-	
+
 	head ea.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].urn = trim(cnvtalias(ea.alias, ea.alias_pool_cd),3)
 		endif
-	
+
 	foot ea.ENCNTR_ID
 		null
-	
+
 	with expand = 2
 
-;GET ADMITTING DR [1] NEW 1 START 
+;GET ADMITTING DR [1] NEW 1 START
 	SELECT INTO "nl:"
 	FROM
 		ENCNTR_PRSNL_RELTN   EPR
@@ -268,16 +268,16 @@ with outdev ,jsondata
 		if(pos > 0)
 			data->list[pos].admittingdoctor = trim(PRSNL.NAME_FULL_FORMATTED,3)
 		endif
-	
+
 	foot EPR.ENCNTR_ID
 		null
 	;[1] NEW 1 END
-;Get Principal Diagnosis [1]  NEW 2 START 
+;Get Principal Diagnosis [1]  NEW 2 START
 	SELECT INTO "nl:"
 	FROM
 		DIAGNOSIS
-	PLAN 
-		DIAGNOSIS	
+	PLAN
+		DIAGNOSIS
 			WHERE
 				expand(idx,1,data->cnt,DIAGNOSIS.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 				AND
@@ -289,11 +289,11 @@ with outdev ,jsondata
 		if(pos > 0)
 			data->list[pos].diagnosis = trim(DIAGNOSIS.DIAGNOSIS_DISPLAY,3)
 		endif
-	
+
 	foot DIAGNOSIS.ENCNTR_ID
 		null
 	;[1] NEW CODE END 2
-;Get Additional Diagnosis' new code 4 start 
+;Get Additional Diagnosis' new code 4 start
 	SELECT INTO "nl:"
 	FROM
 		DIAGNOSIS D
@@ -310,24 +310,24 @@ with outdev ,jsondata
 	head D.PERSON_ID
 		pos = locateval(idx,1,data->cnt,D.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
- 
+
 	detail
 		if(pos > 0)
 			cnt += 1
 			stat = alterlist(data->list[pos]->diagnosisas, cnt)
 			data->list[pos]->diagnosisas[cnt].diagnosisa = D.DIAGNOSIS_DISPLAY
 		endif
- 
+
 	foot D.PERSON_ID
 		if(pos > 0)
 			data->list[pos].diagnosisas_cnt = cnt
 		endif
 	with expand = 2
 	;new code 4 end
-;Get blood results [1] NEW CODE 3 START 
+;Get blood results [1] NEW CODE 3 START
 	; Haemoglobin Level (Blood) (4054760)
 	SELECT INTO "nl:"
-	FROM 
+	FROM
 		CLINICAL_EVENT CE
 	PLAN
 		CE
@@ -343,7 +343,7 @@ with outdev ,jsondata
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
-	
+
 	DETAIL CE.PERSON_ID
 		if(pos > 0 and cnt < 3) ; cnt < 3 only saves the first 3 results
 			;data->list[pos].haemoglobin = trim(CE.RESULT_VAL,3)
@@ -359,13 +359,13 @@ with outdev ,jsondata
 			data->list[pos].haemoglobins_cnt = cnt
 			data->list[pos].haemoglobindatedsps_cnt = cnt
 		endif
-	
-	WITH 
+
+	WITH
 		expand = 2
 		, maxcol=5000
 	;White Cell Count (Blood) (4054950) (whitecc) (whiteccdatedsp)
 	SELECT INTO "nl:"
-	FROM 
+	FROM
 		CLINICAL_EVENT CE
 	PLAN
 		CE
@@ -381,7 +381,7 @@ with outdev ,jsondata
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
-	
+
 	DETAIL CE.PERSON_ID
 		if(pos > 0 and cnt < 3) ; cnt < 3 only saves the first 3 results
 			;data->list[pos].whitecc = trim(CE.RESULT_VAL,3)
@@ -397,13 +397,13 @@ with outdev ,jsondata
 			data->list[pos].whiteccs_cnt = cnt
 			data->list[pos].whiteccdatedsps_cnt = cnt
 		endif
-	
-	WITH 
+
+	WITH
 		expand = 2
 		, maxcol=5000
 	;Platelet Count (Blood) (4054852)
 	SELECT INTO "nl:"
-	FROM 
+	FROM
 		CLINICAL_EVENT CE
 	PLAN
 		CE
@@ -419,7 +419,7 @@ with outdev ,jsondata
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
-	
+
 	DETAIL CE.PERSON_ID
 		if(pos > 0 and cnt < 3) ; cnt < 3 only saves the first 3 results
 			;data->list[pos].plate = trim(CE.RESULT_VAL,3)
@@ -435,13 +435,13 @@ with outdev ,jsondata
 			data->list[pos].plates_cnt = cnt
 			data->list[pos].platedatedsps_cnt = cnt
 		endif
-	
-	WITH 
+
+	WITH
 		expand = 2
 		, maxcol=5000
 	;C-Reactive Protein (4055520)
 	SELECT INTO "nl:"
-	FROM 
+	FROM
 		CLINICAL_EVENT CE
 	PLAN
 		CE
@@ -457,7 +457,7 @@ with outdev ,jsondata
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
-	
+
 	DETAIL CE.PERSON_ID
 		if(pos > 0 and cnt < 3) ; cnt < 3 only saves the first 3 results
 			;data->list[pos].crprotein = trim(CE.RESULT_VAL,3)
@@ -473,13 +473,13 @@ with outdev ,jsondata
 			data->list[pos].crproteins_cnt = cnt
 			data->list[pos].crproteindatedsps_cnt = cnt
 		endif
-	
-	WITH 
+
+	WITH
 		expand = 2
 		, maxcol=5000
 	;Creatinine Level (Serum/Plasma) (2700655) (creatinine)
 	SELECT INTO "nl:"
-	FROM 
+	FROM
 		CLINICAL_EVENT CE
 	PLAN
 		CE
@@ -495,7 +495,7 @@ with outdev ,jsondata
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
-	
+
 	DETAIL CE.PERSON_ID
 		if(pos > 0 and cnt < 3) ; cnt < 3 only saves the first 3 results
 			;data->list[pos].creatinine = trim(CE.RESULT_VAL,3)
@@ -511,8 +511,8 @@ with outdev ,jsondata
 			data->list[pos].creatinines_cnt = cnt
 			data->list[pos].creatininedatedsps_cnt = cnt
 		endif
-	
-	WITH 
+
+	WITH
 		expand = 2
 		, maxcol=5000
 	;[1] NEW CODE 3 END
@@ -530,16 +530,16 @@ with outdev ,jsondata
 		where cv.code_value = pi.parent_entity_id
 		and cv.active_ind = 1
 	order by pi.ENCNTR_ID
-	
+
 	head pi.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].illness_severity = trim(cv.display,3)
 		endif
-	
+
 	foot pi.ENCNTR_ID
 		null
-	
+
 	with expand = 2
 ;Get Code Status
 	select into "nl:"
@@ -553,27 +553,27 @@ with outdev ,jsondata
 		where od.order_id = o.order_id
 		and od.oe_field_id = 1040321.00		;Code Status
 	order by o.ENCNTR_ID, o.order_id, od.oe_field_id, od.action_sequence desc
-	
+
 	head o.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,o.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-	
+
 	head o.order_id
 		null
-	
+
 	head od.oe_field_id
 		if(pos > 0)
 			data->list[pos].code_status = trim(od.oe_field_display_value,3)
 		endif
-	
+
 	foot od.oe_field_id
 		null
-	
+
 	foot o.order_id
 		null
-	
+
 	foot o.ENCNTR_ID
 		null
-	
+
 	with expand = 2
 ;Get Patient Summary and Situation Awareness & Planning
 	select into "nl:"
@@ -598,32 +598,32 @@ with outdev ,jsondata
 		where lt.long_text_id = outerjoin(sn.long_text_id)
 		and lt.active_ind = outerjoin(1)
 	order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
-	
+
 	head pi.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
-	
+
 	head pi.ipass_data_type_cd
 		if(pos > 0 and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD)
 			data->list[pos].patient_summary = result
 		endif
-	
+
 	detail
 		if(pos > 0 and pi.ipass_data_type_cd = 4003147_COMMENT_CD)
 			cnt += 1
 			stat = alterlist(data->list[pos]->sit_aware, cnt)
-	
+
 			data->list[pos]->sit_aware[cnt].comment = result
 		endif
-	
+
 	foot pi.ipass_data_type_cd
 		if(pos > 0)
 			data->list[pos].sit_aware_cnt = cnt
 		endif
-	
+
 	foot pi.ENCNTR_ID
 		null
-	
+
 	with expand = 2
 ;Get Actions
 	select into "nl:"
@@ -645,23 +645,23 @@ with outdev ,jsondata
 		and lt.parent_entity_name = "TASK_ACTIVITY"
 		and lt.long_text != null
 	order by pi.ENCNTR_ID, pi.begin_effective_dt_tm desc
-	
+
 	head pi.ENCNTR_ID
 		pos = locatevalsort(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
-	
+
 	detail
 		if(pos > 0)
 			cnt += 1
 			stat = alterlist(data->list[pos]->actions, cnt)
 			data->list[pos]->actions[cnt].action = trim(lt.long_text,3)
 		endif
-	
+
 	foot pi.ENCNTR_ID
 		if(pos > 0)
 			data->list[pos].actions_cnt = cnt
 		endif
-	
+
 	with expand = 2
 ;Get Allergies
 	select into "nl:"
@@ -681,26 +681,26 @@ with outdev ,jsondata
 		where n.nomenclature_id = outerjoin(a.substance_nom_id)
 		and n.active_ind = outerjoin(1)
 	order by a.PERSON_ID, result
-	
+
 	head a.PERSON_ID
 		pos = locateval(idx,1,data->cnt,a.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
-	
+
 	detail
 		if(pos > 0)
 			cnt += 1
 			stat = alterlist(data->list[pos]->allergies, cnt)
 			data->list[pos]->allergies[cnt].allergy = result
 		endif
-	
+
 	foot a.PERSON_ID
 		if(pos > 0)
 			data->list[pos].allergy_cnt = cnt
 		endif
-	
+
 	with expand = 2
 	call echojson(print_options,trim(concat(trim(logical("ccluserdir"),3),"/ph_print_testing.dat"),3))
-	
+
 ;Build HTML
 	call alterlist(html_log->list,data->cnt)
 	for(x = 1 to data->cnt)
@@ -730,7 +730,7 @@ with outdev ,jsondata
 
 		set patienthtml = build2(patienthtml
 			,"</td>"
-			,"<td class=patient-info>",data->list[x].admittingdoctor,"</td>"		
+			,"<td class=patient-info>",data->list[x].admittingdoctor,"</td>"
 			,"</td>"
 			,"<td class=patient-info>",data->list[x].admit_dt_tm_disp,"</td>"
 			, "</tr>"
@@ -756,7 +756,7 @@ with outdev ,jsondata
 					,data->list[x]->diagnosisas[y].diagnosisa,",&nbsp"
 				)
 			endfor
-		
+
 		set patienthtml = build2(patienthtml
 			,"</td>"
 			,"</tr>"
@@ -920,8 +920,8 @@ with outdev ,jsondata
 		,".patient-info-wide {border: 1px dotted}"
 		,".patient-info-name {font-size: 105%; border: 1px solid #dddddd; font-weight: 800; background-color:lightgrey}"
 		,".bld {font-weight: bold}"
-		,".patient-data-header {font-weight: bold}" 
-		,".patient-data-header-twofive {width: 25%; font-weight: bold}" 
+		,".patient-data-header {font-weight: bold}"
+		,".patient-data-header-twofive {width: 25%; font-weight: bold}"
 		,".patient-data {width: 19%; border: 1px solid #dddddd}"
 		,".comment-box {height: 30px}"
 		,"</style> </head>"

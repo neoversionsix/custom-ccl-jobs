@@ -5,3 +5,6 @@ https://wiki.cerner.com/display/public/reference/Configure+Custom+Printing+for+P
 
 Forum:
 https://community.oracle.com/oraclehealth/discussion/comment/864423
+
+
+Location is not printing correction
