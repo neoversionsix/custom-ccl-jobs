@@ -12,8 +12,10 @@ Date: May 2024
 
 drop program wh_physician_handover go
 create program wh_physician_handover
-; [1] changed 2 lines above: swapped "msj_ph_custom_print" with "whs_physician_handover" to identify the program name in
-; in non-prod env without destroying the current print format
+
+
+; The two prompts below are recieved by the program ans stored in the two variables
+; in the with section of the program
 prompt
 	"Output to File/Printer/MINE" = "MINE" ,
 	"JSON Request:" = "" ; jsondata is passed to this program from powerchart
