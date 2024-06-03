@@ -1,2 +1,29 @@
 SELECT
-; For Priya
+/*
+For Priya
+dashboard but otherwise as a monthly report includes:
+
+1) Total number of births (already on the reports for Lucy)
+
+2) Total number of C section deliveries with subcategories 1) Elective
+2) Emergency (already in reports for Lucy)
+
+3) Under elective and emergency a subcategory of General Anaesthesia
+ (this will be difficult but is really helpful for us, perhaps looking at
+ patients who have ‘propofol’ as a drug in their Anaesthesia record for C section)
+
+4) Epidurals requested on birth suite (EMR request is done
+for each one -‘Referral to medical speciality —> Epidural Service)
+
+5) Epidurals performed (count of epidural power notes)
+
+6) Number of dural punctures (this is selected on EMR as a complication in
+the discharge checklist in interactive view)
+*/
+
+FROM
+    CLINICAL_EVENT          C_E
+
+PLAN
+JOIN
+WITH
