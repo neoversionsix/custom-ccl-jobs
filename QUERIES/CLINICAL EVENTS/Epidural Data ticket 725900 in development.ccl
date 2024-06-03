@@ -1,0 +1,148 @@
+SELECT DISTINCT
+/*
+|------------------------------------------------------------------------|
+|                                                                        |
+| For Priya. Cherwell ticket 725900                                      |
+| dashboard but otherwise as a monthly report includes:                  |
+|                                                                        |
+| 1) Total number of births (already on the reports for Lucy)            |
+|                                                                        |
+| 2) Total number of C section deliveries with subcategories:            |
+|    1) Elective                                                         |
+|    2) Emergency (already in reports for Lucy)                          |
+|                                                                        |
+| 3) Under elective and emergency a subcategory of General Anaesthesia   |
+|    (this will be difficult but is really helpful for us, perhaps       |
+|    looking at patients who have ‘propofol’ as a drug in their          |
+|    Anaesthesia record for C section)                                   |
+|                                                                        |
+| 4) Epidurals requested on birth suite (EMR request is done             |
+|    for each one -‘Referral to medical speciality —> Epidural Service)  |
+|                                                                        |
+| 5) Epidurals performed (count of epidural power notes)                 |
+|                                                                        |
+| 6) Number of dural punctures (this is selected on EMR as a             |
+|    complication in the discharge checklist in interactive view)        |
+|                                                                        |
+|------------------------------------------------------------------------|
+*/
+/*
+This will give filter for encounters with certain surgeries
+and then provide Anaesthesia and Surgery times for those encounters
+
+ */
+ 	  PATIENT = P.NAME_FULL_FORMATTED
+    , PATIENT_URN = P_A.ALIAS
+    , D.DIAGNOSIS_DISPLAY
+	, UAR_GET_CODE_DISPLAY(D.DIAG_TYPE_CD)
+	, GENDER = UAR_GET_CODE_DISPLAY(P.SEX_CD)
+	, AGE = CNVTAGE(P.BIRTH_DT_TM)
+	, ENCOUNTER_NO = E_A.ALIAS
+    , ENCOUNTER_LOC = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+    , ENCOUNTER_UNIT = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+	, SURG_SCHED_TYPE = UAR_GET_CODE_DISPLAY(S_C.SCHED_TYPE_CD)
+	, PROCEDURE = O_C_S.MNEMONIC
+	, SURGEON = PR_SURGEON.NAME_FULL_FORMATTED
+	, ANESTHETIST = PR_ANESTHETIST.NAME_FULL_FORMATTED
+	, SURG_LOCATION = UAR_GET_CODE_DISPLAY(S_C.SURG_OP_LOC_CD)
+	, SURG_AREA = UAR_GET_CODE_DISPLAY(S_C_P.SURG_AREA_CD)
+	, SURG_SCHED_START = S_C.SCHED_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, SURG_START = S_C.SURG_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, SURG_PROC_START = S_C_P.PROC_START_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, SURG_SCHEDULED_DURATION = S_C.SCHED_DUR
+	, SURG_DURATION = S_C_P.PROC_DUR_MIN
+	, SURG_STOP = S_C.SURG_STOP_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, E_DISCH_DISPOSITION_DISP = UAR_GET_CODE_DISPLAY(E.DISCH_DISPOSITION_CD)
+	, E_DISCH_TO_LOCTN_DISP = UAR_GET_CODE_DISPLAY(E.DISCH_TO_LOCTN_CD)
+
+FROM
+	SURGICAL_CASE   			S_C
+	, SURG_CASE_PROCEDURE   	S_C_P
+	, ORDER_CATALOG_SYNONYM   	O_C_S
+	, ENCOUNTER					E
+	, ENCNTR_ALIAS   			E_A
+	, PRSNL   					PR_SURGEON
+	, PRSNL   					PR_ANESTHETIST
+	, PERSON   					P
+	, PERSON_ALIAS   			P_A
+    , DIAGNOSIS                 D
+
+
+PLAN S_C ;SURGICAL_CASE
+	WHERE
+    ; ACTIVE DATA
+    S_C.ACTIVE_IND = 1
+    ; TIME FILTERS
+    AND S_C.SURG_START_DT_TM >= CNVTDATETIME("07-AUG-2023 00:00:00.00")
+    AND S_C.SURG_START_DT_TM <= CNVTDATETIME("08-NOV-2023 00:00:00.00")
+
+JOIN S_C_P ;SURG_CASE_PROCEDURE
+	WHERE S_C_P.SURG_CASE_ID = OUTERJOIN(S_C.SURG_CASE_ID)
+	AND S_C_P.ACTIVE_IND = OUTERJOIN(1)
+
+JOIN O_C_S ;ORDER_CATALOG_SYNONYM
+	WHERE O_C_S.SYNONYM_ID = (S_C_P.SYNONYM_ID)
+    AND O_C_S.CATALOG_TYPE_CD = 2519 ; Surgery
+    AND O_C_S.MNEMONIC_KEY_CAP = "*CAESAREAN*"
+
+; JOIN C_E_SURGERY ;CLINICAL_EVENT
+	; WHERE C_E_SURGERY.EVENT_ID = OUTERJOIN(S_C_P.EVENT_ID)
+
+JOIN E;ENCOUNTER
+    WHERE E.ENCNTR_ID = OUTERJOIN(S_C.ENCNTR_ID)
+    ; ACTIVE
+    AND E.ACTIVE_IND = OUTERJOIN(1)
+    ; Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital
+    AND E.LOC_FACILITY_CD != OUTERJOIN(4038465.00)
+
+JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+    ;  'FIN/ENCOUNTER/VISIT NBR' from code set 319
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+	; active FIN NBRs only
+    AND E_A.ACTIVE_IND = 1
+    ; effective FIN NBRs only
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+
+JOIN PR_SURGEON ;PRSNL
+	WHERE PR_SURGEON.PERSON_ID = OUTERJOIN(S_C_P.PRIMARY_SURGEON_ID)
+	AND PR_SURGEON.ACTIVE_IND = 1
+
+JOIN PR_ANESTHETIST ;PRSNL
+	WHERE PR_ANESTHETIST.PERSON_ID = OUTERJOIN(S_C.ANESTH_PRSNL_ID)
+	AND PR_ANESTHETIST.ACTIVE_IND = 1
+
+; Patients
+JOIN P;PERSON
+	WHERE P.PERSON_ID = S_C.PERSON_ID
+    ; Remove Inactive Patients
+    AND P.ACTIVE_IND = 1
+    ; Remove Fake 'Test' Patients
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    ; Remove Ineffective Patients
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+    ; AGE FILTER OVER 18 YEARS OLD
+    AND P.BIRTH_DT_TM < CNVTLOOKBEHIND("18, Y")
+
+JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
+    WHERE P_A.PERSON_ID = E.PERSON_ID
+    AND
+    ; this filters for the UR Number Alias' only
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    ; Effective Only
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    ; Active Only
+    P_A.ACTIVE_IND = 1
+
+JOIN D ; DIAGNOSIS
+    WHERE D.ENCNTR_ID = OUTERJOIN(S_C.ENCNTR_ID)
+    AND D.ACTIVE_IND = OUTERJOIN(1)
+    AND D.DIAGNOSIS_DISPLAY != ""
+
+
+ORDER BY
+	E.ENCNTR_ID	DESC
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 15
