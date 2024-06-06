@@ -1,0 +1,112 @@
+SELECT ;return duplicate orders within timeframe - to be used for few months - not for large volumes of data
+    o_duplicate.person_id
+    , URN = p_urn.alias
+	, ENC = o_enc.encntr_id
+    , o_duplicate.order_id
+;   , o_enc_type = uar_get_code_display(o_enc.encntr_type_cd)
+;   , order_cat = uar_get_code_display(o_duplicate.catalog_cd)
+    , o_duplicate.ordered_as_mnemonic
+    , order_status = uar_get_code_display(o_duplicate.order_status_cd)
+    , dept_status = uar_get_code_display(o_duplicate.dept_status_cd)
+    , ordered = o_duplicate.orig_order_dt_tm
+    , scheduled_or_collected = o_duplicate.current_start_dt_tm
+    , ordering_prsnl = oap_orig.name_full_formatted
+;   , p_upd_o.name_full_formatted
+	, prior_order_enc = evaluate(o_prior.encntr_id, null, "", cnvtstring(o_prior.encntr_id))
+    , prior_order_status = uar_get_code_display(o_prior.order_status_cd)
+    , prior_order_id = evaluate(o_prior.order_id, null, "", cnvtstring(o_prior.order_id))
+    , prior_active = evaluate(o_prior.active_ind, null, "", cnvtstring(o_prior.active_ind))
+    , prior_order_dt = o_prior.orig_order_dt_tm
+    , prior_sched_or_coll_dt = o_prior.current_start_dt_tm
+;   , last_updater = p_upd_p.name_full_formatted
+    , prior_ordering_prsnl = oap_prior.name_full_formatted
+    , collect_time_diff_mins = if(o_prior.order_id != null) cnvtstring(datetimediff(o_duplicate.current_start_dt_tm, o_prior.current_start_dt_tm, 4))
+        else "" endif
+    , order_time_diff_mins = if(o_prior.order_id != null) cnvtstring(datetimediff(o_duplicate.orig_order_dt_tm, o_prior.orig_order_dt_tm, 4))
+        else "" endif
+;   , prior_order_status = uar_get_code_display(o_prior.order_status_cd)
+;   , prior_order_status_cd = o_prior.order_status_cd
+;   , check = if(o_prior.order_status_cd = 2542) 1 else 0 endif
+    , rank = rank() over(partition by o_duplicate.person_id order by o_duplicate.person_id, o_duplicate.current_start_dt_tm asc, o_duplicate.orig_order_dt_tm asc, o_duplicate.order_id)
+
+FROM
+    orders o_duplicate
+    , (inner join encounter o_enc on o_enc.encntr_id = o_duplicate.encntr_id
+;        and o_enc.encntr_type_cd = 309308 /*inpatient only*/)
+        and o_enc.encntr_type_cd = 309309 /*outpatient only*/)
+    ,(left join person_alias p_URN on p_URN.person_id = o_duplicate.person_id
+        and p_URN.alias_pool_cd = 9569589 ;WHS UR Number
+        and p_URN.person_alias_type_cd = 10 ; 'URN' from code set 319
+        and p_URN.active_ind = 1    ; active URNs only
+        and p_URN.end_effective_dt_tm > sysdate ; effective URNs only
+    )
+
+    ;inner join on orders but only where the current order had a prior order within timeframe
+    , (left join orders o_prior on o_prior.person_id = o_duplicate.person_id
+		and o_prior.encntr_id = o_enc.encntr_id
+;		and o_prior.catalog_type_cd = 2513 ;Laboratory
+;        and o_prior.catalog_cd = 7347904 ;FBE <---comment in/out with other FBE code--->
+;       and o_prior.catalog_cd = 7349660 ;UEC <<<<comment in/out with other UEC code>>>>
+        and o_prior.order_id != o_duplicate.order_id
+        and o_prior.order_id < o_duplicate.order_id
+		and o_prior.catalog_cd = o_duplicate.catalog_cd ;ensure we're comparing apples with apples
+;       and o_prior.discontinue_ind = 0
+        and o_prior.current_start_dt_tm <= o_duplicate.current_start_dt_tm ;include orders with same start time
+;        and o_prior.current_start_dt_tm > (o_duplicate.current_start_dt_tm - 2/24) ;within 2hrs for FBE <---comment in/out with other FBE code--->
+;       and o_prior.current_start_dt_tm > (o_duplicate.current_start_dt_tm - 5/24) ;within 5hrs for UEC <<<<comment in/out with other UEC code>>>>
+;		and o_prior.current_start_dt_tm > (o_duplicate.current_start_dt_tm - 1/24) ;within 1hrs
+;        and
+;        (   o_prior.order_status_cd not in
+;            (   2542        ;Cancelled
+;                , 2544      ;Deleted
+;                , 2545      ;Discontinued
+;                , 2552      ;Suspended
+;                , 614538    ;Transfer/Canceled
+;            )
+;            or (o_prior.order_status_cd = 2545 /*Discontinued*/ and o_prior.updt_id = 1) ;updt_id = 1 is SYSTEM, SYSTEM
+;        )
+    )
+
+    , (left join prsnl p_upd_o on p_upd_o.person_id = o_duplicate.updt_id)
+    , (left join prsnl p_upd_p on p_upd_p.person_id = o_prior.updt_id)
+
+    ; original order ordering clinician
+    , (left join order_action oa_orig on oa_orig.order_id = o_duplicate.order_id
+        and oa_orig.action_type_cd = 2534) ;order action
+    , (left join prsnl oap_orig on oap_orig.person_id = oa_orig.action_personnel_id)
+
+    ; prior order ordering clinician
+    , (left join order_action oa_prior on oa_prior.order_id = o_prior.order_id
+        and oa_prior.action_type_cd = 2534) ;order action
+    , (left join prsnl oap_prior on oap_prior.person_id = oa_prior.action_personnel_id)
+
+
+where o_duplicate.active_ind = 1
+;    and o_duplicate.catalog_cd = 7347904 ;FBE <---comment in/out with other FBE code--->
+;   and o_duplicate.catalog_cd = 7349660 ;UEC <<<<comment in/out with other UEC code>>>>
+	and o_duplicate.catalog_type_cd = 2513 ;Laboratory
+;    and
+;    (   o_duplicate.order_status_cd not in
+;        (   2542        ;Cancelled
+;            , 2544      ;Deleted
+;            , 2545      ;Discontinued
+;            , 2552      ;Suspended
+;            , 614538    ;Transfer/Cancelled
+;        )
+;        or (o_duplicate.order_status_cd = 2545 /*Discontinued*/ and o_duplicate.updt_id = 1) ;updt_id = 1 is SYSTEM, SYSTEM
+;    )
+    and o_duplicate.current_start_dt_tm >= cnvtdatetime("01-may-2024 00:00:00")
+    and o_duplicate.current_start_dt_tm < cnvtdatetime("01-jun-2024 00:00:00")
+;   and o_duplicate.discontinue_ind = 0
+    and o_duplicate.person_id not in (select p.person_id from person p where p.name_last_key like "*TESTWHS*")
+
+order by
+    o_duplicate.person_id
+    , o_duplicate.current_start_dt_tm asc
+    , o_duplicate.orig_order_dt_tm
+    , o_duplicate.order_id
+    , o_prior.current_start_dt_tm asc
+    , o_prior.orig_order_dt_tm
+    , o_prior.order_id
+
+WITH time = 240, format(date,"@SHORTDATETIME")
