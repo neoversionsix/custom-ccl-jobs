@@ -46,8 +46,7 @@ FROM
         and o_prior.order_id < o_orig.order_id
 ;       and o_prior.discontinue_ind = 0
 
-		/* current_start_dt_tm is the scheduled time if the order isn't collected or the collected time if it is collected
-		*/
+		;current_start_dt_tm is the scheduled time if the order isn't collected or the collected time if it is collected
         and o_prior.current_start_dt_tm <= o_orig.current_start_dt_tm ;include orders with same start time
         and o_prior.current_start_dt_tm > (o_orig.current_start_dt_tm - 2/24) ;within 2hrs for FBE <---comment in/out with other FBE code--->
 ;       and o_prior.current_start_dt_tm > (o_orig.current_start_dt_tm - 5/24) ;within 5hrs for UEC <<<<comment in/out with other UEC code>>>>
