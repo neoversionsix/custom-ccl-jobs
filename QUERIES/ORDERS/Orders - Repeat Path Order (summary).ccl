@@ -50,11 +50,11 @@ where o_orig.active_ind = 1
 	and o_orig.person_id not in (select p.person_id from person p where p.name_last_key like "*TESTWHS*")
 
 group by
-	datetimepart(o_orig.current_start_dt_tm, 1)
-	, datetimepart(o_orig.current_start_dt_tm, 2)
+	datetimepart(o_orig.current_start_dt_tm, 1) ;year
+	, datetimepart(o_orig.current_start_dt_tm, 2) ;month
 
 order by
-	datetimepart(o_orig.current_start_dt_tm, 1) desc
-	, datetimepart(o_orig.current_start_dt_tm, 2) desc
+	datetimepart(o_orig.current_start_dt_tm, 1) desc ;year
+	, datetimepart(o_orig.current_start_dt_tm, 2) desc ;month
 
 WITH time = 360

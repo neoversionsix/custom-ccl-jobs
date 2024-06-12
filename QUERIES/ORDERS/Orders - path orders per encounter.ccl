@@ -1,0 +1,44 @@
+select
+;	clinic = cv_loc.display
+	clinic = uar_get_code_display(enc.loc_nurse_unit_cd)
+	, URN = pa.alias
+	, ENCOUNTER = ea.alias
+;	, enc.encntr_id
+;	, enc.arrive_dt_tm
+	, order_item = uar_get_code_display(o.catalog_cd)
+	, orders_in_encounter = count(distinct o.order_id)
+from orders o
+	,(inner join encounter enc on enc.encntr_id = o.encntr_id
+		and enc.active_ind = 1
+		and enc.encntr_type_cd = 309309 ;outpatient
+		and enc.arrive_dt_tm >= cnvtdatetime("01-jan-2024 00:00:00")
+		and enc.arrive_dt_tm < cnvtdatetime("01-jun-2024 00:00:00")
+	)
+	,(left join code_value cv_loc on cv_loc.code_value = enc.loc_nurse_unit_cd)
+	,(inner join order_detail od on od.order_id = o.order_id
+		and od.oe_field_id = 12613 ;collection priority
+		and od.oe_field_value = 311048 ;Collect Now
+	)
+	,(left join person_alias pa on pa.person_id = o.person_id
+		and pa.ALIAS_POOL_CD = 9569589
+		and pa.active_ind = 1
+		and pa.end_effective_dt_tm > sysdate
+	)
+	,(left join encntr_alias ea on ea.encntr_id = o.encntr_id
+		and ea.active_ind = 1
+		and ea.alias_pool_cd = 9569592 ;WHS Episode Number
+		and ea.encntr_alias_type_cd = 1077 ;FIN Number
+		and ea.end_effective_dt_tm > sysdate)
+	
+
+;where o.person_id = 12872303 ;test patient in CERT
+;and O.ORIG_ORDER_DT_TM >= CNVTDATETIME("01-may-2024")
+where o.catalog_cd in (7347904, 7349660) ;FBE, UEC
+and o.active_ind = 1
+and o.person_id not in (select p.person_id from person p where p.name_last_key like "*TESTWHS*")
+
+
+group by enc.loc_nurse_unit_cd, pa.alias, ea.alias, o.catalog_cd
+;group by enc.loc_nurse_unit_cd, enc.encntr_id, o.catalog_cd
+
+with time = 60
