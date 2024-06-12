@@ -1,6 +1,8 @@
 select
 ;	clinic = cv_loc.display
 	clinic = uar_get_code_display(enc.loc_nurse_unit_cd)
+	, year = datetimepart(enc.arrive_dt_tm, 1)
+	, month = datetimepart(enc.arrive_dt_tm, 2)
 	, URN = pa.alias
 	, ENCOUNTER = ea.alias
 ;	, enc.encntr_id
@@ -29,7 +31,7 @@ from orders o
 		and ea.alias_pool_cd = 9569592 ;WHS Episode Number
 		and ea.encntr_alias_type_cd = 1077 ;FIN Number
 		and ea.end_effective_dt_tm > sysdate)
-	
+
 
 ;where o.person_id = 12872303 ;test patient in CERT
 ;and O.ORIG_ORDER_DT_TM >= CNVTDATETIME("01-may-2024")
@@ -38,7 +40,13 @@ and o.active_ind = 1
 and o.person_id not in (select p.person_id from person p where p.name_last_key like "*TESTWHS*")
 
 
-group by enc.loc_nurse_unit_cd, pa.alias, ea.alias, o.catalog_cd
+group by
+	enc.loc_nurse_unit_cd
+	, datetimepart(enc.arrive_dt_tm, 1) ;year
+	, datetimepart(enc.arrive_dt_tm, 2) ;month
+	, pa.alias
+	, ea.alias
+	, o.catalog_cd
 ;group by enc.loc_nurse_unit_cd, enc.encntr_id, o.catalog_cd
 
 with time = 60
