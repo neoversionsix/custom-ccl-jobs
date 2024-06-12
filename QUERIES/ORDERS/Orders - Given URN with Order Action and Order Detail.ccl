@@ -1,0 +1,63 @@
+SELECT
+	PATIENT_URN = pa.ALIAS
+	, o.person_id
+	, FIN_No = ea.alias
+	, OA_conv_id = oa.order_conversation_id
+	, o.order_id
+	, PATIENT = P.NAME_FULL_FORMATTED
+	, ITEM_ORDERED = O.ORDER_MNEMONIC
+	, o.catalog_cd
+;	, o.order_detail_display_line
+	, od.oe_field_display_value
+	, od.oe_field_value
+	, order_status = uar_get_code_display(o.order_status_cd)
+	, order_status = uar_get_code_display(o.dept_status_cd)
+	, ORDERED_TIME = O.ORIG_ORDER_DT_TM
+	, START_TIME = o.current_start_dt_tm
+	, DISC_TIME = o.discontinue_effective_dt_tm
+;	, user = pu.name_full_formatted
+	, OA_type = uar_get_code_display(oa.action_type_cd)
+	, OA_disp = oa.simplified_display_line
+	, OA_dept_status = uar_get_code_display(oa.dept_status_cd)
+	, OA_time = oa.action_dt_tm
+	, OA_init = oa.action_initiated_dt_tm
+	, OA_start = oa.current_start_dt_tm
+	, OA_ord_time = oa.order_dt_tm
+	, OA_eff_time = oa.effective_dt_tm
+	, OA_upd = oa.updt_dt_tm
+
+
+from orders o
+	,(inner join person_alias pa on pa.person_id = o.person_id
+		and pa.ALIAS_POOL_CD = 9569589
+		and pa.active_ind = 1
+		and pa.end_effective_dt_tm > sysdate
+		and pa.alias = "1613166")
+	,(left join person p on p.person_id = o.person_id)
+	,(left join encntr_alias ea on ea.encntr_id = o.encntr_id
+		and ea.active_ind = 1
+		and ea.alias_pool_cd = 9569592 ;WHS Episode Number
+		and ea.encntr_alias_type_cd = 1077 ;FIN Number
+		and ea.end_effective_dt_tm > sysdate)
+;	,(left join order_detail od on od.order_id = o.order_id)
+	,(left join order_action oa on oa.order_id = o.order_id)
+	,(left join prsnl pu on pu.person_id = o.updt_id)
+	,(left join order_detail od on od.order_id = o.order_id
+		and od.oe_field_id = 12613) ;collection priority
+
+
+
+WHERE O.ORIG_ORDER_DT_TM >= CNVTDATETIME("06-may-2024")
+AND O.CATALOG_TYPE_CD= 2513 ;laboratory
+
+
+ORDER BY
+	O.PERSON_ID
+;	, oa.order_conversation_id
+	, O.ORDER_ID
+	, oa.action_sequence
+
+WITH TIME = 20,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT(date, "@SHORTDATETIME")
