@@ -1007,8 +1007,10 @@ with
 
 	;Add HTML and CSS shell around patienthtml
 	set finalhtml = build2(
-		"<!doctype html><html><head>"
-		,"<meta charset=utf-8><meta name=description><meta http-equiv=X-UA-Compatible content=IE=Edge>"
+		"<!doctype html><html>"
+		,"<head>"
+		,"<meta charset=utf-8>"
+		,"<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
 		,"<title>MPage Print</title>"
 		; CSS CODE IS BELOW
 		,"<style type=text/css>"
@@ -1017,7 +1019,7 @@ with
 		,"td {vertical-align: top; padding: 2px; text-align: left }"
 		,".border {border: 1px solid #dddddd;}"
 		,".print-header {display: flex;}"
-		,".print-header div{display: flex; flex: 1 1;}"
+		,".print-header div {display: flex; flex: 1 1;}"
 		,".print-title {justify-content: center; font-weight: bold; font-size: 24px; color: DarkBlue}"
 		,".printed-date {justify-content: flex-end;}"
 		,".column {font-weight: bold; width: 10%}"
@@ -1029,11 +1031,12 @@ with
 		,".patient-data-header-twofive {width: auto; font-weight: bold}"
 		,".patient-data {width: 19%; border: 1px solid #dddddd}"
 		,".comment-box {height: 30px}"
-		,"</style> </head>"
+		,"</style>"
+		,"</head>"
 		; END OF CSS CODE START OF HEADER
 		,"<div id = print-container> <div class=print-header> <div class=printed-by-user>"
 		,"<span> Printed By:  </span> <span>",printuser_name,"</span>"
-		,"</div> <div class=print-title> <span> Medical Worklist </span> </div>"
+		,"</div> <div class=print-title> <span> Medical Worklist V5.2</span> </div>"
 		,"<div class=printed-date> <span>"
 		, "PRINTED: "
 		,format(sysdate,"dd/mm/yyyy hh:mm;;d")
@@ -1048,32 +1051,8 @@ with
 		,patienthtml
 		,"</body></html>")
 
-;Send HTML string back to PowerChart for printing
-	if(validate(_memory_reply_string) = 1)
-		set _memory_reply_string = finalhtml
-	else
-		free record putrequest
-		record putrequest (
-		1 source_dir = vc
-		1 source_filename = vc
-		1 nbrlines = i4
-		1 line [*]
-			2 linedata = vc
-		1 overflowpage [*]
-			2 ofr_qual [*]
-			3 ofr_line = vc
-		1 isblob = c1
-		1 document_size = i4
-		1 document = gvc
-		)
-		set putrequest->source_dir =  $OUTDEV
-		set putrequest->isblob = "1"
-		set putrequest->document = finalhtml
-		set putrequest->document_size = size (putrequest->document)
-		execute eks_put_source with replace("REQUEST" ,putrequest), replace("REPLY" ,putreply)
-	endif
+	set _memory_reply_string = finalhtml
 
-
-	#exit_script
-	end
-	go
+#exit_script
+end
+go
