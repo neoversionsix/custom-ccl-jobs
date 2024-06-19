@@ -846,7 +846,7 @@ with
 			,"<tr>"
 			,"<td class=patient-data-header-twofive>","Diagnosis","</td>"
 			,"<td class=patient-info-wide> PRINCIPAL: ",data->list[x].diagnosis
-			, "<br/>ADDITIONALS: "
+			, "<br>ADDITIONALS: "
 		)
 		; additional diagnosis'
 			for(y = 1 to data->list[x].diagnosisas_cnt)
@@ -889,6 +889,7 @@ with
 
 		set patienthtml = build2(patienthtml
 			,"</table>"
+			,"</div>"
 		)
 
 
@@ -1007,49 +1008,48 @@ with
 
 	;Add HTML and CSS shell around patienthtml
 	set finalhtml = build2(
-		"<!doctype html><html>"
+		"<!DOCTYPE html><html>"
 		,"<head>"
-		,"<meta charset=utf-8>"
+		,"<meta charset='utf-8'>"
 		,"<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-		,"<title>MPage Print</title>"
-		; CSS CODE IS BELOW
-		,"<style type=text/css>"
-		,"hr.thick {height:5px;border:none;color:#333;background-color:#333}"
-		,"body {font-family: arial;	font-size: 12px;}"
-		,"td {vertical-align: top; padding: 2px; text-align: left }"
+		,"<title>Mpage Print</title>"
+		,"<style type='text/css'>"
+		,"hr.thick {height: 5px; border: none; color: #333; background-color: #333;}"
+		,"body {font-family: Arial, sans-serif; font-size: 12px;}"
+		,"td {vertical-align: top; padding: 2px; text-align: left;}"
 		,".border {border: 1px solid #dddddd;}"
 		,".print-header {display: flex;}"
 		,".print-header div {display: flex; flex: 1 1;}"
-		,".print-title {justify-content: center; font-weight: bold; font-size: 24px; color: DarkBlue}"
+		,".print-title {justify-content: center; font-weight: bold; font-size: 24px; color: DarkBlue;}"
 		,".printed-date {justify-content: flex-end;}"
-		,".column {font-weight: bold; width: 10%}"
-		,".patient-info {width: 10%; border: 1px solid #dddddd}"
-		,".patient-info-wide {border: 1px solid #dddddd}"
-		,".patient-info-name {font-size: 115%; border: 1px solid #dddddd; font-weight: 500; background-color:lightgrey}"
-		,".bld {font-weight: bold}"
-		,".patient-data-header {font-weight: bold}"
-		,".patient-data-header-twofive {width: auto; font-weight: bold}"
-		,".patient-data {width: 19%; border: 1px solid #dddddd}"
-		,".comment-box {height: 30px}"
+		,".column {font-weight: bold; width: 10%;}"
+		,".patient-info {width: 10%; border: 1px solid #dddddd;}"
+		,".patient-info-wide {border: 1px solid #dddddd;}"
+		,".patient-info-name {font-size: 115%; border: 1px solid #dddddd; font-weight: 500; background-color: lightgrey;}"
+		,".bld {font-weight: bold;}"
+		,".patient-data-header {font-weight: bold;}"
+		,".patient-data-header-twofive {width: auto; font-weight: bold;}"
+		,".patient-data {width: 19%; border: 1px solid #dddddd;}"
+		,".comment-box {height: 30px;}"
 		,"</style>"
 		,"</head>"
-		; END OF CSS CODE START OF HEADER
-		,"<div id = print-container> <div class=print-header> <div class=printed-by-user>"
-		,"<span> Printed By:  </span> <span>",printuser_name,"</span>"
-		,"</div> <div class=print-title> <span> Medical Worklist V5.3</span> </div>"
-		,"<div class=printed-date> <span>"
-		, "PRINTED: "
-		,format(sysdate,"dd/mm/yyyy hh:mm;;d")
-		,"</span> </div> </div> </div>"
-		, "<h2>LIST_NAME: "
-		, displayed_list_name
-		, "</h2>"
-		,"<p class=print-title></p>"
-		,'<div><b><table style="width:100%"><tr><tr>'
-		,"</tr></tr></table></b></div>"
-		; PATIENT DATA IN THE VARIABLE BELOW
+		,"<body>"
+		,"<div id='print-container'>"
+		,"<div class='print-header'>"
+		,"<div class='printed-by-user'>"
+		,"<span>PRG V5.6 Printed By: </span><span>", printuser_name, "</span>"
+		,"</div>"
+		,"<div class='print-title'><span>Medical Worklist</span></div>"
+		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
+		,"</div>"
+		,"</div>"
+		,"<h2>LIST_NAME: ", displayed_list_name, "</h2>"
+		,"<p class='print-title'></p>"
+		,"<div><b><table style='width:100%'><tr><tr></tr></tr></table></b></div>"
 		,patienthtml
-		,"</body></html>")
+		,"</body></html>"
+	);
+
 
 	set _memory_reply_string = finalhtml
 
