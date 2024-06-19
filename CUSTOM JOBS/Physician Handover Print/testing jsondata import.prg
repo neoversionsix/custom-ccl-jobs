@@ -27,7 +27,7 @@ set finalhtml build2
 ,'</head>'
 ,'<body>'
     ,'<p>'
-	for (i = 1 to size(icu_stay->qual, 5))
+	, jsontext
 	,'</p>'
 ,'</body>'
 ,'</html>'

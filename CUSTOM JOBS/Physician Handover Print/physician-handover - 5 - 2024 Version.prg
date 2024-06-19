@@ -163,7 +163,7 @@ with
 	with nocounter
 
 ;Add json patients to data record
-	set stat = cnvtjsontorec($jsondata)
+	set stat = cnvtjsontorec($jsondata,0,0,0,0)
 
 	select into "nl:"
 		encounter = print_options->qual[d1.seq].ENCNTR_ID
@@ -780,7 +780,7 @@ with
 	with expand = 2
 	call echojson(print_options,trim(concat(trim(logical("ccluserdir"),3),"/ph_print_testing.dat"),3))
 
-;Build HTML
+;Build HTML for each patient
 	call alterlist(html_log->list,data->cnt)
 	for(x = 1 to data->cnt)
 		set html_log->list[x].start = textlen(trim(patienthtml,3)) + 1
@@ -815,7 +815,7 @@ with
 			,"</tr>"
 			,"<tr>"
 			,"<td class=patient-info>",data->list[x].unit_disp,",&nbsp;"
-			,data->list[x].room_disp,",&nbsp;",data->list[x].bed_disp,"</div>","</td>"
+			,data->list[x].room_disp,",&nbsp;",data->list[x].bed_disp,"</td>"
 			,"<td class=patient-info>",data->list[x].urn,"</td>"
 			,"<td class=patient-info>"
 		)
@@ -832,6 +832,7 @@ with
 			,"<td class=patient-info>",data->list[x].admit_dt_tm_disp,"</td>"
 			, "</tr>"
 			,"</table>"
+			,"</div>"
 		)
 
 		; PATIENT SUMMARY TABLE
@@ -990,7 +991,6 @@ with
 		,"Comments:"
 		,"</p>"
 		,"<div>"
-		; ,"<div class=comment-box>"
 		)
 			for(y = 1 to data->list[x].mcomments_cnt)
 				set patienthtml = build2(patienthtml
@@ -1036,7 +1036,7 @@ with
 		; END OF CSS CODE START OF HEADER
 		,"<div id = print-container> <div class=print-header> <div class=printed-by-user>"
 		,"<span> Printed By:  </span> <span>",printuser_name,"</span>"
-		,"</div> <div class=print-title> <span> Medical Worklist V5.2</span> </div>"
+		,"</div> <div class=print-title> <span> Medical Worklist V5.3</span> </div>"
 		,"<div class=printed-date> <span>"
 		, "PRINTED: "
 		,format(sysdate,"dd/mm/yyyy hh:mm;;d")
