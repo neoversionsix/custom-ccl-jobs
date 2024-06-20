@@ -56,6 +56,7 @@ with
 	declare newsize = i4 with noconstant(0),protect
 	declare printuser_name = vc with noconstant(" "),protect
 	declare displayed_list_name = vc with noconstant(" "),protect
+	declare total_number_of_encounters = i4 with noconstant(0),protect
 
 
 ;Declare Records
@@ -67,6 +68,7 @@ with
 		2 unit_disp					= vc
 		2 room_disp					= vc
 		2 bed_disp					= vc
+		2 admit_dt_tm_disp			= vc
 		2 patient_name				= vc
 		2 age						= vc
 		2 gender					= vc
@@ -117,7 +119,6 @@ with
 		2 medteams[*]
 		3 medteam					= vc
 		2 code_status				= vc
-		2 admit_dt_tm_disp			= vc
 		2 patient_summary			= vc
 		2 sit_aware_cnt				= i4
 		2 sit_aware[*]
@@ -142,6 +143,7 @@ with
 	) with protect
 
 
+
 ;Set printuser_name
 	select into "nl:"
 	from
@@ -162,15 +164,18 @@ with
 		displayed_list_name = trim(print_options->list_name[1], 3)
 	with nocounter
 
-;Add json patients to data record
+;Add json patients to data record called print_options as inherited by PChart
 	set stat = cnvtjsontorec($jsondata,0,0,0,0)
 
+;Get the total number of encounters passed over from powerchart
+	SET total_number_of_encounters = SIZE(print_options->qual,5)
+;Get Information from JSON Recod structure to new one
 	select into "nl:"
 		encounter = print_options->qual[d1.seq].ENCNTR_ID
 	from
 		(dummyt d1 with seq = evaluate(size(print_options->qual,5),0,1,size(print_options->qual,5)))
 	plan d1
-		where size(print_options->qual,5) > 0
+		where size(print_options->qual,5) > 1
 	;order by encounter
 
 	head report
@@ -178,9 +183,9 @@ with
 
 	head encounter
 		cnt += 1
-		if(mod(cnt, 20) = 1)
-			stat = alterlist(data->list,cnt + 19)
-		endif
+		; Allocate enough memory for max 200 encounters
+		stat = alterlist(data->list,200)
+
 		data->list[cnt].ENCNTR_ID = print_options->qual[d1.seq].ENCNTR_ID
 		data->list[cnt].PERSON_ID = print_options->qual[d1.seq].PERSON_ID
 		data->list[cnt].age = trim(print_options->qual[d1.seq].pat_age,3)
@@ -189,29 +194,30 @@ with
 		null
 
 	foot report
-		data->cnt = cnt
+		total_number_of_encounters = cnt
 		stat = alterlist(data->list,cnt)
 
 	with nocounter
 
 
-;Get patient information
+
+;Get patient name gender
 	select into "nl:"
 	from
 		person p
 	plan p
-		where expand(idx,1,data->cnt,p.PERSON_ID,data->list[idx].PERSON_ID)
-	order by p.PERSON_ID
+		where expand(idx,1,total_number_of_encounters,p.PERSON_ID,data->list[idx].PERSON_ID)
+
 
 	head p.PERSON_ID
-		pos = locateval(idx,1,data->cnt,p.PERSON_ID,data->list[idx].PERSON_ID)
+		pos = locateval(idx,1,total_number_of_encounters,p.PERSON_ID,data->list[idx].PERSON_ID)
 		if(pos > 0)
 			data->list[pos].patient_name = trim(p.name_full_formatted,3)
 			data->list[pos].gender = trim(uar_get_code_display(p.sex_cd),3)
 		endif
 
-	foot p.PERSON_ID
-		null
+	 foot p.PERSON_ID
+		 null
 
 	with expand = 2
 
@@ -220,12 +226,13 @@ with
 	from
 		encounter e
 	plan e
-		where expand(idx,1,data->cnt,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		where expand(idx,1,total_number_of_encounters,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and e.active_ind = 1
-	order by e.ENCNTR_ID
-
+	;order by e.ENCNTR_ID
+	head report
+		cnt = 0
 	head e.ENCNTR_ID
-		pos = locatevalsort(idx,1,data->cnt,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locatevalsort(idx,1,total_number_of_encounters,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].unit_disp = trim(uar_get_code_display(e.loc_nurse_unit_cd),3)
 			data->list[pos].room_disp = trim(uar_get_code_display(e.loc_room_cd),3)
@@ -246,7 +253,7 @@ with
 
 	PLAN D
 		WHERE
-		expand(idx,1,data->cnt,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		expand(idx,1,total_number_of_encounters,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		AND D.ACTIVE_IND = 1
 		AND D.BEG_EFFECTIVE_DT_TM < sysdate
 		AND	D.END_EFFECTIVE_DT_TM > sysdate
@@ -258,7 +265,7 @@ with
 		D.BEG_EFFECTIVE_DT_TM
 
 	head D.ENCNTR_ID
-		pos = locateval(idx,1,data->cnt,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locateval(idx,1,total_number_of_encounters,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
 
 	detail
@@ -286,14 +293,14 @@ with
 		sticky_note s
 	plan s
 			where
-				expand(idx,1,data->cnt,s.parent_entity_id,data->list[idx].ENCNTR_ID)
+				expand(idx,1,total_number_of_encounters,s.parent_entity_id,data->list[idx].ENCNTR_ID)
 				and
 				s.sticky_note_type_cd = 78917771.00 ; MPages Comment
 	order by
 		s.parent_entity_id, s.BEG_EFFECTIVE_DT_TM
 
 	head s.parent_entity_id
-		pos = locateval(idx,1,data->cnt,s.parent_entity_id,data->list[idx].ENCNTR_ID)
+		pos = locateval(idx,1,total_number_of_encounters,s.parent_entity_id,data->list[idx].ENCNTR_ID)
 		cnt = 0
 
 	detail
@@ -315,7 +322,7 @@ with
 	from
 		encntr_alias ea
 	plan ea
-		where expand(idx,1,data->cnt,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		where expand(idx,1,total_number_of_encounters,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and ea.active_ind = 1
 		and ea.beg_effective_dt_tm <= sysdate
 		and ea.end_effective_dt_tm >= sysdate
@@ -323,7 +330,7 @@ with
 	;order by ea.ENCNTR_ID
 
 	head ea.ENCNTR_ID
-		pos = locatevalsort(idx,1,data->cnt,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locatevalsort(idx,1,total_number_of_encounters,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].urn = trim(cnvtalias(ea.alias, ea.alias_pool_cd),3)
 		endif
@@ -341,14 +348,14 @@ with
 	PLAN
 		EPR
 			WHERE
-				expand(idx,1,data->cnt,EPR.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+				expand(idx,1,total_number_of_encounters,EPR.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 				AND
 				EPR.ENCNTR_PRSNL_R_CD = 333_ADMITTINGDOCTOR_CD ; this code filters for addmitting dr
 	JOIN
 		PR;PRSNL
 		 WHERE PR.PERSON_ID = EPR.PRSNL_PERSON_ID
 	head EPR.ENCNTR_ID
-		pos = locatevalsort(idx,1,data->cnt,EPR.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locatevalsort(idx,1,total_number_of_encounters,EPR.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].admittingdoctor = trim(PR.NAME_FULL_FORMATTED,3)
 		endif
@@ -363,13 +370,13 @@ with
 	PLAN
 		DIAGNOSIS
 			WHERE
-				expand(idx,1,data->cnt,DIAGNOSIS.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+				expand(idx,1,total_number_of_encounters,DIAGNOSIS.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 				AND
 				DIAGNOSIS.ACTIVE_IND = 1
 				AND
 				DIAGNOSIS.DIAG_TYPE_CD = 3538766 ; "Principal Dx"
 	head DIAGNOSIS.ENCNTR_ID
-		pos = locatevalsort(idx,1,data->cnt,DIAGNOSIS.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locatevalsort(idx,1,total_number_of_encounters,DIAGNOSIS.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].diagnosis = trim(DIAGNOSIS.DIAGNOSIS_DISPLAY,3)
 		endif
@@ -384,14 +391,14 @@ with
 	PLAN
 		D
 			WHERE
-				expand(idx,1,data->cnt,D.PERSON_ID,data->list[idx].PERSON_ID)
+				expand(idx,1,total_number_of_encounters,D.PERSON_ID,data->list[idx].PERSON_ID)
 				AND
 				D.ACTIVE_IND = 1
 				AND
 				D.DIAG_TYPE_CD = 3538765 ;"Additional Dx"
 	ORDER BY D.PERSON_ID, D.BEG_EFFECTIVE_DT_TM
 	head D.PERSON_ID
-		pos = locateval(idx,1,data->cnt,D.PERSON_ID,data->list[idx].PERSON_ID)
+		pos = locateval(idx,1,total_number_of_encounters,D.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
 
 	detail
@@ -415,14 +422,14 @@ with
 	PLAN
 		CE
 			WHERE
-				expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
+				expand(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
 				AND CE.EVENT_CD = 4054760 ;TYPE OF BLOOD TEST
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
 				AND CE.VIEW_LEVEL = 1
 	ORDER BY CE.PERSON_ID, CE.EVENT_END_DT_TM DESC
 	HEAD CE.PERSON_ID
-		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		pos = locateval(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
 
 	DETAIL CE.PERSON_ID
@@ -451,14 +458,14 @@ with
 	PLAN
 		CE
 			WHERE
-				expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
+				expand(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
 				AND CE.EVENT_CD = 4054950 ;TYPE OF BLOOD TEST
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
 				AND CE.VIEW_LEVEL = 1
 	ORDER BY CE.PERSON_ID, CE.EVENT_END_DT_TM DESC
 	HEAD CE.PERSON_ID
-		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		pos = locateval(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
 
 	DETAIL CE.PERSON_ID
@@ -487,14 +494,14 @@ with
 	PLAN
 		CE
 			WHERE
-				expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
+				expand(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
 				AND CE.EVENT_CD = 4054852 ;TYPE OF BLOOD TEST
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
 				AND CE.VIEW_LEVEL = 1
 	ORDER BY		CE.PERSON_ID		, CE.EVENT_END_DT_TM DESC
 	HEAD CE.PERSON_ID
-		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		pos = locateval(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
 
 	DETAIL CE.PERSON_ID
@@ -523,7 +530,7 @@ with
 	PLAN
 		CE
 			WHERE
-				expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
+				expand(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
 				AND CE.EVENT_CD = 4055520 ;TYPE OF BLOOD TEST
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
@@ -532,7 +539,7 @@ with
 		CE.PERSON_ID
 		, CE.EVENT_END_DT_TM DESC
 	HEAD CE.PERSON_ID
-		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		pos = locateval(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
 
 	DETAIL CE.PERSON_ID
@@ -561,7 +568,7 @@ with
 	PLAN
 		CE
 			WHERE
-				expand(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
+				expand(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
 				AND CE.EVENT_CD = 2700655 ;TYPE OF BLOOD TEST
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
@@ -570,7 +577,7 @@ with
 		CE.PERSON_ID
 		, CE.EVENT_END_DT_TM DESC
 	HEAD CE.PERSON_ID
-		pos = locateval(idx,1,data->cnt,CE.PERSON_ID,data->list[idx].PERSON_ID)
+		pos = locateval(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
 
 	DETAIL CE.PERSON_ID
@@ -599,7 +606,7 @@ with
 		pct_ipass pi
 		,code_value cv
 	plan pi
-		where expand(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		where expand(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and pi.active_ind = 1
 		and pi.end_effective_dt_tm >= sysdate
 		and pi.ipass_data_type_cd = 4003147_ILLNESSSEVERITY_CD
@@ -609,7 +616,7 @@ with
 	order by pi.ENCNTR_ID
 
 	head pi.ENCNTR_ID
-		pos = locatevalsort(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locatevalsort(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].illness_severity = trim(cv.display,3)
 		endif
@@ -624,7 +631,7 @@ with
 		orders o
 		,order_detail od
 	plan o
-		where expand(idx,1,data->cnt,o.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		where expand(idx,1,total_number_of_encounters,o.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and o.catalog_cd = 200_CODESTATUS_CD
 	join od
 		where od.order_id = o.order_id
@@ -632,7 +639,7 @@ with
 	order by o.ENCNTR_ID, o.order_id, od.oe_field_id, od.action_sequence desc
 
 	head o.ENCNTR_ID
-		pos = locatevalsort(idx,1,data->cnt,o.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locatevalsort(idx,1,total_number_of_encounters,o.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 
 	head o.order_id
 		null
@@ -660,7 +667,7 @@ with
 		,sticky_note sn
 		,long_text lt
 	plan pi
-		where expand(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		where expand(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and pi.active_ind = 1
 		and pi.end_effective_dt_tm >= sysdate
 		and pi.ipass_data_type_cd in (
@@ -677,7 +684,7 @@ with
 	order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
 
 	head pi.ENCNTR_ID
-		pos = locatevalsort(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locatevalsort(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
 
 	head pi.ipass_data_type_cd
@@ -709,7 +716,7 @@ with
 		,task_activity ta
 		,long_text lt
 	plan pi
-		where expand(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		where expand(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and pi.active_ind = 1
 		and pi.end_effective_dt_tm >= sysdate
 		and pi.ipass_data_type_cd = 4003147_ACTION_CD
@@ -724,7 +731,7 @@ with
 	order by pi.ENCNTR_ID, pi.begin_effective_dt_tm desc
 
 	head pi.ENCNTR_ID
-		pos = locatevalsort(idx,1,data->cnt,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locatevalsort(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
 
 	detail
@@ -749,7 +756,7 @@ with
 
 	plan a
 		where
-		expand(idx,1,data->cnt,a.PERSON_ID,data->list[idx].PERSON_ID)
+		expand(idx,1,total_number_of_encounters,a.PERSON_ID,data->list[idx].PERSON_ID)
 		and a.active_ind = 1
 		and a.beg_effective_dt_tm <= sysdate
 		and (a.end_effective_dt_tm >= sysdate
@@ -762,7 +769,7 @@ with
 	order by a.PERSON_ID, result
 
 	head a.PERSON_ID
-		pos = locateval(idx,1,data->cnt,a.PERSON_ID,data->list[idx].PERSON_ID)
+		pos = locateval(idx,1,total_number_of_encounters,a.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
 
 	detail
@@ -781,11 +788,14 @@ with
 	call echojson(print_options,trim(concat(trim(logical("ccluserdir"),3),"/ph_print_testing.dat"),3))
 
 ;Build HTML for each patient
-	call alterlist(html_log->list,data->cnt)
-	for(x = 1 to data->cnt)
+	call alterlist(html_log->list,total_number_of_encounters)
+	for(x = 1 to total_number_of_encounters)
 		set html_log->list[x].start = textlen(trim(patienthtml,3)) + 1
 		set patienthtml = build2(patienthtml
-			,"<p class=patient-info-name>",data->list[x].patient_name," ",data->list[x].age," ",data->list[x].gender,"</p>"
+			,"<p class=patient-info-name>",data->list[x].patient_name," ",data->list[x].age," ",data->list[x].gender
+			, " ENC_ID: ", data->list[x].ENCNTR_ID
+			, " UNIT: ", data->list[x].unit_disp
+			,"</p>"
 			,"<div>"
 			,'<table style="width:100%">'
 			,"<tr>"
@@ -814,9 +824,12 @@ with
 			,"<td class=patient-data-header>Admit Date</td>"
 			,"</tr>"
 			,"<tr>"
-			,"<td class=patient-info>",data->list[x].unit_disp,",&nbsp;"
-			,data->list[x].room_disp,",&nbsp;",data->list[x].bed_disp,"</td>"
-			,"<td class=patient-info>",data->list[x].urn,"</td>"
+			,"<td class=patient-info>"
+			, data->list[x].unit_disp,",&nbsp;"
+			, data->list[x].room_disp,",&nbsp;"
+			, data->list[x].bed_disp
+			,"</td>"
+			,"<td class=patient-info>", data->list[x].urn, "</td>"; debug
 			,"<td class=patient-info>"
 		)
 		; Allergies
@@ -880,7 +893,8 @@ with
 		)
 			for(y = 1 to data->list[x].actions_cnt)
 				set patienthtml = build2(patienthtml
-					,"&#9744;",data->list[x]->actions[y].action,"<br>")
+					; Checkbox, splace, followed by action and line break
+					,"&#9744;", ",&nbsp;", data->list[x]->actions[y].action, "<br>")
 			endfor
 		set patienthtml = build2(patienthtml
 			,"</td>"
@@ -1037,13 +1051,14 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>PRG V5.6 Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>PRG V5.6.7 Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
 		,"</div>"
 		,"</div>"
-		,"<h2>LIST_NAME: ", displayed_list_name, "</h2>"
+		,"<h2>LIST NAME: ", displayed_list_name, "</h2>"
+		,"<p>total Enc: ", total_number_of_encounters, "</p>"
 		,"<p class='print-title'></p>"
 		,"<div><b><table style='width:100%'><tr><tr></tr></tr></table></b></div>"
 		,patienthtml
