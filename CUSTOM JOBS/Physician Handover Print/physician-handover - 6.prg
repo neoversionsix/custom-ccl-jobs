@@ -963,7 +963,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>PRG V5.9.5 Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>PRG V5.9.6 Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
@@ -971,8 +971,6 @@ with
 		,"</div>"
 		,"<h2>LIST NAME: ", displayed_list_name, "</h2>"
 		,"<p>Encounters: ", total_number_of_encounters, "</p>"
-		,"<p class='print-title'></p>"
-		,"<div><b><table style='width:100%'><tr><tr></tr></tr></table></b></div>"
 		,patienthtml
 		,"</body></html>"
 	);
