@@ -27,7 +27,7 @@ with
 
 ;Declare Constants
 	declare 319_URN_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",319,"URN")),protect
-	;[1] 319 is the code set for URN on the CODE_VALUE table "URN" is the DISPLAY_KEY for urn
+	;319 is the code set for URN on the CODE_VALUE table "URN" is the DISPLAY_KEY for urn
 	declare 4003147_ILLNESSSEVERITY_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",4003147,"ILLNESSSEVERITY")),protect
 	declare 200_CODESTATUS_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",200,"CODESTATUS")),protect
 	declare 4003147_COMMENT_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",4003147,"COMMENT")),protect
@@ -37,17 +37,16 @@ with
 	declare 79_PENDING_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",79,"PENDING")),protect
 	declare 12025_CANCELED_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",12025,"CANCELED")),protect
 	declare 333_ADMITTINGDOCTOR_CD = f8 with constant(uar_get_code_by("DISPLAYKEY",333,"ADMITTINGDOCTOR")),protect
+	declare MPAGE_COMMENT_CD_VAR = f8 with constant(78917771.00),protect
+	declare DIAGNOSIS_TYPE_PRINCIPAL_CD_VAR = f8 with constant(3538766.00),protect
+	declare DIAGNOSIS_TYPE_ADDITIONAL_CD_VAR = f8 with constant(3538765.00),protect
+	declare HAEMOGLOBIN_CD_VAR = f8 with constant(4054760.00),protect
+	declare WHITE_CELL_COUNT_CD_VAR = f8 with constant(4054950.00),protect
+	declare PLATELET_COUNT_CD_VAR = f8 with constant(4054852.00),protect
+	declare C_R_PROTEIN_CD_VAR = f8 with constant(4055520.00),protect
+	declare CREATININE_CD_VAR = f8 with constant(2700655.00),protect
+	declare ACTIVE_12025_CD_VAR = f8 with constant(3299.00),protect
 
-	call echo(build2("319_URN_CD: ",319_URN_CD))
-	call echo(build2("4003147_ILLNESSSEVERITY_CD: ",4003147_ILLNESSSEVERITY_CD))
-	call echo(build2("200_CODESTATUS_CD: ",200_CODESTATUS_CD))
-	call echo(build2("4003147_COMMENT_CD: ",4003147_COMMENT_CD))
-	call echo(build2("4003147_PATIENTSUMMARY_CD: ",4003147_PATIENTSUMMARY_CD))
-	call echo(build2("4003147_ACTION_CD: ",4003147_ACTION_CD))
-	call echo(build2("6027_IPASSACTION_CD: ",6027_IPASSACTION_CD))
-	call echo(build2("79_PENDING_CD: ",79_PENDING_CD))
-	call echo(build2("12025_CANCELED_CD: ",12025_CANCELED_CD))
-	call echo(build2("333_ADMITTINGDOCTOR_CD: ",333_ADMITTINGDOCTOR_CD))
 
 ;Declare Variables
 	declare idx = i4 with noconstant(0),protect
@@ -266,7 +265,7 @@ ENDFOR
 			where
 				expand(idx,1,total_number_of_encounters,s.parent_entity_id,data->list[idx].ENCNTR_ID)
 				and
-				s.sticky_note_type_cd = 78917771.00 ; MPages Comment
+				s.sticky_note_type_cd = MPAGE_COMMENT_CD_VAR ; MPages Comment
 	order by
 		s.parent_entity_id, s.BEG_EFFECTIVE_DT_TM
 
@@ -344,7 +343,7 @@ ENDFOR
 				AND
 				DIAGNOSIS.ACTIVE_IND = 1
 				AND
-				DIAGNOSIS.DIAG_TYPE_CD = 3538766 ; "Principal Dx"
+				DIAGNOSIS.DIAG_TYPE_CD = DIAGNOSIS_TYPE_PRINCIPAL_CD_VAR
 	head DIAGNOSIS.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,DIAGNOSIS.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
@@ -365,7 +364,7 @@ ENDFOR
 				AND
 				D.ACTIVE_IND = 1
 				AND
-				D.DIAG_TYPE_CD = 3538765 ;"Additional Dx"
+				D.DIAG_TYPE_CD = DIAGNOSIS_TYPE_ADDITIONAL_CD_VAR
 	ORDER BY D.PERSON_ID, D.BEG_EFFECTIVE_DT_TM
 	head D.PERSON_ID
 		pos = locateval(idx,1,total_number_of_encounters,D.PERSON_ID,data->list[idx].PERSON_ID)
@@ -393,7 +392,7 @@ ENDFOR
 		CE
 			WHERE
 				expand(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
-				AND CE.EVENT_CD = 4054760 ;TYPE OF BLOOD TEST
+				AND CE.EVENT_CD = HAEMOGLOBIN_CD_VAR
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
 				AND CE.VIEW_LEVEL = 1
@@ -429,7 +428,7 @@ ENDFOR
 		CE
 			WHERE
 				expand(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
-				AND CE.EVENT_CD = 4054950 ;TYPE OF BLOOD TEST
+				AND CE.EVENT_CD = WHITE_CELL_COUNT_CD_VAR
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
 				AND CE.VIEW_LEVEL = 1
@@ -465,7 +464,7 @@ ENDFOR
 		CE
 			WHERE
 				expand(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
-				AND CE.EVENT_CD = 4054852 ;TYPE OF BLOOD TEST
+				AND CE.EVENT_CD = PLATELET_COUNT_CD_VAR
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
 				AND CE.VIEW_LEVEL = 1
@@ -501,7 +500,7 @@ ENDFOR
 		CE
 			WHERE
 				expand(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
-				AND CE.EVENT_CD = 4055520 ;TYPE OF BLOOD TEST
+				AND CE.EVENT_CD = C_R_PROTEIN_CD_VAR
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
 				AND CE.VIEW_LEVEL = 1
@@ -539,7 +538,7 @@ ENDFOR
 		CE
 			WHERE
 				expand(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID);AND CE.PERSON_ID = xxxxxx
-				AND CE.EVENT_CD = 2700655 ;TYPE OF BLOOD TEST
+				AND CE.EVENT_CD = CREATININE_CD_VAR
 				AND CE.VALID_UNTIL_DT_TM > SYSDATE
 				AND CE.EVENT_END_DT_TM > CNVTLOOKBEHIND("200, D")
 				AND CE.VIEW_LEVEL = 1
@@ -731,7 +730,7 @@ ENDFOR
 		and a.beg_effective_dt_tm <= sysdate
 		and (a.end_effective_dt_tm >= sysdate
 			or a.end_effective_dt_tm = null)
-		and a.reaction_status_cd = 3299 ; 'Active' from code set 12025
+		and a.reaction_status_cd = ACTIVE_12025_CD_VAR ; 'Active' from code set 12025
 
 	join n
 		where n.nomenclature_id = outerjoin(a.substance_nom_id)
@@ -763,8 +762,6 @@ ENDFOR
 		set html_log->list[x].start = textlen(trim(patienthtml,3)) + 1
 		set patienthtml = build2(patienthtml
 			,"<p class=patient-info-name>",data->list[x].patient_name," ",data->list[x].age," ",data->list[x].gender
-			, " ENC_ID: ", data->list[x].ENCNTR_ID
-			, " UNIT: ", data->list[x].unit_disp
 			,"</p>"
 			,"<div>"
 			,'<table style="width:100%">'
@@ -864,7 +861,7 @@ ENDFOR
 			for(y = 1 to data->list[x].actions_cnt)
 				set patienthtml = build2(patienthtml
 					; Checkbox, splace, followed by action and line break
-					,"&#9744;", ",&nbsp;", data->list[x]->actions[y].action, "<br>")
+					,"&#9744;", "&nbsp;", data->list[x]->actions[y].action, "<br>")
 			endfor
 		set patienthtml = build2(patienthtml
 			,"</td>"
@@ -1021,14 +1018,14 @@ ENDFOR
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>PRG V5.6.10 Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>PRG V5.8.0 Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
 		,"</div>"
 		,"</div>"
 		,"<h2>LIST NAME: ", displayed_list_name, "</h2>"
-		,"<p>total Enc: ", total_number_of_encounters, "</p>"
+		,"<p>Encounters: ", total_number_of_encounters, "</p>"
 		,"<p class='print-title'></p>"
 		,"<div><b><table style='width:100%'><tr><tr></tr></tr></table></b></div>"
 		,patienthtml
