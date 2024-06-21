@@ -1,0 +1,21 @@
+select
+	medservice = trim(uar_get_code_display(P.PCT_MED_SERVICE_CD),3)
+	,medteam = trim(uar_get_code_display(P.PCT_TEAM_CD),3)
+FROM
+	DCP_SHIFT_ASSIGNMENT   D
+	, PCT_CARE_TEAM P
+
+PLAN D
+	WHERE
+	D.ENCNTR_ID = 55035726.00
+	AND D.ACTIVE_IND = 1
+	AND D.BEG_EFFECTIVE_DT_TM < sysdate
+	AND	D.END_EFFECTIVE_DT_TM > sysdate
+
+JOIN P WHERE P.PCT_CARE_TEAM_ID = D.PCT_CARE_TEAM_ID
+	and P.ACTIVE_IND = 1
+
+ORDER BY
+		D.BEG_EFFECTIVE_DT_TM
+WITH
+	 time = 5, format
