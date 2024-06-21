@@ -61,7 +61,7 @@ with
 
 ;Declare Records
 	record data (
-	1 cnt							= i4
+	;1 cnt							= i4
 	1 list[*]
 		2 PERSON_ID					= f8
 		2 ENCNTR_ID					= f8
@@ -156,50 +156,23 @@ with
 
 	with nocounter
 
-;Get and Set Powerchart list_name
-	select into "nl:"
-	from
-		dummyt dt
-	head report
-		displayed_list_name = trim(print_options->list_name[1], 3)
-	with nocounter
+
+
 
 ;Add json patients to data record called print_options as inherited by PChart
 	set stat = cnvtjsontorec($jsondata,0,0,0,0)
-
+;Set Powerchart list_name
+	SET displayed_list_name = trim(print_options->list_name[1], 3)
 ;Get the total number of encounters passed over from powerchart
 	SET total_number_of_encounters = SIZE(print_options->qual,5)
 ;Get Information from JSON Recod structure to new one
-	select into "nl:"
-		encounter = print_options->qual[d1.seq].ENCNTR_ID
-	from
-		(dummyt d1 with seq = evaluate(size(print_options->qual,5),0,1,size(print_options->qual,5)))
-	plan d1
-		where size(print_options->qual,5) > 1
-	;order by encounter
 
-	head report
-		cnt = 0
-
-	head encounter
-		cnt += 1
-		; Allocate enough memory for max 200 encounters
-		stat = alterlist(data->list,200)
-
-		data->list[cnt].ENCNTR_ID = print_options->qual[d1.seq].ENCNTR_ID
-		data->list[cnt].PERSON_ID = print_options->qual[d1.seq].PERSON_ID
-		data->list[cnt].age = trim(print_options->qual[d1.seq].pat_age,3)
-
-	foot encounter
-		null
-
-	foot report
-		total_number_of_encounters = cnt
-		stat = alterlist(data->list,cnt)
-
-	with nocounter
-
-
+SET stat = alterlist(data->list,total_number_of_encounters); Allocate enough memory
+FOR (x=1 to total_number_of_encounters)
+	SET data->list[x].ENCNTR_ID = print_options->qual[x].ENCNTR_ID
+	SET data->list[x].PERSON_ID = print_options->qual[x].PERSON_ID
+	SET data->list[x].age = trim(print_options->qual[x].pat_age,3)
+ENDFOR
 
 ;Get patient name gender
 	select into "nl:"
@@ -228,11 +201,9 @@ with
 	plan e
 		where expand(idx,1,total_number_of_encounters,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and e.active_ind = 1
-	;order by e.ENCNTR_ID
-	head report
-		cnt = 0
+
 	head e.ENCNTR_ID
-		pos = locatevalsort(idx,1,total_number_of_encounters,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locateval(idx,1,total_number_of_encounters,e.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].unit_disp = trim(uar_get_code_display(e.loc_nurse_unit_cd),3)
 			data->list[pos].room_disp = trim(uar_get_code_display(e.loc_room_cd),3)
@@ -327,10 +298,9 @@ with
 		and ea.beg_effective_dt_tm <= sysdate
 		and ea.end_effective_dt_tm >= sysdate
 		and ea.encntr_alias_type_cd = 319_URN_CD
-	;order by ea.ENCNTR_ID
 
 	head ea.ENCNTR_ID
-		pos = locatevalsort(idx,1,total_number_of_encounters,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locateval(idx,1,total_number_of_encounters,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].urn = trim(cnvtalias(ea.alias, ea.alias_pool_cd),3)
 		endif
@@ -355,7 +325,7 @@ with
 		PR;PRSNL
 		 WHERE PR.PERSON_ID = EPR.PRSNL_PERSON_ID
 	head EPR.ENCNTR_ID
-		pos = locatevalsort(idx,1,total_number_of_encounters,EPR.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locateval(idx,1,total_number_of_encounters,EPR.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].admittingdoctor = trim(PR.NAME_FULL_FORMATTED,3)
 		endif
@@ -376,7 +346,7 @@ with
 				AND
 				DIAGNOSIS.DIAG_TYPE_CD = 3538766 ; "Principal Dx"
 	head DIAGNOSIS.ENCNTR_ID
-		pos = locatevalsort(idx,1,total_number_of_encounters,DIAGNOSIS.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locateval(idx,1,total_number_of_encounters,DIAGNOSIS.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].diagnosis = trim(DIAGNOSIS.DIAGNOSIS_DISPLAY,3)
 		endif
@@ -616,7 +586,7 @@ with
 	order by pi.ENCNTR_ID
 
 	head pi.ENCNTR_ID
-		pos = locatevalsort(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].illness_severity = trim(cv.display,3)
 		endif
@@ -639,7 +609,7 @@ with
 	order by o.ENCNTR_ID, o.order_id, od.oe_field_id, od.action_sequence desc
 
 	head o.ENCNTR_ID
-		pos = locatevalsort(idx,1,total_number_of_encounters,o.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locateval(idx,1,total_number_of_encounters,o.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 
 	head o.order_id
 		null
@@ -684,7 +654,7 @@ with
 	order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
 
 	head pi.ENCNTR_ID
-		pos = locatevalsort(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
 
 	head pi.ipass_data_type_cd
@@ -731,7 +701,7 @@ with
 	order by pi.ENCNTR_ID, pi.begin_effective_dt_tm desc
 
 	head pi.ENCNTR_ID
-		pos = locatevalsort(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
 
 	detail
@@ -1051,7 +1021,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>PRG V5.6.7 Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>PRG V5.6.10 Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
@@ -1068,6 +1038,5 @@ with
 
 	set _memory_reply_string = finalhtml
 
-#exit_script
 end
 go
