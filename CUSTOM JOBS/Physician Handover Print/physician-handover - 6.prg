@@ -299,6 +299,10 @@ with
 				DIAGNOSIS.ACTIVE_IND = 1
 				AND
 				DIAGNOSIS.DIAG_TYPE_CD = DIAGNOSIS_TYPE_PRINCIPAL_CD_VAR
+				AND
+				D.END_EFFECTIVE_DT_TM > SYSDATE
+				AND
+				D.BEG_EFFECTIVE_DT_TM < SYSDATE
 	head DIAGNOSIS.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,DIAGNOSIS.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
@@ -320,6 +324,11 @@ with
 				D.ACTIVE_IND = 1
 				AND
 				D.DIAG_TYPE_CD = DIAGNOSIS_TYPE_ADDITIONAL_CD_VAR
+				AND
+				D.END_EFFECTIVE_DT_TM > SYSDATE
+				AND
+				D.BEG_EFFECTIVE_DT_TM < SYSDATE
+
 	ORDER BY D.PERSON_ID, D.BEG_EFFECTIVE_DT_TM
 	head D.PERSON_ID
 		pos = locateval(idx,1,total_number_of_encounters,D.PERSON_ID,data->list[idx].PERSON_ID)
@@ -358,8 +367,6 @@ with
 
 	DETAIL CE.PERSON_ID
 		if(pos > 0 and cnt < 3) ; cnt < 3 only saves the first 3 results
-			;data->list[pos].haemoglobin = trim(CE.RESULT_VAL,3)
-			;data->list[pos].haemoglobindatedsp = FORMAT(CE.EVENT_END_DT_TM, "DD/MM/YY hh:mm;;d")
 			cnt += 1
 			stat = alterlist(data->list[pos]->haemoglobins, cnt)
 			data->list[pos]->haemoglobins[cnt].haemoglobin = trim(CE.RESULT_VAL,3)
@@ -963,7 +970,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>PRG V5.9.6 Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>PRG V5.9.7 Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
