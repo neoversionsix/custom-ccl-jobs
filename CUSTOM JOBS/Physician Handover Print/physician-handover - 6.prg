@@ -105,7 +105,9 @@ with
 		2 creatininedatedsps_cnt	= i4
 		2 creatininedatedsps[*]
 		3 creatininedatedsp			= vc
-		2 diagnosis					= vc
+		2 diagnosisps_cnt			= i4
+		2 diagnosisps[*]
+		3 diagnosisp				= vc
 		2 diagnosisas_cnt			= i4
 		2 diagnosisas[*]
 		3 diagnosisa				= vc
@@ -264,7 +266,7 @@ with
 
 	with expand = 2
 
-;GET ADMITTING DR [1] NEW 1 START
+;GET ADMITTING DR
 	SELECT INTO "nl:"
 	FROM
 		ENCNTR_PRSNL_RELTN   EPR
@@ -286,40 +288,50 @@ with
 
 	foot EPR.ENCNTR_ID
 		null
-	;[1] NEW 1 END
-;Get Principal Diagnosis [1]  NEW 2 START
-	SELECT INTO "nl:"
-	FROM
-		DIAGNOSIS
-	PLAN
-		DIAGNOSIS
-			WHERE
-				expand(idx,1,total_number_of_encounters,DIAGNOSIS.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-				AND
-				DIAGNOSIS.ACTIVE_IND = 1
-				AND
-				DIAGNOSIS.DIAG_TYPE_CD = DIAGNOSIS_TYPE_PRINCIPAL_CD_VAR
-				AND
-				D.END_EFFECTIVE_DT_TM > SYSDATE
-				AND
-				D.BEG_EFFECTIVE_DT_TM < SYSDATE
-	head DIAGNOSIS.ENCNTR_ID
-		pos = locateval(idx,1,total_number_of_encounters,DIAGNOSIS.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-		if(pos > 0)
-			data->list[pos].diagnosis = trim(DIAGNOSIS.DIAGNOSIS_DISPLAY,3)
-		endif
 
-	foot DIAGNOSIS.ENCNTR_ID
-		null
-	;[1] NEW CODE END 2
-;Get Additional Diagnosis' new code 4 start
+;Get Principal Diagnosis
 	SELECT INTO "nl:"
 	FROM
 		DIAGNOSIS D
 	PLAN
 		D
 			WHERE
-				expand(idx,1,total_number_of_encounters,D.PERSON_ID,data->list[idx].PERSON_ID)
+				expand(idx,1,total_number_of_encounters,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+				AND
+				D.ACTIVE_IND = 1
+				AND
+				D.DIAG_TYPE_CD = DIAGNOSIS_TYPE_PRINCIPAL_CD_VAR
+				AND
+				D.END_EFFECTIVE_DT_TM > SYSDATE
+				AND
+				D.BEG_EFFECTIVE_DT_TM < SYSDATE
+
+	ORDER BY D.ENCNTR_ID, D.BEG_EFFECTIVE_DT_TM
+	head D.ENCNTR_ID
+		pos = locateval(idx,1,total_number_of_encounters,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		cnt = 0
+
+	detail
+		if(pos > 0)
+			cnt += 1
+			stat = alterlist(data->list[pos]->diagnosisps, cnt)
+			data->list[pos]->diagnosisps[cnt].diagnosisp = D.DIAGNOSIS_DISPLAY
+		endif
+
+	foot D.ENCNTR_ID
+		if(pos > 0)
+			data->list[pos].diagnosisps_cnt = cnt
+		endif
+	with expand = 2
+
+;Get Additional Diagnosis'
+	SELECT INTO "nl:"
+	FROM
+		DIAGNOSIS D
+	PLAN
+		D
+			WHERE
+				expand(idx,1,total_number_of_encounters,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 				AND
 				D.ACTIVE_IND = 1
 				AND
@@ -329,9 +341,9 @@ with
 				AND
 				D.BEG_EFFECTIVE_DT_TM < SYSDATE
 
-	ORDER BY D.PERSON_ID, D.BEG_EFFECTIVE_DT_TM
-	head D.PERSON_ID
-		pos = locateval(idx,1,total_number_of_encounters,D.PERSON_ID,data->list[idx].PERSON_ID)
+	ORDER BY D.ENCNTR_ID, D.BEG_EFFECTIVE_DT_TM
+	head D.ENCNTR_ID
+		pos = locateval(idx,1,total_number_of_encounters,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
 
 	detail
@@ -341,13 +353,13 @@ with
 			data->list[pos]->diagnosisas[cnt].diagnosisa = D.DIAGNOSIS_DISPLAY
 		endif
 
-	foot D.PERSON_ID
+	foot D.ENCNTR_ID
 		if(pos > 0)
 			data->list[pos].diagnosisas_cnt = cnt
 		endif
 	with expand = 2
-	;new code 4 end
-;Get blood results [1] NEW CODE 3 START
+
+;Get blood results
 	; Haemoglobin Level (Blood) (4054760)
 	SELECT INTO "nl:"
 	FROM
@@ -401,8 +413,7 @@ with
 
 	DETAIL CE.PERSON_ID
 		if(pos > 0 and cnt < 3) ; cnt < 3 only saves the first 3 results
-			;data->list[pos].whitecc = trim(CE.RESULT_VAL,3)
-			;data->list[pos].whiteccdatedsp = FORMAT(CE.EVENT_END_DT_TM, "DD/MM/YY hh:mm;;d")
+
 			cnt += 1
 			stat = alterlist(data->list[pos]->whiteccs, cnt)
 			data->list[pos]->whiteccs[cnt].whitecc = trim(CE.RESULT_VAL,3)
@@ -530,7 +541,7 @@ with
 	WITH
 		expand = 2
 		, maxcol=5000
-	;[1] NEW CODE 3 END
+
 ;Get Illness Severity
 	select into "nl:"
 	from
@@ -776,10 +787,19 @@ with
 		; Diagnosis
 		set patienthtml = build2(patienthtml
 			,"<tr>"
-			,"<td class=patient-data-header-twofive>","Diagnosis","</td>"
-			,"<td class=patient-info-wide> PRINCIPAL: ",data->list[x].diagnosis
+			,"<td class=patient-data-header-twofive>","Diagnoses","</td>"
+			,"<td class=patient-info-wide> PRINCIPALS: "
+		)
+
+			for(y = 1 to data->list[x].diagnosisps_cnt)
+				set patienthtml = build2(patienthtml
+					,data->list[x]->diagnosisps[y].diagnosisp,",&nbsp"
+				)
+			endfor
+		set patienthtml = build2(patienthtml
 			, "<br>ADDITIONALS: "
 		)
+
 		; additional diagnosis'
 			for(y = 1 to data->list[x].diagnosisas_cnt)
 				set patienthtml = build2(patienthtml
@@ -826,7 +846,7 @@ with
 		)
 
 
-		; [1] New code for bloods
+		; BLOODS
 		set patienthtml = build2(patienthtml
 			,'<table style="width:100%">'
 			,"<tr>"
@@ -970,7 +990,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>PRG V5.9.7 Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>PRG V6.0.1 Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
