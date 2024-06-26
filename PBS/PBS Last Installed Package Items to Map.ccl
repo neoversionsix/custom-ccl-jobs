@@ -1,15 +1,11 @@
-SELECT		;RETRIEVES CODES THAT NEED TO BE MAPPED THIS MONTH.
+SELECT ;RETRIEVES MOST RECENT CODES.
 /*
 Notes:
-This will pull back the items that need to be mapped this month. It
-assumes that the package was installed recently. It will pull back items
-for the last installed package
-
-UPDATES
-28 FEB 2024 - Jason Whittle updated the order by section for easier mapping.
-
-2 May 2024 - Jason Whittle updated code to still bring back items without any
-            prescriber type codes. in the PBS_PRESCRIBER table.
+This is used for getting the items that need to be mapped after
+a new package install. This will pull back the items with the most
+recent P_D.BEG_EFFECTIVE_DT_TM that is in the table. It can also help
+with testing, for example, as a quick check to see if the package
+was in fact installed.
 */
     MAP_PBS_DRUG_ID_ = P_D.PBS_DRUG_ID
 	; , DOMAIN = CURDOMAIN
