@@ -10,14 +10,15 @@ prompt
 
 with OUTDEV
 
+declare HTML_OUT_VAR = VC with NoConstant('""'),Protect
+
 ; Query from Order_Catalog TABLE
     SELECT INTO $OUTDEV
-		lt.long_text
+		LONG = REPLACE(lt.long_text, char(10), "<BR>", 0)
     FROM
 		pct_ipass   pi
 		, sticky_note   sn
 		, long_text   lt
-		, LONG_BLOB   l
 
 	plan pi
 	where
@@ -45,9 +46,7 @@ with OUTDEV
 	where lt.long_text_id = outerjoin(sn.long_text_id)
 	and lt.active_ind = outerjoin(1)
 
-	join l where l.PARENT_ENTITY_ID = OUTERJOIN(pi.PARENT_ENTITY_ID)
-
-	with time = 5, format, seperator = " ", maxcol = 50000
+	with time = 5, format, seperator = " ", maxcol = 100000
 
 end
 go
