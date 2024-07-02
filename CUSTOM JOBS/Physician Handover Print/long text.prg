@@ -10,22 +10,14 @@ prompt
 
 with OUTDEV
 
-
-
-
 ; Query from Order_Catalog TABLE
     SELECT INTO $OUTDEV
 		lt.long_text
-
-
-
-
     FROM
-
-	pct_ipass   pi
-	, sticky_note   sn
-	, long_text   lt
-	, LONG_BLOB   l
+		pct_ipass   pi
+		, sticky_note   sn
+		, long_text   lt
+		, LONG_BLOB   l
 
 	plan pi
 	where
@@ -44,19 +36,18 @@ with OUTDEV
 		82070315.00,
 		82070321.00
 		)
-join sn
+	join sn
 	where sn.sticky_note_id = pi.parent_entity_id
 	and sn.beg_effective_dt_tm <= sysdate
 	and sn.end_effective_dt_tm >= sysdate
 	and sn.sticky_note_id != 0
-join lt
+	join lt
 	where lt.long_text_id = outerjoin(sn.long_text_id)
 	and lt.active_ind = outerjoin(1)
 
-join l where l.PARENT_ENTITY_ID = OUTERJOIN(pi.PARENT_ENTITY_ID)
+	join l where l.PARENT_ENTITY_ID = OUTERJOIN(pi.PARENT_ENTITY_ID)
 
-with time = 5, format, seperator = " ", maxcol = 50000
-
+	with time = 5, format, seperator = " ", maxcol = 50000
 
 end
 go
