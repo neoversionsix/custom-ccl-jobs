@@ -603,7 +603,7 @@ with
 	with expand = 2
 ;Get Patient Summary and Situation Awareness & Planning
 	select into "nl:"
-		result = evaluate(sn.long_text_id,0,trim(sn.sticky_note_text,3),trim(lt.long_text,3))
+		result = replace(evaluate(sn.long_text_id,0,trim(sn.sticky_note_text,3),trim(lt.long_text,3)), "  ", "<BR><BR>")
 	from
 		pct_ipass pi
 		,sticky_note sn
@@ -990,7 +990,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>PRG V6.0.1 Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>PRG V7.0.0 Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
