@@ -603,7 +603,14 @@ with
 	with expand = 2
 ;Get Patient Summary and Situation Awareness & Planning
 	select into "nl:"
-		result = replace(evaluate(sn.long_text_id,0,trim(sn.sticky_note_text,3),trim(lt.long_text,3)), "  ", "<BR>")
+		result = evaluate
+		(
+			 sn.long_text_id
+			, 0
+			, REPLACE(TRIM(sn.sticky_note_text, 3), char(10), "<BR>", 0)
+			, REPLACE(TRIM(lt.long_text, 3), char(10), "<BR>", 0)
+		)
+
 	from
 		pct_ipass pi
 		,sticky_note sn
@@ -788,7 +795,7 @@ with
 		set patienthtml = build2(patienthtml
 			,"<tr>"
 			,"<td class=patient-data-header-twofive>","Diagnoses","</td>"
-			,"<td class=patient-info-wide> PRINCIPALS: "
+			,"<td class=patient-info-wide> PRINCIPALS:&nbsp"
 		)
 
 			for(y = 1 to data->list[x].diagnosisps_cnt)
@@ -797,7 +804,7 @@ with
 				)
 			endfor
 		set patienthtml = build2(patienthtml
-			, "<br>ADDITIONALS: "
+			, "<br>ADDITIONALS:&nbsp"
 		)
 
 		; additional diagnosis'
@@ -990,7 +997,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>Program V7.0.2, Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>Program V7.0.4, Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"

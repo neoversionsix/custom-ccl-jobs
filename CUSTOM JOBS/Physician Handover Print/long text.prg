@@ -14,7 +14,7 @@ declare HTML_OUT_VAR = VC with NoConstant('""'),Protect
 
 ; Query from Order_Catalog TABLE
     SELECT INTO $OUTDEV
-		LONG = REPLACE(lt.long_text, char(10), "<BR>", 0)
+		LONG = REPLACE(TRIM(lt.long_text, 3), char(10), "<BR>", 0)
     FROM
 		pct_ipass   pi
 		, sticky_note   sn
