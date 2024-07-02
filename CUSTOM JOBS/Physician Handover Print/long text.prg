@@ -1,15 +1,33 @@
-select
-    lt.long_text
-	;  ,LTX = replace(trim(lt.long_text,3), "  ", "<BR>")
-	; , result = evaluate(sn.long_text_id,0,trim(sn.sticky_note_text,3),trim(lt.long_text,3))
-	; , sn.long_text_id
-	; , sn.sticky_note_text
-	;, LT = replace(lt.long_text, char(13), "<BR>")
-from
-	pct_ipass pi
-	,sticky_note sn
-	,long_text lt
-plan pi
+/*
+Programmer: Jason Whittle
+*/
+
+drop program wh_testing_query_88 go
+create program wh_testing_query_88
+
+prompt
+	"Output to File/Printer/MINE" = "MINE"
+
+with OUTDEV
+
+
+
+
+; Query from Order_Catalog TABLE
+    SELECT INTO $OUTDEV
+		lt.long_text
+
+
+
+
+    FROM
+
+	pct_ipass   pi
+	, sticky_note   sn
+	, long_text   lt
+	, LONG_BLOB   l
+
+	plan pi
 	where
 	pi.ENCNTR_ID IN
    (
@@ -30,8 +48,15 @@ join sn
 	where sn.sticky_note_id = pi.parent_entity_id
 	and sn.beg_effective_dt_tm <= sysdate
 	and sn.end_effective_dt_tm >= sysdate
+	and sn.sticky_note_id != 0
 join lt
 	where lt.long_text_id = outerjoin(sn.long_text_id)
 	and lt.active_ind = outerjoin(1)
-order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
-with time = 10, format
+
+join l where l.PARENT_ENTITY_ID = OUTERJOIN(pi.PARENT_ENTITY_ID)
+
+with time = 5, format, seperator = " ", maxcol = 50000
+
+
+end
+go

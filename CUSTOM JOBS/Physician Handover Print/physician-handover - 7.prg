@@ -157,7 +157,7 @@ with
 
 ;Add json patients to data record called print_options as inherited by PChart
 	set stat = cnvtjsontorec($jsondata,0,0,0,0)
-;Set Powerchart list_name
+;Set Powerchart list_name based on json data ingested
 	SET displayed_list_name = trim(print_options->list_name[1], 3)
 ;Get the total number of encounters passed over from powerchart
 	SET total_number_of_encounters = SIZE(print_options->qual,5)
@@ -603,7 +603,7 @@ with
 	with expand = 2
 ;Get Patient Summary and Situation Awareness & Planning
 	select into "nl:"
-		result = replace(evaluate(sn.long_text_id,0,trim(sn.sticky_note_text,3),trim(lt.long_text,3)), "  ", "<BR><BR>")
+		result = replace(evaluate(sn.long_text_id,0,trim(sn.sticky_note_text,3),trim(lt.long_text,3)), "  ", "<BR>")
 	from
 		pct_ipass pi
 		,sticky_note sn
@@ -990,7 +990,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>PRG V7.0.0 Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>Program V7.0.2, Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
