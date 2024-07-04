@@ -23,8 +23,7 @@
 ;    *002 20/11/2015 Mark Wakefield       Add Position to Output ER692979            *
 ;~DE~*******************************************************************************
 
-; 4th July 2024 Jason Whittle - Editing this to pull back the provider number
-; that is related to the doctor/encounter.
+
 ;~END~ ***********************  END OF ALL MODCONTROL BLOCKS  **********************
 
 drop program vic_signedby_prsnl:dba go
