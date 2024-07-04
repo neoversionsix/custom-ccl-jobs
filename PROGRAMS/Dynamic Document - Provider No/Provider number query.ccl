@@ -1,0 +1,51 @@
+select
+    pla1.alias_pool_cd
+    pla1.alias
+
+
+from encounter e
+	, org_alias_pool_reltn oapr
+	, prsnl_alias pla1
+	, prsnl_alias pla2
+
+plan e where e.encntr_id = IN
+    (
+        SELECT E_A.ENCNTR_ID
+        FROM ENCNTR_ALIAS E_A
+        WHERE E_A.ALIAS = "30313959" ; EDIT THIS!
+            AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077	; 'FIN NBR' from code set 319
+            AND E_A.ACTIVE_IND = 1	; active FIN NBRs only
+            AND E_A.END_EFFECTIVE_DT_TM > SYSDATE	; effective FIN NBRs only
+    )
+
+join oapr where oapr.organization_id = e.organization_id
+and oapr.alias_entity_alias_type_cd = uar_get_code_by("MEANING",320,"PROVIDER NUM"
+and oapr.active_ind = 1
+and oapr.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+and oapr.alias_pool_cd != uar_get_code_by("DISPLAYKEY",263,"GPPROVIDER")
+
+join pla1 where pla1.person_id = outerjoin(reqinfo->updt_id)
+and pla1.alias_pool_cd = outerjoin(oapr.alias_pool_cd)
+and pla1.prsnl_alias_type_cd = outerjoin(uar_get_code_by("MEANING",320,"PROVIDER NUM")
+and pla1.active_ind = outerjoin(1)
+and pla1.beg_effective_dt_tm < outerjoin(cnvtdatetime(curdate,curtime3))
+and pla1.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
+
+join pla2 where pla2.person_id = reqinfo->updt_id
+and pla2.prsnl_alias_type_cd = uar_get_code_by("MEANING",320,"PROVIDER NUM"
+and pla2.active_ind = 1
+and pla2.beg_effective_dt_tm < cnvtdatetime(curdate,curtime3)
+and pla2.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
+
+order by e.encntr_id
+		, pla1.beg_effective_dt_tm
+		, pla2.beg_effective_dt_tm
+
+head e.encntr_id
+	if(pla1.prsnl_alias_id > 0.0)
+		provider_no = cnvtalias(pla1.alias,pla1.alias_pool_cd)
+	elseif(pla2.prsnl_alias_id > 0.0)
+		provider_no = cnvtalias(pla2.alias,pla2.alias_pool_cd)
+	endif
+
+with time = 5, format, seperator = " "
