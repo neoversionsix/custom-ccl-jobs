@@ -1,4 +1,5 @@
-;The following example uses the BLOBGET() function to fetch a blob from the LONG_TEXT table. The blob is then broken up into 200 line segments and displayed.
+;The following example uses the BLOBGET() function to fetch a blob from the
+;LONG_TEXT table. The blob is then broken up into 200 line segments and displayed.
 
 select into $outdev
 	bloblen = blobgetlen(l.long_text)

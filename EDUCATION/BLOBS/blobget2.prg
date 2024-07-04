@@ -1,4 +1,5 @@
-The following example uses the BLOBGET() function to fetch a blob from the LONG_BLOB table and assign it to temprec->ImageData.
+;The following example uses the BLOBGET() function to fetch a blob
+;from the LONG_BLOB table and assign it to temprec->ImageData.
 
 select into "nl:"
 	lb.long_blob_id
