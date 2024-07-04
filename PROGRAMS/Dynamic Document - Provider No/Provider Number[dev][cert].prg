@@ -23,8 +23,9 @@
 ;    *002 20/11/2015 Mark Wakefield       Add Position to Output ER692979            *
 ;~DE~*******************************************************************************
 
-; 4th July 2024 Jason Whittle - Editing this to pull back the provider number
-; that is related to the doctor/encounter.
+; 4th of July 2024 - Jason Whittle - Pulling back the provider number for the
+; specific hospital the encounter is for
+
 ;~END~ ***********************  END OF ALL MODCONTROL BLOCKS  **********************
 
 drop program vic_signedby_prsnl:dba go
@@ -42,6 +43,7 @@ declare position = vc with noconstant(""), protect
 ; Code vars
 declare PROVIDER_NBR_CD = f8 with protect, constant(uar_get_code_by("MEANING",320,"PROVIDER NUM"))
 declare GPPROVIDER_VAR = f8 with protect, Constant(uar_get_code_by("DISPLAYKEY",263,"GPPROVIDER"))
+declare ENCOUNTER_HOSP_NAME = vc with noconstant(""), protect
 
 
 ; Declare reply struct
@@ -67,7 +69,7 @@ detail
 with nocounter
 
 
-; Get logged in users org alias for the current encounters organisation.
+; Get logged in users provider nuber for the current encounters organisation.
 select into "nl:"
 from encounter e
 	, org_alias_pool_reltn oapr
