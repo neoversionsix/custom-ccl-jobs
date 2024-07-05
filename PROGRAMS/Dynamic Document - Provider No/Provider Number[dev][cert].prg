@@ -1,49 +1,29 @@
-/*****************************************************************************
+/*
+PROGRAM NOTES
+Completly rebuild of old HTS CODE to make it simple and pull back the
+correct provider number for the patients encounter/hospital
 
-        Source file name:       vic_signedby_prsnl.prg
-        Object name:            vic_signedby_prsnl
-        Request #:              NA
-
-        Program purpose:		Load current user and provider number for current org into RTF window.
-
-        Executing from:         Powerchart - Smart Template
-
-        Special Notes:			Must be built as a smart template in code set 16529.
-
-******************************************************************************/
-
-
-;~DB~*******************************************************************************
-;    *                      GENERATED MODIFICATION CONTROL LOG                     *
-;    *******************************************************************************
-;    *                                                                             *
-;    *Mod Date       Engineer             Comment                                    *
-;    *--- --------   -------------------- ------------------------------------------ *
-;    *001 20/3/2012  Anthony Steele       Initial Release                            *
-;    *002 20/11/2015 Mark Wakefield       Add Position to Output ER692979            *
-;~DE~*******************************************************************************
-
-; 4th of July 2024 - Jason Whittle - Pulling back the provider number for the
-; specific hospital the encounter is for
-
-;~END~ ***********************  END OF ALL MODCONTROL BLOCKS  **********************
+CONTROL LOG
+(1) 4th of July 2024 - Jason Whittle - Complete rebuild of old HTS CODE
+old code can still be found by searching github repo for neoversionsix
+*/
 
 drop program vic_signedby_prsnl:dba go
 create program vic_signedby_prsnl:dba
 
-%i cclsource:ma_rtf_tags.inc
-%i cclsource:vic_ds_common_fonts.inc
+%i CUST_SCRIPT:ma_rtf_tags.inc
+%i CUST_SCRIPT:vic_ds_common_fonts.inc
 
 ; Program Constants
-declare DEBUG_IND = i1 with constant(0), protect
-declare ENCNTR_ID = f8 with constant(request->visit[1]->encntr_id), protect
-declare provider_no = vc with noconstant(""), protect
-declare position = vc with noconstant(""), protect
+declare ENCNTR_ID_VAR = f8 with constant(request->visit[1]->encntr_id), protect
+declare PRSNL_ALIAS_TYPE_CD_VAR = f8 with constant(1090.00), protect ; "Provider No"
 
-; Code vars
-declare PROVIDER_NBR_CD = f8 with protect, constant(uar_get_code_by("MEANING",320,"PROVIDER NUM"))
-declare GPPROVIDER_VAR = f8 with protect, Constant(uar_get_code_by("DISPLAYKEY",263,"GPPROVIDER"))
-declare ENCOUNTER_HOSP_NAME = vc with noconstant(""), protect
+; Program variables
+declare PROVIDER_NO_VAR = vc with noconstant(""), protect
+declare POSITION_VAR = vc with noconstant(""), protect
+declare ENCOUNTER_HOSP_NAME_VAR = vc with noconstant(""), protect
+declare ALIAS_POOL_CD_VAR = f8 with noconstant(0.00), protect
+declare DEBUG_IND_VAR = i1 with noconstant(0), protect
 
 
 ; Declare reply struct
@@ -57,78 +37,78 @@ set reply->status_data.status = "F"
 
 call ApplyFont(active_fonts->normal)
 
-; Get loged in users name.
+; Get logged in users name and position
 select into "nl:"
 from prsnl p
 plan p where p.person_id = reqinfo->updt_id
 detail
 	call PrintText(concat("Name: ",trim(p.name_full_formatted)),0,0,0)
 	call NextLine(1)
-	position = UAR_GET_CODE_DISPLAY(p.position_cd)
+	POSITION_VAR = UAR_GET_CODE_DISPLAY(p.position_cd)
 
 with nocounter
 
+; Get the encounters hospital location name
+SELECT INTO "nl:"
+  HOSPITAL_NAME = REPLACE (UAR_GET_CODE_DISPLAY(e.LOC_FACILITY_CD), " ", "", 0)
+FROM
+	ENCOUNTER E
+WHERE E.ENCNTR_ID = ENCNTR_ID_VAR
+	AND E.ACTIVE_IND =1
+HEAD REPORT
+	ENCOUNTER_HOSP_NAME_VAR = HOSPITAL_NAME
+WITH NOCOUNTER
 
-; Get logged in users provider nuber for the current encounters organisation.
-select into "nl:"
-from encounter e
-	, org_alias_pool_reltn oapr
-	, prsnl_alias pla1
-	, prsnl_alias pla2
+SET ENCOUNTER_HOSP_NAME_VAR = CONCAT("*", ENCOUNTER_HOSP_NAME_VAR, "*")
 
-plan e where e.encntr_id = encntr_id
+; Get Alias pool code for the encounters location
+SELECT INTO "NL:"
+ALIAS_POOL_CODE = C_V.CODE_VALUE
+FROM CODE_VALUE C_V
+WHERE C_V.CODE_SET = 263 ; GP PROVIDER
+	AND DISPLAY_KEY = "*WHS*"
+	AND DISPLAY_KEY = "*PROVIDER*"
+	AND DISPLAY_KEY = PATSTRING(ENCOUNTER_HOSP_NAME_VAR)
+HEAD REPORT
+	ALIAS_POOL_CD_VAR = ALIAS_POOL_CODE
+WITH NOCOUNTER
 
-join oapr where oapr.organization_id = e.organization_id
-and oapr.alias_entity_alias_type_cd = PROVIDER_NBR_CD
-and oapr.active_ind = 1
-and oapr.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
-and oapr.alias_pool_cd != GPPROVIDER_VAR
-
-join pla1 where pla1.person_id = outerjoin(reqinfo->updt_id)
-and pla1.alias_pool_cd = outerjoin(oapr.alias_pool_cd)
-and pla1.prsnl_alias_type_cd = outerjoin(PROVIDER_NBR_CD)
-and pla1.active_ind = outerjoin(1)
-and pla1.beg_effective_dt_tm < outerjoin(cnvtdatetime(curdate,curtime3))
-and pla1.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
-
-join pla2 where pla2.person_id = reqinfo->updt_id
-and pla2.prsnl_alias_type_cd = PROVIDER_NBR_CD
-and pla2.active_ind = 1
-and pla2.beg_effective_dt_tm < cnvtdatetime(curdate,curtime3)
-and pla2.end_effective_dt_tm > cnvtdatetime(curdate,curtime3)
-
-order by e.encntr_id
-		, pla1.beg_effective_dt_tm
-		, pla2.beg_effective_dt_tm
-
-head e.encntr_id
-	if(pla1.prsnl_alias_id > 0.0)
-		provider_no = cnvtalias(pla1.alias,pla1.alias_pool_cd)
-	elseif(pla2.prsnl_alias_id > 0.0)
-		provider_no = cnvtalias(pla2.alias,pla2.alias_pool_cd)
-	endif
-
-with nocounter
+; Get the provider number for the prsln and encounters location
+SELECT INTO "NL:"
+	PROVIDER_NO = P_A.ALIAS
+FROM
+	PRSNL_ALIAS P_A
+WHERE
+	P_A.ACTIVE_IND = 1
+	and P_A.ACTIVE_STATUS_CD = 188 ; ACTIVE
+	and P_A.BEG_EFFECTIVE_DT_TM < sysdate
+	and P_A.END_EFFECTIVE_DT_TM > sysdate
+	AND P_A.ALIAS_POOL_CD = ALIAS_POOL_CD_VAR
+	AND P_A.PRSNL_ALIAS_TYPE_CD = PRSNL_ALIAS_TYPE_CD_VAR
+	AND P_A.PERSON_ID = (reqinfo->updt_id)
+HEAD REPORT
+	PROVIDER_NO_VAR = PROVIDER_NO
+WITH NOCOUNTER
 
 
 ; Format RTF Output
-if(provider_no > " ")
-	call PrintText(concat("Provider Number: ",provider_no),0,0,0)
+if(PROVIDER_NO_VAR > " ")
+	call PrintText(concat(" IN DEVELOPMENT Provider Numberz: ",PROVIDER_NO_VAR),0,0,0)
 else
-	call PrintText("Provider Number:",0,0,0)
+	call PrintText("Provider Numberz:",0,0,0)
 endif
 
-if (position > " ")
+if (POSITION_VAR > " ")
 		call Nextline(1)
-		call PrintText(concat("Position: ",trim(position)),0,0,0)
+		call PrintText(concat("Positionz: ",trim(POSITION_VAR)),0,0,0)
 else
-		call PrintText("Position:",0,0,0)
+		call PrintText("Positionz:",0,0,0)
 endif
 
 
 call FinishText(0)
 ; Load output to output desination.
-if(DEBUG_IND = 1)
+if(DEBUG_IND_VAR = 1)
 	call echo(rtf_out->text)
 else
 	set reply->text = rtf_out->text
