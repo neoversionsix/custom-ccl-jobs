@@ -19,11 +19,13 @@ declare ENCNTR_ID_VAR = f8 with constant(request->visit[1]->encntr_id), protect
 declare PRSNL_ALIAS_TYPE_CD_VAR = f8 with constant(1090.00), protect ; "Provider No"
 
 ; Program variables
-declare PROVIDER_NO_VAR = vc with noconstant(""), protect
-declare POSITION_VAR = vc with noconstant(""), protect
-declare ENCOUNTER_HOSP_NAME_VAR = vc with noconstant(""), protect
+declare PROVIDER_NO_VAR = vc with noconstant("X"), protect
+declare POSITION_VAR = vc with noconstant("X"), protect
+declare ENCOUNTER_HOSP_NAME_VAR = vc with noconstant("X"), protect
+declare ENCOUNTER_HOSP_NAME_UPPER_VAR = vc with noconstant("X"), protect
 declare ALIAS_POOL_CD_VAR = f8 with noconstant(0.00), protect
 declare DEBUG_IND_VAR = i1 with noconstant(0), protect
+declare HOSPITAL_DISPLAY_VAR = vc with noconstant("X"), protect
 
 
 ; Declare reply struct
@@ -55,21 +57,26 @@ FROM
 	ENCOUNTER E
 WHERE E.ENCNTR_ID = ENCNTR_ID_VAR
 	AND E.ACTIVE_IND =1
-HEAD REPORT
+DETAIL
 	ENCOUNTER_HOSP_NAME_VAR = HOSPITAL_NAME
 WITH NOCOUNTER
 
-SET ENCOUNTER_HOSP_NAME_VAR = CONCAT("*", ENCOUNTER_HOSP_NAME_VAR, "*")
+; Set the hospital name for use in title and patstring search
+SET ENCOUNTER_HOSP_NAME_UPPER_VAR = CNVTUPPER(ENCOUNTER_HOSP_NAME_VAR)
+SET ENCOUNTER_HOSP_NAME_UPPER_VAR = CONCAT("*", ENCOUNTER_HOSP_NAME_UPPER_VAR, "*")
+SET HOSPITAL_DISPLAY_VAR = CNVTCAP(ENCOUNTER_HOSP_NAME_VAR)
+SET HOSPITAL_DISPLAY_VAR = CONCAT (" - ", HOSPITAL_DISPLAY_VAR, " Hospital")
+
 
 ; Get Alias pool code for the encounters location
 SELECT INTO "NL:"
 ALIAS_POOL_CODE = C_V.CODE_VALUE
 FROM CODE_VALUE C_V
 WHERE C_V.CODE_SET = 263 ; GP PROVIDER
-	AND DISPLAY_KEY = "*WHS*"
-	AND DISPLAY_KEY = "*PROVIDER*"
-	AND DISPLAY_KEY = PATSTRING(ENCOUNTER_HOSP_NAME_VAR)
-HEAD REPORT
+	AND C_V.DISPLAY_KEY = "*WHS*"
+	AND C_V.DISPLAY_KEY = "*PROVIDER*"
+	AND C_V.DISPLAY_KEY = PATSTRING(ENCOUNTER_HOSP_NAME_UPPER_VAR)
+DETAIL
 	ALIAS_POOL_CD_VAR = ALIAS_POOL_CODE
 WITH NOCOUNTER
 
@@ -86,23 +93,23 @@ WHERE
 	AND P_A.ALIAS_POOL_CD = ALIAS_POOL_CD_VAR
 	AND P_A.PRSNL_ALIAS_TYPE_CD = PRSNL_ALIAS_TYPE_CD_VAR
 	AND P_A.PERSON_ID = (reqinfo->updt_id)
-HEAD REPORT
+DETAIL
 	PROVIDER_NO_VAR = PROVIDER_NO
 WITH NOCOUNTER
 
 
 ; Format RTF Output
 if(PROVIDER_NO_VAR > " ")
-	call PrintText(concat(" IN DEVELOPMENT Provider Numberz: ",PROVIDER_NO_VAR),0,0,0)
+	call PrintText(concat("Provider Number: ",PROVIDER_NO_VAR, HOSPITAL_DISPLAY_VAR),0,0,0)
 else
-	call PrintText("Provider Numberz:",0,0,0)
+	call PrintText("Provider Number:",0,0,0)
 endif
 
 if (POSITION_VAR > " ")
 		call Nextline(1)
-		call PrintText(concat("Positionz: ",trim(POSITION_VAR)),0,0,0)
+		call PrintText(concat("Position: ",trim(POSITION_VAR)),0,0,0)
 else
-		call PrintText("Positionz:",0,0,0)
+		call PrintText("Position:",0,0,0)
 endif
 
 
