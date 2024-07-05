@@ -1,0 +1,19 @@
+SELECT
+	pla1.alias
+	, pla1.ACTIVE_IND
+	, pla1.ACTIVE_STATUS_CD
+	, pla1.PERSON_ID
+	, pla1.PRSNL_ALIAS_TYPE_CD
+	, PLA1.ALIAS_POOL_CD
+	, PLA1_ALIAS_POOL_DISP = UAR_GET_CODE_DISPLAY(PLA1.ALIAS_POOL_CD)
+
+FROM
+	prsnl_alias   pla1
+
+where pla1.person_id = outerjoin(reqinfo->updt_id)
+and pla1.prsnl_alias_type_cd = outerjoin(1090.00);uar_get_code_by("MEANING",320,"PROVIDER NUM")
+and pla1.active_ind = outerjoin(1)
+and pla1.beg_effective_dt_tm < outerjoin(cnvtdatetime(curdate,curtime3))
+and pla1.end_effective_dt_tm > outerjoin(cnvtdatetime(curdate,curtime3))
+
+WITH time = 5, format, seperator = " "

@@ -1,0 +1,68 @@
+
+The REPLACE( ) function performs a case-sensitive search and replace.
+
+Syntax
+REPLACE(original_string,search_string,replace_string,[mode])
+Metasymbols
+original string
+The original string to be searched.
+
+search string
+The textual string for which to search.
+
+replace string
+The textual string to replace the search string.
+
+mode
+
+What mode to use in replacing the string.
+
+
+
+0
+
+Replace all occurrences (default).
+
+1
+
+Replace the first occurrence.
+
+2
+
+Replace the last occurrence.
+
+3
+
+Replace character by character. Requires the search and replace strings to contain the same number of characters. Each character in the original string that matches a character in the search string is replaced with the corresponding character from the replace string.  Any characters in the original string that are not listed in the search string are removed.
+
+4
+
+Replace all occurrences of the search string with the replace string and restart the search at beginning of the replace string after each substitution. Beginning with Discern Explorer version 8.12.6, a maximum of 1000 iterations, restarting at the beginning of the search string, are performed to avoid an endless loop.
+
+Examples
+The following example returns ABCZZZDEFZZZGHIZZZJKL:
+
+CALL ECHO(REPLACE("ABCXXXDEFXXXGHIXXXJKL","XXX","ZZZ",0)) GO
+The following example returns ABCZZZDEFXXXGHIXXXJKL:
+
+CALL ECHO(REPLACE("ABCXXXDEFXXXGHIXXXJKL","XXX","ZZZ",1)) GO
+The following example returns ABCXXXDEFXXXGHIZZZJKL:
+
+CALL ECHO(REPLACE("ABCXXXDEFXXXGHIXXXJKL","XXX","ZZZ",2)) GO
+The following example returns abcdefghiXXXjkl:
+
+CALL ECHO(REPLACE("abcxxxdefxxxghiXXXjkl","xxx","",0)) GO
+The following example returns 9ZZZ999:
+
+CALL ECHO(REPLACE("1-ABC-234",
+          "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+          9999999999ZZZZZZZZZZZZZZZZZZZZZZZZZZ",3))
+The following example replaces each occurrence of the combination of a carriage return (char(13)) and linefeed (char(10)) in the variable named comment_var with a single space:
+
+set crlf_to_sp = replace (comment_var, concat(char(13),char(10)), " ",0)
+The example below replaces each occurrence of a carriage return (char(13)) and each occurrence of a linefeed (char(10)) in the variable named comment_var with a single space. The combination of the carriage return and linefeed is replaced by two spaces:
+
+set cr_or_lf_to_sp = replace(replace(comment, char(13), " " ,0), char(10), " ",0)
+The example below echoes BCC. Since Mode 4 is used, the AB in AABCC is replaced with B resulting in ABCC. Since Mode 4 restarts the search at the beginning of the string, it finds AB in ABCC and replaces it with B resulting in BCC. Since AB does not exist in that result, BCC is returned.
+
+CALL ECHO(REPLACE("AABCC","AB","B",4)) GO
