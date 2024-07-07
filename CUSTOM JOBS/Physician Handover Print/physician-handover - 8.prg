@@ -1073,7 +1073,7 @@ for(x = 1 to total_number_of_encounters)
 					," ",data->list[x].gender
 				,'</td>'
 				,'<td>'
-					, data->list[x].urn,
+					, data->list[x].urn
 				, '</td>'
 				,'<td></td>'
 				,'<td></td>'
