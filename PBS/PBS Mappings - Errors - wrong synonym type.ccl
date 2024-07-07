@@ -1,0 +1,49 @@
+SELECT	DISTINCT 	;RETRIEVES CODES THAT ARE INCORRECTLY MAPPED due to hospital type and prescriber type.
+/* Notes: Faras updated my code to get this code */
+	    DOMAIN = CURDOMAIN
+	    , PBS_CODE = P_L.PBS_ITEM_CODE
+        , PBS_DRUG_ID = P_O_M.PBS_DRUG_ID
+	    , MAPPED_SYNONYM = O_C_S.MNEMONIC
+        , SYNONYM_TYPE = UAR_GET_CODE_DISPLAY(O_C_S.MNEMONIC_TYPE_CD)
+	    , SYNONYM_ID = O_C_S.SYNONYM_ID
+
+FROM
+	  PBS_OCS_MAPPING           P_O_M
+	, ORDER_CATALOG_SYNONYM     O_C_S
+    , PBS_DRUG                  P_D
+    , PBS_ITEM                  P_I
+    , PBS_LISTING               P_L
+
+
+PLAN P_O_M
+    WHERE
+        P_O_M.END_EFFECTIVE_DT_TM > SYSDATE
+JOIN O_C_S
+    WHERE
+        O_C_S.SYNONYM_ID = P_O_M.SYNONYM_ID
+        AND O_C_S.MNEMONIC_TYPE_CD NOT IN
+            (
+                  2583.00
+                , 2580.00
+                , 614548.00
+                , 614544.00
+                , 614549.00
+                , 614545.00
+            )
+                ; "PRIMARY"
+                ; "BRAND"
+                ; "GENERIC"
+                ; "GENERIC"
+                ; "TRADE"
+                ; "TRADE"
+
+JOIN P_D    WHERE P_D.PBS_DRUG_ID = P_O_M.PBS_DRUG_ID
+JOIN P_I    WHERE P_I.PBS_ITEM_ID = P_D.PBS_ITEM_ID
+JOIN P_L    WHERE P_L.PBS_LISTING_ID = P_I.PBS_LISTING_ID
+
+ORDER BY	P_L.PBS_ITEM_CODE
+
+WITH TIME = 20,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT
