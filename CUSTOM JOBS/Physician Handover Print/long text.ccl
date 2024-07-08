@@ -1,14 +1,22 @@
-select
-    lt.long_text
+SELECT
+	lt.long_text
 	;  ,LTX = replace(trim(lt.long_text,3), "  ", "<BR>")
 	; , result = evaluate(sn.long_text_id,0,trim(sn.sticky_note_text,3),trim(lt.long_text,3))
 	; , sn.long_text_id
 	; , sn.sticky_note_text
+	LT = replace(lt.long_text, char(10), "<BR>")
 	;, LT = replace(lt.long_text, char(13), "<BR>")
-from
-	pct_ipass pi
-	,sticky_note sn
-	,long_text lt
+	, pi.UPDT_ID
+	, pi.UPDT_DT_TM
+	, pi.UPDT_CNT
+	, pr.NAME_FULL_FORMATTED
+
+FROM
+	pct_ipass   pi
+	, sticky_note   sn
+	, long_text   lt
+	, prsnl pr
+
 plan pi
 	where
 	pi.ENCNTR_ID IN
@@ -33,5 +41,17 @@ join sn
 join lt
 	where lt.long_text_id = outerjoin(sn.long_text_id)
 	and lt.active_ind = outerjoin(1)
-order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
-with time = 10, format
+
+join pr
+	where pr.PERSON_ID = outerjoin(pi.UPDT_ID)
+	and pr.active_ind = outerjoin(1)
+	and pr.END_EFFECTIVE_DT_TM > outerjoin(sysdate)
+	and pr.BEG_EFFECTIVE_DT_TM > outerjoin(sysdate)
+
+
+ORDER BY
+	pi.ENCNTR_ID
+	, pi.ipass_data_type_cd
+	, pi.begin_effective_dt_tm   DESC
+
+WITH time = 10, format
