@@ -73,6 +73,7 @@ with
 		2 clinical_unit				= vc
 		2 patient_name				= vc
 		2 age						= vc
+		2 DOB						= vc
 		2 gender					= vc
 		2 urn						= vc
 		2 illness_severity			= vc
@@ -185,6 +186,7 @@ with
 		if(pos > 0)
 			data->list[pos].patient_name = trim(p.name_full_formatted,3)
 			data->list[pos].gender = trim(uar_get_code_display(p.sex_cd),3)
+			data->list[pos].DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY") ; Date of Birth
 		endif
 
 	 foot p.PERSON_ID
@@ -758,6 +760,7 @@ with
 			,"<tr>"
 			,"<td class=patient-data-header>Location</td>"
 			,"<td class=patient-data-header>URN</td>"
+			,"<td class=patient-data-header>D.O.B</td>"
 			,"<td class=patient-data-header>Allergies</td>"
 			,"<td class=patient-data-header>Admitting Dr</td>"
 			,"<td class=patient-data-header>Admit Date</td>"
@@ -768,7 +771,8 @@ with
 			, data->list[x].room_disp,",&nbsp;"
 			, data->list[x].bed_disp
 			,"</td>"
-			,"<td class=patient-info>", data->list[x].urn, "</td>"; debug
+			,"<td class=patient-info>", data->list[x].urn, "</td>"
+			,"<td class=patient-info>", data->list[x].DOB, "</td>"
 			,"<td class=patient-info>"
 		)
 		; Allergies
@@ -791,6 +795,12 @@ with
 		set patienthtml = build2(patienthtml
 			,"<div>"
 			,'<table style="width:100%">'
+			,"<tr>"
+				,"<td class=patient-data-header-twofive>","Illness Severity","</td>"
+				,"<td class=patient-info-wide>"
+					, data->list[x].illness_severity
+				,"</td>"
+			,"</tr>"
 		)
 
 		; Diagnosis
@@ -999,7 +1009,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>Program V8, Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>Program V8.4, Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
@@ -1008,6 +1018,9 @@ with
 		,"<h2>LIST NAME: ", displayed_list_name, "</h2>"
 		,"<p>Encounters: ", total_number_of_encounters, "</p>"
 		,patienthtml
+		,'<footer style="margin-top: 20px; font-weight: bold; text-align: center;">'
+    		,'If found, please return to the nearest ward clerk'
+		,'</footer>'
 		,"</body></html>"
 	);
 
@@ -1052,10 +1065,8 @@ set finalhtmlsimplified = build2(
             ,'<th>Patient</th>'
             ,'<th>MRN</th>'
             ,'<th>Illness Severity</th>'
-            ,'<th>Primary Contact</th>'
-            ,'<th>Diagnosis</th>'
-            ,'<th>Code Status</th>'
             ,'<th>Admit Date</th>'
+			,'<th>For Notes</th>'
         ,'</tr>'
 )
 for(x = 1 to total_number_of_encounters)
@@ -1075,19 +1086,22 @@ for(x = 1 to total_number_of_encounters)
 				,'<td>'
 					, data->list[x].urn
 				, '</td>'
-				,'<td></td>'
-				,'<td></td>'
-				,'<td></td>'
-				,'<td></td>'
+				,'<td>',data->list[x].illness_severity,'</td>'
 				,'<td>'
 				, data->list[x].admit_dt_tm_disp
 				, '</td>'
+				,'<td></td>'
 			,'</tr>'
 	)
 endfor
 set finalhtmlsimplified = build2( finalhtmlsimplified, patienthtmlsimplified
     ,'</table>'
+
 ,'</body>'
+,'<footer style="margin-top: 20px; font-weight: bold; text-align: center;">'
+    ,'If found, please return to the nearest ward clerk'
+,'</footer>'
+
 ,'</html>'
 )
 
