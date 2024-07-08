@@ -615,8 +615,6 @@ with
 			, REPLACE(TRIM(sn.sticky_note_text, 3), char(10), "<BR>", 0)
 			, REPLACE(TRIM(lt.long_text, 3), char(10), "<BR>", 0)
 		)
-		, author = pr.name_full_formatted
-
 	from
 		  pct_ipass pi
 		, sticky_note sn
@@ -641,22 +639,22 @@ with
 		where pr.person_id = outerjoin(pi.updt_id)
 		and pr.active_ind = outerjoin(1)
 		and pr.END_EFFECTIVE_DT_TM > outerjoin(sysdate)
-		and pr.BEG_EFFECTIVE_DT_TM > outerjoin(sysdate)
+		and pr.BEG_EFFECTIVE_DT_TM < outerjoin(sysdate)
 	order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
 
 	head pi.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
 
-	head pi.ipass_data_type_cd, pr.person_id
+	head pi.ipass_data_type_cd
 		if(pos > 0 and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD)
 			data->list[pos].patient_summary = result
-			data->list[pos].patient_summary_author = trim(author,3)
 		endif
 
-	head pr.person_id
-		if(pos > 0 and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD)
-			data->list[pos].patient_summary_author = trim(author,3)
+		if (pos > 0 and pr.person_id > 0)
+			data->list[pos].patient_summary_author = trim(pr.name_full_formatted,3)
+		else
+			data->list[pos].patient_summary_author = "No author for summary found"
 		endif
 
 	detail
@@ -846,8 +844,8 @@ with
 			,"<td class=patient-data-header-twofive>","Patient Summary","</td>"
 			,"<td class=patient-info-wide>"
 				, data->list[x].patient_summary
-				,"&nbsp"
-				, " - [",data->list[x].patient_summary_author,"]"
+				,"<BR>"
+				, "[",data->list[x].patient_summary_author,"]"
 			,"</td>"
 			,"</tr>"
 			,"<tr>"
@@ -1026,7 +1024,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>Program V9.0.1, Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>Program V9.2.2, Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
