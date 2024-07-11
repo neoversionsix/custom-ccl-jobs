@@ -1,0 +1,154 @@
+/*	Data request for Ally Qvist for EMR Benefits.
+**  Looking at IV Cannula data to calculate adherence to removal KPIs
+*/
+
+SELECT
+	URN = p_URN.alias
+	, cannula = cdl.label_name
+;	, label_id = cdl.ce_dynamic_label_id
+	, status = uar_get_code_display(cdl.label_status_cd)
+	, site = ce_site.result_val
+	, created = cdl.create_dt_tm
+	, inactivated = if(cdl.label_status_cd = 6807662 /*inactive*/) cdl.valid_from_dt_tm else null endif "@SHORTDATETIME"
+	, insertion = ce_inserted.EVENT_END_DT_TM
+	, POA_Inserted = ce_POA.result_dt_tm
+	, POA_Inserted_By = ce_POA_InsertedBy.result_val
+	, inserted_under_emergency = ce_IUE.result_val
+	, discontinued = ce_discontinued.event_end_dt_tm
+
+from
+
+	;get list of cannulas by dynamic group label id
+	((
+		select
+			ce_cath.ce_dynamic_label_id
+			, ce_cath.person_id
+		from clinical_event ce_cath
+			,(inner join person p on p.person_id = ce_cath.person_id
+				and p.name_last_key != "TESTWHS" ; Remove orders for test patients
+			)
+
+		where
+			/*only return valid rows - cannulas can only have one valid row at any given time
+			  and are not able to be changed once created, so this guarantees unique cannulas */
+			ce_cath.valid_until_dt_tm > sysdate
+			and ce_cath.event_end_dt_tm >= cnvtdatetime("01-jul-2023 00:00:00")
+			and ce_cath.event_end_dt_tm < cnvtdatetime("01-jan-2024 00:00:00")
+;			and ce_cath.person_id = 12872303 ;TESTWHS, Alison
+			and ce_cath.event_cd = 79847892 ;catheter type
+			and ce_cath.result_val = "Cannula"
+		) cannulas
+	)
+
+	;get the dynamic group (cannula) label
+	, (left join ce_dynamic_label cdl on cdl.ce_dynamic_label_id = cannulas.ce_dynamic_label_id
+		and cdl.valid_until_dt_tm > sysdate)
+
+	;get current URN for patient
+	,(left join person_alias p_URN on p_URN.person_id = cannulas.person_id
+		AND p_URN.PERSON_ALIAS_TYPE_CD = 10 ; 'URN' FROM CODE SET 319
+	    AND p_URN.ALIAS_POOL_CD = 9569589 ; WHS UR Number
+		AND p_URN.ACTIVE_IND = 1	; ACTIVE URNS ONLY
+		AND p_URN.END_EFFECTIVE_DT_TM > SYSDATE	; EFFECTIVE URNS ONLY
+	)
+
+	;get cannula site
+	, (left join (
+		select
+			ce1.ce_dynamic_label_id
+			, ce1.result_val
+		from clinical_event ce1
+		where ce1.event_cd = 79847920 ;Peripheral IV Site
+			and ce1.valid_until_dt_tm > sysdate ;only return valid rows to avoid duplicates
+		order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc
+
+		with SQLTYPE("F8","vc255")
+		) ce_site on ce_site.ce_dynamic_label_id = cannulas.ce_dynamic_label_id
+	)
+
+
+	;get the earliest documented insertion time if it exists
+	, (left join (
+		select
+			ce1.ce_dynamic_label_id
+			, ce1.event_end_dt_tm
+			, row_num = row_number() over (partition by ce1.ce_dynamic_label_id order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc)
+		from clinical_event ce1
+		where ce1.event_cd = 79847746 ;Peripheral IV Activity
+			and ce1.result_val = "Insert new site"
+		order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc
+
+		with SQLTYPE("F8","DQ8","i2")
+		) ce_inserted on ce_inserted.ce_dynamic_label_id = cannulas.ce_dynamic_label_id
+			and ce_inserted.row_num = 1
+	)
+
+
+	;get earliest recorded Present on Admission (POA) time
+	, (left join (
+		select
+			ce1.ce_dynamic_label_id
+;			, ce1.event_end_dt_tm ;time documented against
+			, cdr.result_dt_tm
+			, row_num = row_number() over (partition by ce1.ce_dynamic_label_id order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc)
+		from clinical_event ce1
+			,(inner join ce_date_result cdr on cdr.event_id = ce1.event_id)
+		where ce1.event_cd = 86303655 ;Peripheral IV POA Insert Date/Time
+
+;		with SQLTYPE("F8","DQ8","DQ8","i2")
+		with SQLTYPE("F8","DQ8","i2")
+		) ce_POA on ce_POA.ce_dynamic_label_id = cannulas.ce_dynamic_label_id
+			and ce_POA.row_num = 1
+	)
+
+	;get earliest recorded inserted by
+	, (left join (
+		select
+			ce1.ce_dynamic_label_id
+;			, ce1.event_end_dt_tm ;time documented against
+			, ce1.result_val
+			, row_num = row_number() over (partition by ce1.ce_dynamic_label_id order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc)
+		from clinical_event ce1
+		where ce1.event_cd = 86303679 ;Peripheral IV Inserted By
+
+;		with SQLTYPE("F8","DQ8","vc255","i2")
+		with SQLTYPE("F8","vc255","i2")
+		) ce_POA_InsertedBy on ce_POA_InsertedBy.ce_dynamic_label_id = cannulas.ce_dynamic_label_id
+			and ce_POA_InsertedBy.row_num = 1
+	)
+
+	;get earliest inserted under emergency response
+	, (left join (
+		select
+			ce1.ce_dynamic_label_id
+;			, ce1.event_end_dt_tm ;time documented against
+			, ce1.result_val
+			, row_num = row_number() over (partition by ce1.ce_dynamic_label_id order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc)
+		from clinical_event ce1
+		where ce1.event_cd = 86303663 ;Peripheral IV Inserted Under Emergency
+
+;		with SQLTYPE("F8","DQ8","vc255","i2")
+		with SQLTYPE("F8","vc255","i2")
+		) ce_IUE on ce_IUE.ce_dynamic_label_id = cannulas.ce_dynamic_label_id
+			and ce_IUE.row_num = 1
+	)
+
+	;get the earliest documented discontinued time if it exists
+	, (left join (
+		select
+			ce1.ce_dynamic_label_id
+			, ce1.event_end_dt_tm
+			, row_num = row_number() over (partition by ce1.ce_dynamic_label_id order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc)
+		from clinical_event ce1
+		where ce1.event_cd = 79847746 ;Peripheral IV Activity
+			and ce1.result_val = "Discontinued"
+		order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc
+
+		with SQLTYPE("F8","DQ8","i2")
+		) ce_discontinued on ce_discontinued.ce_dynamic_label_id = cannulas.ce_dynamic_label_id
+			and ce_discontinued.row_num = 1
+	)
+
+order by cdl.create_dt_tm asc
+
+with time=240, format(date,"@SHORTDATETIME"), separator=" "
