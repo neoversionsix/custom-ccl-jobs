@@ -142,8 +142,6 @@ with
 		2 patient_text		= vc
 	) with protect
 
-
-
 ;Set printuser_name
 	select into "nl:"
 	from
@@ -155,9 +153,6 @@ with
 		printuser_name = trim(p.name_full_formatted, 3)
 
 	with nocounter
-
-
-
 
 ;Add json patients to data record called print_options as inherited by PChart
 	set stat = cnvtjsontorec($jsondata,0,0,0,0)
@@ -218,7 +213,6 @@ with
 
 	with expand = 2
 
-
 ;GET MPAGE COMMENTS
 	select into "nl:"
 	from
@@ -234,14 +228,12 @@ with
 	head s.parent_entity_id
 		pos = locateval(idx,1,total_number_of_encounters,s.parent_entity_id,data->list[idx].ENCNTR_ID)
 		cnt = 0
-
 	detail
 		if(pos > 0)
 			cnt += 1
 			stat = alterlist(data->list[pos]->mcomments, cnt)
 			data->list[pos]->mcomments[cnt].mcomment = S.STICKY_NOTE_TEXT
 		endif
-
 	foot s.parent_entity_id
 		if(pos > 0)
 			data->list[pos].mcomments_cnt = cnt
@@ -259,16 +251,13 @@ with
 		and ea.beg_effective_dt_tm <= sysdate
 		and ea.end_effective_dt_tm >= sysdate
 		and ea.encntr_alias_type_cd = 319_URN_CD
-
 	head ea.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,ea.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].urn = trim(cnvtalias(ea.alias, ea.alias_pool_cd),3)
 		endif
-
 	foot ea.ENCNTR_ID
 		null
-
 	with expand = 2
 
 ;GET ADMITTING DR
@@ -290,7 +279,6 @@ with
 		if(pos > 0)
 			data->list[pos].admittingdoctor = trim(PR.NAME_FULL_FORMATTED,3)
 		endif
-
 	foot EPR.ENCNTR_ID
 		null
 
@@ -310,12 +298,10 @@ with
 				D.END_EFFECTIVE_DT_TM > SYSDATE
 				AND
 				D.BEG_EFFECTIVE_DT_TM < SYSDATE
-
 	ORDER BY D.ENCNTR_ID, D.BEG_EFFECTIVE_DT_TM
 	head D.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
-
 	detail
 		if(pos > 0)
 			cnt += 1
@@ -345,19 +331,16 @@ with
 				D.END_EFFECTIVE_DT_TM > SYSDATE
 				AND
 				D.BEG_EFFECTIVE_DT_TM < SYSDATE
-
 	ORDER BY D.ENCNTR_ID, D.BEG_EFFECTIVE_DT_TM
 	head D.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,D.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
-
 	detail
 		if(pos > 0)
 			cnt += 1
 			stat = alterlist(data->list[pos]->diagnosisas, cnt)
 			data->list[pos]->diagnosisas[cnt].diagnosisa = D.DIAGNOSIS_DISPLAY
 		endif
-
 	foot D.ENCNTR_ID
 		if(pos > 0)
 			data->list[pos].diagnosisas_cnt = cnt
@@ -381,7 +364,6 @@ with
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
-
 	DETAIL CE.PERSON_ID
 		if(pos > 0 and cnt < 3) ; cnt < 3 only saves the first 3 results
 			cnt += 1
@@ -395,10 +377,10 @@ with
 			data->list[pos].haemoglobins_cnt = cnt
 			data->list[pos].haemoglobindatedsps_cnt = cnt
 		endif
-
 	WITH
 		expand = 2
 		, maxcol=5000
+
 	;White Cell Count (Blood) (4054950) (whitecc) (whiteccdatedsp)
 	SELECT INTO "nl:"
 	FROM
@@ -415,7 +397,6 @@ with
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
-
 	DETAIL CE.PERSON_ID
 		if(pos > 0 and cnt < 3) ; cnt < 3 only saves the first 3 results
 
@@ -430,10 +411,10 @@ with
 			data->list[pos].whiteccs_cnt = cnt
 			data->list[pos].whiteccdatedsps_cnt = cnt
 		endif
-
 	WITH
 		expand = 2
 		, maxcol=5000
+
 	;Platelet Count (Blood) (4054852)
 	SELECT INTO "nl:"
 	FROM
@@ -470,6 +451,7 @@ with
 	WITH
 		expand = 2
 		, maxcol=5000
+
 	;C-Reactive Protein (4055520)
 	SELECT INTO "nl:"
 	FROM
@@ -488,7 +470,6 @@ with
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
-
 	DETAIL CE.PERSON_ID
 		if(pos > 0 and cnt < 3) ; cnt < 3 only saves the first 3 results
 			;data->list[pos].crprotein = trim(CE.RESULT_VAL,3)
@@ -504,10 +485,10 @@ with
 			data->list[pos].crproteins_cnt = cnt
 			data->list[pos].crproteindatedsps_cnt = cnt
 		endif
-
 	WITH
 		expand = 2
 		, maxcol=5000
+
 	;Creatinine Level (Serum/Plasma) (2700655) (creatinine)
 	SELECT INTO "nl:"
 	FROM
@@ -526,7 +507,6 @@ with
 	HEAD CE.PERSON_ID
 		pos = locateval(idx,1,total_number_of_encounters,CE.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
-
 	DETAIL CE.PERSON_ID
 		if(pos > 0 and cnt < 3) ; cnt < 3 only saves the first 3 results
 			;data->list[pos].creatinine = trim(CE.RESULT_VAL,3)
@@ -542,7 +522,6 @@ with
 			data->list[pos].creatinines_cnt = cnt
 			data->list[pos].creatininedatedsps_cnt = cnt
 		endif
-
 	WITH
 		expand = 2
 		, maxcol=5000
@@ -561,17 +540,15 @@ with
 		where cv.code_value = pi.parent_entity_id
 		and cv.active_ind = 1
 	order by pi.ENCNTR_ID
-
 	head pi.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		if(pos > 0)
 			data->list[pos].illness_severity = trim(cv.display,3)
 		endif
-
 	foot pi.ENCNTR_ID
 		null
-
 	with expand = 2
+
 ;Get Code Status
 	select into "nl:"
 	from
@@ -584,28 +561,22 @@ with
 		where od.order_id = o.order_id
 		and od.oe_field_id = 1040321.00		;Code Status
 	order by o.ENCNTR_ID, o.order_id, od.oe_field_id, od.action_sequence desc
-
 	head o.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,o.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-
 	head o.order_id
 		null
-
 	head od.oe_field_id
 		if(pos > 0)
 			data->list[pos].code_status = trim(od.oe_field_display_value,3)
 		endif
-
 	foot od.oe_field_id
 		null
-
 	foot o.order_id
 		null
-
 	foot o.ENCNTR_ID
 		null
-
 	with expand = 2
+
 ;Get Patient Summary and Situation Awareness & Planning
 	select into "nl:"
 		result = evaluate
@@ -641,11 +612,9 @@ with
 		and pr.END_EFFECTIVE_DT_TM > outerjoin(sysdate)
 		and pr.BEG_EFFECTIVE_DT_TM < outerjoin(sysdate)
 	order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
-
 	head pi.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
-
 	head pi.ipass_data_type_cd
 		if(pos > 0 and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD)
 			data->list[pos].patient_summary = result
@@ -656,23 +625,20 @@ with
 		else
 			data->list[pos].patient_summary_author = "No author for summary found"
 		endif
-
 	detail
 		if(pos > 0 and pi.ipass_data_type_cd = 4003147_COMMENT_CD)
 			cnt += 1
 			stat = alterlist(data->list[pos]->sit_aware, cnt)
 			data->list[pos]->sit_aware[cnt].comment = result
 		endif
-
 	foot pi.ipass_data_type_cd
 		if(pos > 0)
 			data->list[pos].sit_aware_cnt = cnt
 		endif
-
 	foot pi.ENCNTR_ID
 		null
-
 	with expand = 2
+
 ;Get Actions
 	select into "nl:"
 	from
@@ -709,15 +675,14 @@ with
 		if(pos > 0)
 			data->list[pos].actions_cnt = cnt
 		endif
-
 	with expand = 2
+
 ;Get Allergies
 	select into "nl:"
 		result = evaluate(a.substance_nom_id,0,trim(a.substance_ftdesc,3),trim(n.source_string,3))
 	from
 		allergy a
 		,nomenclature n
-
 	plan a
 		where
 		expand(idx,1,total_number_of_encounters,a.PERSON_ID,data->list[idx].PERSON_ID)
@@ -726,28 +691,23 @@ with
 		and (a.end_effective_dt_tm >= sysdate
 			or a.end_effective_dt_tm = null)
 		and a.reaction_status_cd = ACTIVE_12025_CD_VAR ; 'Active' from code set 12025
-
 	join n
 		where n.nomenclature_id = outerjoin(a.substance_nom_id)
 		and n.active_ind = outerjoin(1)
 	order by a.PERSON_ID, result
-
 	head a.PERSON_ID
 		pos = locateval(idx,1,total_number_of_encounters,a.PERSON_ID,data->list[idx].PERSON_ID)
 		cnt = 0
-
 	detail
 		if(pos > 0)
 			cnt += 1
 			stat = alterlist(data->list[pos]->allergies, cnt)
 			data->list[pos]->allergies[cnt].allergy = result
 		endif
-
 	foot a.PERSON_ID
 		if(pos > 0)
 			data->list[pos].allergy_cnt = cnt
 		endif
-
 	with expand = 2
 	call echojson(print_options,trim(concat(trim(logical("ccluserdir"),3),"/ph_print_testing.dat"),3))
 
@@ -791,7 +751,6 @@ with
 				set patienthtml = build2(patienthtml
 					,data->list[x]->allergies[y].allergy,",&nbsp;")
 			endfor
-
 		set patienthtml = build2(patienthtml
 			,"</td>"
 			,"<td class=patient-info>",data->list[x].admittingdoctor,"</td>"
@@ -801,7 +760,6 @@ with
 			,"</table>"
 			,"</div>"
 		)
-
 		; PATIENT SUMMARY TABLE
 		set patienthtml = build2(patienthtml
 			,"<div>"
@@ -813,14 +771,12 @@ with
 				,"</td>"
 			,"</tr>"
 		)
-
 		; Diagnosis
 		set patienthtml = build2(patienthtml
 			,"<tr>"
 			,"<td class=patient-data-header-twofive>","Diagnoses","</td>"
 			,"<td class=patient-info-wide> PRINCIPALS:&nbsp"
 		)
-
 			for(y = 1 to data->list[x].diagnosisps_cnt)
 				set patienthtml = build2(patienthtml
 					,data->list[x]->diagnosisps[y].diagnosisp,",&nbsp"
@@ -829,14 +785,12 @@ with
 		set patienthtml = build2(patienthtml
 			, "<br>ADDITIONALS:&nbsp"
 		)
-
 		; additional diagnosis'
 			for(y = 1 to data->list[x].diagnosisas_cnt)
 				set patienthtml = build2(patienthtml
 					,data->list[x]->diagnosisas[y].diagnosisa,",&nbsp"
 				)
 			endfor
-
 		set patienthtml = build2(patienthtml
 			,"</td>"
 			,"</tr>"
@@ -873,13 +827,10 @@ with
 			,"</td>"
 			,"</tr>"
 		)
-
 		set patienthtml = build2(patienthtml
 			,"</table>"
 			,"</div>"
 		)
-
-
 		; BLOODS
 		set patienthtml = build2(patienthtml
 			,'<table style="width:100%">'
@@ -902,11 +853,8 @@ with
 					,") <br>"
 				)
 			endfor
-
 		set patienthtml = build2(patienthtml
 			,"</td>"
-
-
 			,"<td class=patient-info>"
 		)
 		;Pathology Results whitecc
@@ -918,11 +866,8 @@ with
 					,") <br>"
 				)
 			endfor
-
 		set patienthtml = build2(patienthtml
 			,"</td>"
-
-
 			,"<td class=patient-info>"
 		)
 		;Pathology Results plate
@@ -934,11 +879,8 @@ with
 					,") <br>"
 				)
 			endfor
-
 		set patienthtml = build2(patienthtml
 			,"</td>"
-
-
 			,"<td class=patient-info>"
 		)
 		;Pathology Results crprotein
@@ -950,11 +892,8 @@ with
 					,") <br>"
 				)
 			endfor
-
 		set patienthtml = build2(patienthtml
 			,"</td>"
-
-
 			,"<td class=patient-info>"
 		)
 		;Pathology Results creatinine
@@ -966,13 +905,11 @@ with
 					,") <br>"
 				)
 			endfor
-
 		set patienthtml = build2(patienthtml
 			,"</td>"
 			, "</tr>"
 			,"</table>"
 		)
-
 		; Comments: Section
 		set patienthtml = build2(patienthtml
 		,"<p>"
@@ -1024,7 +961,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>Program V10.0.3, Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>Program V10.1.0, Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
@@ -1056,10 +993,12 @@ set finalhtmlsimplified = build2(
             ,'width: 100%;'
             ,'border-collapse: collapse;'
             ,'margin-top: 20px;'
-			, 'font-size: 50%;'
+			, 'font-size: 55%;'
         ,'}'
         ,'table, th, td {'
             ,'border: 1px solid black;'
+			,'border-left: none;' /* Remove left border */
+			,'border-right: none;' /* Remove right border */
         ,'}'
         ,'th, td {'
             ,'padding: 10px;'
@@ -1068,25 +1007,30 @@ set finalhtmlsimplified = build2(
         ,'th {'
             ,'background-color: #f2f2f2;'
         ,'}'
+		,'table tr {'
+            ,'border-top: 1px solid black;' /* Add top border to each row */
+            ,'border-bottom: 1px solid black;' /* Add bottom border to each row */
+        ,'}'
 		,'th.notes, td.notes {'
-        , 'width: 30%;'
+        , 'width: 50%;'
     	, '}'
     ,'</style>'
 ,'</head>'
 ,'<body>'
     ,'<h3>Physician Handoff</h3>'
-    ,'<p style = "font-size: 60%;">Printed:&nbsp;', format(sysdate,"dd/mm/yyyy hh:mm;;d"), "&nbsp;", printuser_name,'</p>'
-    ,'<p style = "font-size: 60%;">List:', displayed_list_name ,'</p>'
+    ,'<p style = "font-size: 65%;">Printed:&nbsp;', format(sysdate,"dd/mm/yyyy hh:mm;;d"), "&nbsp;", printuser_name,'</p>'
+    ,'<p style = "font-size: 65%;">List:', displayed_list_name ,'</p>'
 ,''
     ,'<table>'
         ,'<tr>'
             ,'<th>Location</th>'
             ,'<th>Patient</th>'
             ,'<th>MRN</th>'
-			,'<th>Diagnosis</th>'
+			,'<th>Principal Diagnosis</th>'
             ,'<th>Illness Severity</th>'
             ,'<th>Admit Date</th>'
-			,'<th>For Notes</th>'
+			,'<th>Comments</th>'
+			,'<th>Notes</th>'
         ,'</tr>'
 )
 for(x = 1 to total_number_of_encounters)
@@ -1096,7 +1040,7 @@ for(x = 1 to total_number_of_encounters)
 					, data->list[x].unit_disp,",&nbsp;"
 					, data->list[x].room_disp,",&nbsp;"
 					, data->list[x].bed_disp
-				, '</td>'
+				,'</td>'
 				,'<td>'
 					,data->list[x].patient_name
 					," "
@@ -1119,21 +1063,29 @@ for(x = 1 to total_number_of_encounters)
 				,'<td>'
 				, data->list[x].admit_dt_tm_disp
 				, '</td>'
+				,'<td>'
+	)
+	for(y = 1 to data->list[x].mcomments_cnt)
+		set patienthtmlsimplified = build2(patienthtmlsimplified
+			,"-&nbsp", data->list[x]->mcomments[y].mcomment, "<br>"
+		)
+	endfor
+	set patienthtmlsimplified = build2(patienthtmlsimplified
+				, '</td>'
 				,'<td class="notes"></td>'
 			,'</tr>'
 	)
 endfor
+
 set finalhtmlsimplified = build2( finalhtmlsimplified, patienthtmlsimplified
     ,'</table>'
-
-,'</body>'
-,'<footer style="margin-top: 20px; font-weight: bold; font-size: 30%; text-align: center;">'
-    ,'Program V10.0.3     If found, please return to the nearest ward clerk'
-,'</footer>'
-
-,'</html>'
+	,'</body>'
+	,'<footer style="margin-top: 20px; font-weight: bold; font-size: 30%; text-align: center;">'
+		,'Program V10.1.0     If found, please return to the nearest ward clerk'
+	,'</footer>'
+	,'</html>'
 )
-
+; Print the detailed list if checked on powerchart otherwise print the simplified
 if (cnvtlower(trim(print_options->print_style)) = "detailed")
 	set _memory_reply_string = finalhtml
 else
