@@ -11,10 +11,41 @@ SELECT
 	, created = cdl.create_dt_tm
 	, inactivated = if(cdl.label_status_cd = 6807662 /*inactive*/) cdl.valid_from_dt_tm else null endif "@SHORTDATETIME"
 	, insertion = ce_inserted.EVENT_END_DT_TM
+	, inserted_under_emergency = ce_IUE.result_val
 	, POA_Inserted = ce_POA.result_dt_tm
 	, POA_Inserted_By = ce_POA_InsertedBy.result_val
-	, inserted_under_emergency = ce_IUE.result_val
 	, discontinued = ce_discontinued.event_end_dt_tm
+
+
+	/* KPI is 24hrs for antecubital or cannulas inserted by Ambulance or "inserted under emergency"
+	** KPI is 72hrs otherwise.  Where there is no documented insertion or "Present on admission" time
+	** the creation time of the cannula label is used.  Where there is no documented discontinue time,
+	** the label inactivation time is used if it exists.  Where neither exist, sysdate is used to calculate
+	** the time from the label creation to when the report is run as no removal/inactivation has been documented
+	*/
+
+	, KPI_hrs = if(ce_site.result_val = "Antecubital" or ce_POA_InsertedBy.result_val = "Ambulance" or ce_IUE.result_val = "Yes") 24
+		else 72 endif
+
+	, KPI_met =
+		if(ce_site.result_val = "Antecubital" or ce_POA_InsertedBy.result_val = "Ambulance" or ce_IUE.result_val = "Yes")
+			if(datetimediff(
+				least(nullval(ce_discontinued.event_end_dt_tm,sysdate)
+					, nullval(if(cdl.label_status_cd = 6807662) cdl.valid_from_dt_tm else null endif,sysdate))
+				,least(nullval(ce_POA.result_dt_tm,sysdate)
+					, nullval(ce_inserted.EVENT_END_DT_TM,sysdate)
+					, nullval(cdl.create_dt_tm,sysdate)),3) <= 24) 1
+			else 0
+			endif
+		else if(datetimediff(
+			least(nullval(ce_discontinued.event_end_dt_tm,sysdate)
+				, nullval(if(cdl.label_status_cd = 6807662) cdl.valid_from_dt_tm else null endif,sysdate))
+			,least(nullval(ce_POA.result_dt_tm,sysdate)
+				, nullval(ce_inserted.EVENT_END_DT_TM,sysdate), nullval(cdl.create_dt_tm,sysdate)),3) <= 72) 1
+			else 0
+			endif
+		endif
+
 
 from
 
@@ -32,7 +63,7 @@ from
 			/*only return valid rows - cannulas can only have one valid row at any given time
 			  and are not able to be changed once created, so this guarantees unique cannulas */
 			ce_cath.valid_until_dt_tm > sysdate
-			and ce_cath.event_end_dt_tm >= cnvtdatetime("01-jul-2023 00:00:00")
+			and ce_cath.event_end_dt_tm >= cnvtdatetime("01-jan-2023 00:00:00")
 			and ce_cath.event_end_dt_tm < cnvtdatetime("01-jan-2024 00:00:00")
 ;			and ce_cath.person_id = 12872303 ;TESTWHS, Alison
 			and ce_cath.event_cd = 79847892 ;catheter type
@@ -76,6 +107,7 @@ from
 		from clinical_event ce1
 		where ce1.event_cd = 79847746 ;Peripheral IV Activity
 			and ce1.result_val = "Insert new site"
+			and ce1.valid_until_dt_tm > sysdate
 		order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc
 
 		with SQLTYPE("F8","DQ8","i2")
@@ -94,6 +126,7 @@ from
 		from clinical_event ce1
 			,(inner join ce_date_result cdr on cdr.event_id = ce1.event_id)
 		where ce1.event_cd = 86303655 ;Peripheral IV POA Insert Date/Time
+			and ce1.valid_until_dt_tm > sysdate
 
 ;		with SQLTYPE("F8","DQ8","DQ8","i2")
 		with SQLTYPE("F8","DQ8","i2")
@@ -110,6 +143,7 @@ from
 			, row_num = row_number() over (partition by ce1.ce_dynamic_label_id order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc)
 		from clinical_event ce1
 		where ce1.event_cd = 86303679 ;Peripheral IV Inserted By
+			and ce1.valid_until_dt_tm > sysdate
 
 ;		with SQLTYPE("F8","DQ8","vc255","i2")
 		with SQLTYPE("F8","vc255","i2")
@@ -117,15 +151,20 @@ from
 			and ce_POA_InsertedBy.row_num = 1
 	)
 
-	;get earliest inserted under emergency response
+	/* get latest "inserted under emergency" response
+	** latest requested because guidance from Infection Prevention stated
+	** that if multiple values are present, then the subsequently documented values
+	** are most likely accurate.
+	*/
 	, (left join (
 		select
 			ce1.ce_dynamic_label_id
 ;			, ce1.event_end_dt_tm ;time documented against
 			, ce1.result_val
-			, row_num = row_number() over (partition by ce1.ce_dynamic_label_id order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc)
+			, row_num = row_number() over (partition by ce1.ce_dynamic_label_id order by ce1.event_end_dt_tm desc, ce1.clinical_event_id asc)
 		from clinical_event ce1
 		where ce1.event_cd = 86303663 ;Peripheral IV Inserted Under Emergency
+			and ce1.valid_until_dt_tm > sysdate
 
 ;		with SQLTYPE("F8","DQ8","vc255","i2")
 		with SQLTYPE("F8","vc255","i2")
@@ -142,13 +181,14 @@ from
 		from clinical_event ce1
 		where ce1.event_cd = 79847746 ;Peripheral IV Activity
 			and ce1.result_val = "Discontinued"
-		order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc
+			and ce1.valid_until_dt_tm > sysdate
+;		order by ce1.event_end_dt_tm asc, ce1.clinical_event_id asc
 
 		with SQLTYPE("F8","DQ8","i2")
 		) ce_discontinued on ce_discontinued.ce_dynamic_label_id = cannulas.ce_dynamic_label_id
 			and ce_discontinued.row_num = 1
 	)
 
-order by cdl.create_dt_tm asc
+;order by cdl.create_dt_tm asc
 
-with time=240, format(date,"@SHORTDATETIME"), separator=" "
+with time=600, format(date,"@SHORTDATETIME"), separator=" "
