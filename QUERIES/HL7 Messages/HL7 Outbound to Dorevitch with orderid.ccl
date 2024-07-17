@@ -12,10 +12,13 @@ FROM
 
 WHERE
 	/* TIME FROM NOW FILTER */
-	O_T.CREATE_DT_TM BETWEEN
+	O_T.CREATE_DT_TM > cnvtlookbehind("1,H")
+	/*
+		O_T.CREATE_DT_TM BETWEEN
            CNVTDATETIME("10-JAN-2024 23:00")
            AND
            CNVTDATETIME("11-JAN-2024 10:00")
+	 */
 	/* Order ID */
 	AND O_T.MSG_TEXT = "*2538079889*"
     /* Pathology Messages */

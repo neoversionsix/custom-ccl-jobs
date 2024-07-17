@@ -17,7 +17,7 @@ PLAN
 	WHERE O_E_f.OE_FORMAT_NAME IN
     /* Search for name of OEF here */
 		(
-			"*Blood*"
+			"*Gynae*"
 		)
 
 JOIN
