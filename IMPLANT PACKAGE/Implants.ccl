@@ -1,4 +1,4 @@
-; Writing this for the maintence of the
+; Writing this for the maintainence of the
 ; AU_CODE - Prosthetics stuff as part of the new surgery Oracle module
 
 ; CODE SET: 400
@@ -7,7 +7,6 @@
 ; CDF MEANING:AU_PROSCD
 ; DESCRIPTION: AU_CODE - Prosthetics
 ; DISPLAY_KEY: AUCODEPROSTHETICS
-
 
 SELECT
 	N.NOMENCLATURE_ID
@@ -20,8 +19,6 @@ SELECT
 	, END_EFFECTIVE_DT_TM = FORMAT(N.END_EFFECTIVE_DT_TM, "YYYY-MM-DD HH:MM:SS")
 	, BEG_EFFECTIVE_DT_TM = FORMAT(N.BEG_EFFECTIVE_DT_TM, "YYYY-MM-DD HH:MM:SS")
 	, UPDT_DT_TM = FORMAT(N.UPDT_DT_TM, "YYYY-MM-DD HH:MM:SS")
-
-
 
 FROM
 	NOMENCLATURE   N
