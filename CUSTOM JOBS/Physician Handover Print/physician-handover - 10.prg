@@ -1,5 +1,5 @@
 /*
-CUSTOM PRINT LAYOUT FOR THE PHYSICIAN HANDOFF.
+CUSTOM PRINT LAYOUT FOR THE Medical Worklist.
 
 Notes:
 This program was built using code from msj_ph_custom_print.prg, February 2019, tecrfx
@@ -961,7 +961,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>Program V10.1.0, Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>Program V10.1.1, Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
@@ -983,7 +983,7 @@ set finalhtmlsimplified = build2(
 ,'<head>'
     ,'<meta charset="UTF-8">'
     ,'<meta name="viewport" content="width=device-width, initial-scale=1.0">'
-    ,'<title>Physician Handoff</title>'
+    ,'<title>Medical Worklist</title>'
     ,'<style>'
         ,'body {'
             ,'font-family: Arial, sans-serif;'
@@ -1017,7 +1017,6 @@ set finalhtmlsimplified = build2(
     ,'</style>'
 ,'</head>'
 ,'<body>'
-    ,'<h3>Physician Handoff</h3>'
     ,'<p style = "font-size: 65%;">Printed:&nbsp;', format(sysdate,"dd/mm/yyyy hh:mm;;d"), "&nbsp;", printuser_name,'</p>'
     ,'<p style = "font-size: 65%;">List:', displayed_list_name ,'</p>'
 ,''
@@ -1081,7 +1080,7 @@ set finalhtmlsimplified = build2( finalhtmlsimplified, patienthtmlsimplified
     ,'</table>'
 	,'</body>'
 	,'<footer style="margin-top: 20px; font-weight: bold; font-size: 30%; text-align: center;">'
-		,'Program V10.1.0     If found, please return to the nearest ward clerk'
+		,'Program V10.1.1     If found, please return to the nearest ward clerk'
 	,'</footer>'
 	,'</html>'
 )
