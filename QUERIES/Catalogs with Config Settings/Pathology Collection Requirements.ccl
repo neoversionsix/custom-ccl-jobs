@@ -1,6 +1,5 @@
 select	; Pathology collection requirements alignment
-	domain = build(curdomain ,' (', format(sysdate,"yyyymmdd hhmm;3;q"), ")" )
-	, activity_type = uar_get_code_display (oc.activity_type_cd)
+	activity_type = uar_get_code_display (oc.activity_type_cd)
 	, activity_rank = dense_rank() over (partition by 0
 	order by
 	cv_cat.display_key
@@ -15,10 +14,6 @@ select	; Pathology collection requirements alignment
 	)
 	, primary_mnemonic = oc.primary_mnemonic
 	, primary_mnemonic_active = ocs_prim.active_ind
-	, primary_synonym_last_update = format (ocs_prim.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
-	, primary_synonym_last_updater = if(ocs_prim.synonym_id > 0 and p_ocs_prim.name_full_formatted = null) cnvtstring(ocs_prim.updt_id)
-	else p_ocs_prim.name_full_formatted
-	endif
 	, orderable_type = evaluate (oc.orderable_type_flag
 	, 0, "Standard"
           	, 1, "Standard"
@@ -31,10 +26,6 @@ select	; Pathology collection requirements alignment
           	, 8, "Multi-ingredient"
           	, 9, "Interval Test"
          	, 10, "Freetext")
-	, primary_settings_last_update = format (oc.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
-	, primary_settings_last_updater = if(oc.catalog_cd > 0 and p_oc.name_full_formatted = null) cnvtstring(oc.updt_id)
-	else p_oc.name_full_formatted
-	endif
 	, alias_outbound = if (cvo_oc.code_value > 0 and cvo_oc.alias = " ") "<sp>"
 	else cvo_oc.alias
 	endif
@@ -47,14 +38,8 @@ select	; Pathology collection requirements alignment
 	, cnvtupper (oc.primary_mnemonic)
 	)
 	, specimen_type = uar_get_code_display (pst.specimen_type_cd)
-	, specimen_types_for_primary = count  (distinct pst.specimen_type_cd) over (partition by oc.catalog_cd)
-
 	, accession_class = uar_get_code_display (pst.accession_class_cd)
 	, default_collection_method = uar_get_code_display (pst.default_collection_method_cd)
-	, pst_last_update = format (pst.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
-	, pst_last_updater =if(pst.catalog_cd > 0 and p_pst.name_full_formatted = null) cnvtstring(pst.updt_id)
-	else p_pst.name_full_formatted
-	endif
 	, service_resource = if (coll_q.catalog_cd = 0) ""
 	elseif (coll_q.service_resource_cd = 0) "(All)"
 	else uar_get_code_display (coll_q.service_resource_cd)
@@ -122,10 +107,6 @@ select	; Pathology collection requirements alignment
 	, aliq = if (coll_q.aliquot_ind = 1) "x"
 	else ""
 	endif
-	, coll_q_last_update = format (coll_q.updt_dt_tm, "dd/mm/yy hh:mm:ss")
-	, coll_q_last_updater = if(coll_q.catalog_cd > 0 and p_coll_q.name_full_formatted = null) cnvtstring(coll_q.updt_id)
-	else p_coll_q.name_full_formatted
-	endif
 	, aliquot_min_vol = if (aliq_q.coll_info_seq = 0) ""
 	else cnvtstring(aliq_q.min_vol,10,1)	; returns up to 10 digits, with one decimal place accuracy.
 	endif
@@ -135,18 +116,6 @@ select	; Pathology collection requirements alignment
 	, aliquot_net = if (aliq_q.net_ind = 1) "x"
 	else ""
 	endif
-	, aliq_q_last_update = format (aliq_q.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
-	, aliq_q_last_updater = if(aliq_q.catalog_cd > 0 and p_aliq_q.name_full_formatted = null)  cnvtstring(aliq_q.updt_id)
-	else p_aliq_q.name_full_formatted
-	endif
-	, containers_for_spec_type = count  (distinct coll_q.sequence) over (partition by oc.catalog_cd
-	, pst.specimen_type_cd
-	, coll_q.age_from_minutes
-	, coll_q.age_to_minutes
-	)
-	, age_coll_reqs = count  (distinct coll_q.age_to_minutes) over (partition by oc.catalog_cd
-	, pst.specimen_type_cd
-	)
 	, collection_requirements_sequence = if(coll_q.catalog_cd = 0)  ""
 	else cnvtstring(coll_q.sequence)
 	endif
@@ -183,23 +152,6 @@ from
 	, (left join code_value cv_cat on cv_cat.code_value = oc.catalog_type_cd)
 	, (left join code_value cv_act on cv_act.code_value = oc.activity_type_cd)
 	, (left join code_value cv_sub_act on cv_sub_act.code_value = oc.activity_subtype_cd)
-	, (left join (select o.catalog_cd
-	, specimen_type_cd = o_d8.oe_field_value
-	from orders o, order_detail o_d8
-	where o_d8.oe_field_id = 12584
-	and o_d8.order_id = o.order_id
-	group by o.catalog_cd, o_d8.oe_field_value) o_spec_count on o_spec_count.catalog_cd = oc.catalog_cd
-	and o_spec_count.specimen_type_cd = pst.specimen_type_cd
-	)
-	, (left join (select ocs.catalog_cd
-	, synonyms = listagg(ocs.mnemonic, "; ", "") within group (order by ocs.mnemonic)
-	from order_catalog_synonym ocs
-	where ocs.mnemonic_type_cd != 2583	; code value for 'Primary' from code set 6011
-	and ocs.catalog_type_cd = 2513	; code value for 'Laboratory' from code set 6000
-	and ocs.active_ind = 1
-	group by ocs.catalog_cd
-	with sqltype("f8", "vc400")) ocs_syn on ocs_syn.catalog_cd = oc.catalog_cd
-	)
 
 plan 	oc
 where 	oc.catalog_type_cd = 2513 	; code value for 'Laboratory' from code set 6000
@@ -224,8 +176,6 @@ join	cv_cat
 join	cv_act
 join	cv_sub_act
 
-join	o_spec_count
-join	ocs_syn
 
 order by
 ;	catalog_rank
@@ -240,4 +190,4 @@ order by
 	, lab_hand.lab_handling_order_seq
 	, 0
 
-with	time = 1200
+with	time = 5
