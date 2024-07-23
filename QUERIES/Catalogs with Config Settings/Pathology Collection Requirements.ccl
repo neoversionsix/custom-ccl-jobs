@@ -35,9 +35,6 @@ select	; Pathology collection requirements alignment
 	, primary_settings_last_updater = if(oc.catalog_cd > 0 and p_oc.name_full_formatted = null) cnvtstring(oc.updt_id)
 	else p_oc.name_full_formatted
 	endif
-	, synonyms = ocs_syn.synonyms
-	else "0"
-	endif
 	, alias_outbound = if (cvo_oc.code_value > 0 and cvo_oc.alias = " ") "<sp>"
 	else cvo_oc.alias
 	endif
