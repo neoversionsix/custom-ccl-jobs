@@ -242,7 +242,6 @@ from
 	)
 	, (left join dcp_output_route dorcon on dorcon.dcp_output_route_id = oc.consent_form_routing_cd)
 	, (left join dcp_output_route dorreq on dorreq.dcp_output_route_id = oc.requisition_routing_cd)
-	, (left join (select o.catalog_cd
 	, (left join code_value_alias cva_ec on cva_ec.alias = cvo_oc.alias
 	and cva_ec.code_set = 72	; "EVENT_CODE" code set
 	and cva_ec.contributor_source_cd = 10630393	; "WH_LOCAL" from code set 73
@@ -294,4 +293,4 @@ order by
 	, cv_ec.display
 	, 0
 
-with	time = 60	; 1200 seconds, if the res_count join is re-instated
+with	time = 10	; 1200 seconds, if the res_count join is re-instated
