@@ -1,0 +1,75 @@
+select
+    MPage = m.category_name
+    ,Identifier = m.category_mean
+    ,Layout = evaluate(m.layout_flag,0,"Summary",1,"Workflow")
+    ,Position = p.display
+    ,Component = r.report_name
+    ,Filter_Name = f.filter_display
+    ,Value = evaluate2(
+    if (v.mpage_param_mean = "mp_*") concat(trim(v.mpage_param_mean),": ",v.mpage_param_value)
+    elseif(v.parent_entity_name = "DCP_FORMS_REF") pf.description
+    elseif(v.parent_entity_name = "MLTM_DRUG_CATEGORIES") d.category_name
+    elseif(v.parent_entity_name = "DMS_CONTENT_TYPE") mg.display
+    elseif(v.parent_entity_name = "PATHWAY_CATALOG") pc.description
+    elseif(v.parent_entity_name = "NOMENCLATURE") n.mnemonic
+    elseif(v.parent_entity_name = "ORDER_CATALOG_SYNONYM") o.mnemonic
+    elseif(f.filter_display in ("*look back options","*Look Back Options") and v.parent_entity_name = "CODE_VALUE")
+    concat(trim(v.freetext_desc)," ",trim(c.display))
+    elseif(v.parent_entity_name = "CODE_VALUE") c.display
+    else v.freetext_desc
+    endif)
+    from
+    code_value c
+    ,code_value p
+    ,ORDER_CATALOG_SYNONYM o
+    ,PATHWAY_CATALOG pc
+    ,DCP_FORMS_REF pf
+    ,NOMENCLATURE n
+    ,MLTM_DRUG_CATEGORIES d
+    ,DMS_CONTENT_TYPE mg
+    ,br_datamart_flex fl
+    ,br_datamart_value v
+    ,br_datamart_filter f
+    ,BR_DATAMART_REPORT_FILTER_R rf
+    ,br_datamart_report r
+    ,br_datamart_category m
+plan m
+    where m.br_datamart_category_id > 0
+    /****************************************************************************************/
+    and CNVTUPPER(m.category_mean) = "**" ;Set MPage Identifier to search by MPage
+    /****************************************************************************************/
+join r
+    where r.br_datamart_category_id = m.br_datamart_category_id
+    /****************************************************************************************/
+    and r.report_name in ("*") ;Modify to filter for certain components
+/****************************************************************************************/
+join rf
+    where rf.br_datamart_report_id = r.br_datamart_report_id
+    join f
+    where f.br_datamart_filter_id = rf.br_datamart_filter_id
+/****************************************************************************************/
+    and f.filter_display in ("*") ;Modify to filter by mpage filter display
+/****************************************************************************************/
+join v
+where v.br_datamart_filter_id = f.br_datamart_filter_id
+join fl
+where outerjoin(v.br_datamart_flex_id) = fl.br_datamart_flex_id
+join p
+where outerjoin(fl.parent_entity_id) = p.code_value
+join c
+where outerjoin(v.parent_entity_id) = c.code_value
+join pf
+where outerjoin(v.parent_entity_id) = pf.dcp_forms_ref_id
+join d
+where outerjoin(v.parent_entity_id) = d.multum_category_id
+join pc
+where outerjoin(v.parent_entity_id) = pc.pathway_catalog_id
+join n
+where outerjoin(v.parent_entity_id) = n.nomenclature_id
+join o
+where outerjoin(v.parent_entity_id) = o.synonym_id
+join mg
+where outerjoin(v.parent_entity_id) = mg.dms_content_type_id
+
+order by MPage, Position, r.report_seq, f.filter_seq, v.value_seq
+with dontcare = c, maxrec = 5000000000000000, time =180
