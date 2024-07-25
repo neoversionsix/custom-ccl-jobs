@@ -153,6 +153,7 @@ with
 		printuser_name = trim(p.name_full_formatted, 3)
 
 	with nocounter
+	, maxcol=100000
 
 ;Add json patients to data record called print_options as inherited by PChart
 	set stat = cnvtjsontorec($jsondata,0,0,0,0)
@@ -189,6 +190,7 @@ with
 		 null
 
 	with expand = 2
+	, maxcol=100000
 
 ;Get encounter data
 	select into "nl:"
@@ -212,6 +214,7 @@ with
 		null
 
 	with expand = 2
+	, maxcol=100000
 
 ;GET MPAGE COMMENTS
 	select into "nl:"
@@ -239,6 +242,8 @@ with
 			data->list[pos].mcomments_cnt = cnt
 		endif
 	with expand = 2
+	, maxcol=100000
+
 
 
 ;Get URN
@@ -259,6 +264,8 @@ with
 	foot ea.ENCNTR_ID
 		null
 	with expand = 2
+	, maxcol=100000
+
 
 ;GET ADMITTING DR
 	SELECT INTO "nl:"
@@ -314,6 +321,8 @@ with
 			data->list[pos].diagnosisps_cnt = cnt
 		endif
 	with expand = 2
+	, maxcol=100000
+
 
 ;Get Additional Diagnosis'
 	SELECT INTO "nl:"
@@ -346,6 +355,9 @@ with
 			data->list[pos].diagnosisas_cnt = cnt
 		endif
 	with expand = 2
+	, maxcol=100000
+
+
 
 ;Get blood results
 	; Haemoglobin Level (Blood) (4054760)
@@ -379,7 +391,7 @@ with
 		endif
 	WITH
 		expand = 2
-		, maxcol=5000
+		, maxcol=100000
 
 	;White Cell Count (Blood) (4054950) (whitecc) (whiteccdatedsp)
 	SELECT INTO "nl:"
@@ -413,7 +425,8 @@ with
 		endif
 	WITH
 		expand = 2
-		, maxcol=5000
+		, maxcol=100000
+
 
 	;Platelet Count (Blood) (4054852)
 	SELECT INTO "nl:"
@@ -450,7 +463,7 @@ with
 
 	WITH
 		expand = 2
-		, maxcol=5000
+		, maxcol=100000
 
 	;C-Reactive Protein (4055520)
 	SELECT INTO "nl:"
@@ -487,7 +500,8 @@ with
 		endif
 	WITH
 		expand = 2
-		, maxcol=5000
+		, maxcol=100000
+
 
 	;Creatinine Level (Serum/Plasma) (2700655) (creatinine)
 	SELECT INTO "nl:"
@@ -524,7 +538,8 @@ with
 		endif
 	WITH
 		expand = 2
-		, maxcol=5000
+		, maxcol=100000
+
 
 ;Get Illness Severity
 	select into "nl:"
@@ -548,6 +563,8 @@ with
 	foot pi.ENCNTR_ID
 		null
 	with expand = 2
+	, maxcol=100000
+
 
 ;Get Code Status
 	select into "nl:"
@@ -576,6 +593,8 @@ with
 	foot o.ENCNTR_ID
 		null
 	with expand = 2
+	, maxcol=100000
+
 
 ;Get Patient Summary and Situation Awareness & Planning
 	select into "nl:"
@@ -638,6 +657,8 @@ with
 	foot pi.ENCNTR_ID
 		null
 	with expand = 2
+	, maxcol=100000
+
 
 ;Get Actions
 	select into "nl:"
@@ -676,6 +697,8 @@ with
 			data->list[pos].actions_cnt = cnt
 		endif
 	with expand = 2
+	, maxcol=100000
+
 
 ;Get Allergies
 	select into "nl:"
@@ -709,6 +732,8 @@ with
 			data->list[pos].allergy_cnt = cnt
 		endif
 	with expand = 2
+	, maxcol=100000
+
 	call echojson(print_options,trim(concat(trim(logical("ccluserdir"),3),"/ph_print_testing.dat"),3))
 
 ;Build HTML for each patient
@@ -961,7 +986,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>Program V10.1.1, Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>Program V10.1.2, Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
@@ -1080,7 +1105,7 @@ set finalhtmlsimplified = build2( finalhtmlsimplified, patienthtmlsimplified
     ,'</table>'
 	,'</body>'
 	,'<footer style="margin-top: 20px; font-weight: bold; font-size: 30%; text-align: center;">'
-		,'Program V10.1.1     If found, please return to the nearest ward clerk'
+		,'Program V10.1.2     If found, please return to the nearest ward clerk'
 	,'</footer>'
 	,'</html>'
 )
