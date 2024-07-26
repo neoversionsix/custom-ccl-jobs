@@ -986,7 +986,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>Program V10.1.2, Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>Program V10.1.3, Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
@@ -1053,7 +1053,6 @@ set finalhtmlsimplified = build2(
 			,'<th>Principal Diagnosis</th>'
             ,'<th>Illness Severity</th>'
             ,'<th>Admit Date</th>'
-			,'<th>Comments</th>'
 			,'<th>Notes</th>'
         ,'</tr>'
 )
@@ -1087,15 +1086,6 @@ for(x = 1 to total_number_of_encounters)
 				,'<td>'
 				, data->list[x].admit_dt_tm_disp
 				, '</td>'
-				,'<td>'
-	)
-	for(y = 1 to data->list[x].mcomments_cnt)
-		set patienthtmlsimplified = build2(patienthtmlsimplified
-			,"-&nbsp", data->list[x]->mcomments[y].mcomment, "<br>"
-		)
-	endfor
-	set patienthtmlsimplified = build2(patienthtmlsimplified
-				, '</td>'
 				,'<td class="notes"></td>'
 			,'</tr>'
 	)
@@ -1105,7 +1095,7 @@ set finalhtmlsimplified = build2( finalhtmlsimplified, patienthtmlsimplified
     ,'</table>'
 	,'</body>'
 	,'<footer style="margin-top: 20px; font-weight: bold; font-size: 30%; text-align: center;">'
-		,'Program V10.1.2     If found, please return to the nearest ward clerk'
+		,'Program V10.1.3     If found, please return to the nearest ward clerk'
 	,'</footer>'
 	,'</html>'
 )
