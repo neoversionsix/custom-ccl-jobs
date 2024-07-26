@@ -21,7 +21,7 @@ JOIN
     OEF_FIELDS ;OE_FORMAT_FIELDS
     WHERE OEF_FIELDS.OE_FORMAT_ID = OEF.OE_FORMAT_ID
     AND OEF_FIELDS.ACTION_TYPE_CD = 2534.00; Order
-    and (oef_fields.accept_flag != 2 AND
+    and (oef_fields.accept_flag != 2 AND; need to include the field sequence though!
 
 
 ORDER BY
@@ -31,3 +31,4 @@ ORDER BY
 	, OEF_FIELDS.ROWID   DESC
 
 WITH TIME = 30
+; In development.
