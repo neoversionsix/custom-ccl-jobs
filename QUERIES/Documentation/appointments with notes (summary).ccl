@@ -1,0 +1,88 @@
+select ;appointments summary with note counts
+	specialty = uar_get_code_display(enc.med_service_cd)
+    , location = uar_get_code_display(enc.loc_nurse_unit_cd)
+    , appt_date = format(enc.reg_dt_tm,"dd/mm/yyyy")
+    , URN = p_URN.alias
+	, Visit = ea_FIN.alias
+    , appt_status = uar_get_code_display(appt_status.sch_state_cd)
+	, provider_letter_notes = p_notes.nt_count
+	, all_other_notes = notes.nt_count
+	, enc.person_id
+	, enc.encntr_id
+
+from encounter enc
+
+    ;get current URN for patient
+    ,(left join person_alias p_URN on p_URN.person_id = enc.person_id
+        AND p_URN.PERSON_ALIAS_TYPE_CD = 10 ; 'URN' FROM CODE SET 319
+        AND p_URN.ALIAS_POOL_CD = 9569589 ; WHS UR Number
+        AND p_URN.ACTIVE_IND = 1    ; ACTIVE URNS ONLY
+        AND p_URN.END_EFFECTIVE_DT_TM > SYSDATE ; EFFECTIVE URNS ONLY
+    )
+
+	;get encounter FIN number
+	,(left join encntr_alias ea_FIN on ea_FIN.encntr_id = enc.encntr_id
+		and ea_FIN.encntr_alias_type_cd = 1077 ;FIN Number
+		and ea_FIN.active_ind = 1 ;active aliases only
+		and ea_FIN.end_effective_dt_tm > sysdate ;current aliases only
+	)
+
+    ;get latest appointment status based on highest schedule_seq
+    ,(inner join(
+        select
+            sca.encntr_id
+            , sca.sch_state_cd
+            , row_num = row_number() over (partition by sca.encntr_id order by sca.schedule_seq desc)
+        from sch_appt sca
+        where sca.active_ind = 1
+
+        with SQLTYPE("f8","f8","i2")
+        ) appt_status on appt_status.encntr_id = enc.encntr_id
+            and appt_status.row_num = 1
+			and appt_status.sch_state_cd = 4537 ;checked out
+    )
+
+	; provider letter notes on encounter
+	,(left join(
+		select
+			ce.encntr_id
+			, nt_count = count(*)
+		from clinical_event ce
+			,(inner join note_type nt on nt.event_cd = ce.event_cd)
+		where ce.view_level = 1
+			and ce.result_status_cd != 31 ;In Error
+			and ce.valid_until_dt_tm > sysdate
+			and ce.event_cd = 151976831 ;provider letter
+		group by ce.encntr_id
+		with sqltype("f8","i2")
+		) p_notes on p_notes.encntr_id = enc.encntr_id
+	)
+
+	; NON provider letter notes on encounter
+	,(left join(
+		select
+			ce.encntr_id
+			, nt_count = count(*)
+		from clinical_event ce
+			,(inner join note_type nt on nt.event_cd = ce.event_cd)
+		where ce.view_level = 1
+			and ce.result_status_cd != 31 ;In Error
+			and ce.valid_until_dt_tm > sysdate
+			and ce.event_cd != 151976831 ;provider letter
+		group by ce.encntr_id
+		with sqltype("f8","i2")
+		) notes on notes.encntr_id = enc.encntr_id
+	)
+
+where enc.active_ind = 1
+    and enc.encntr_type_cd = 309309 ;Outpatient
+    and enc.reg_dt_tm >= cnvtdatetime("01-apr-2024")
+    and enc.reg_dt_tm < cnvtdatetime("01-jun-2024")
+	and enc.end_effective_dt_tm > sysdate
+	and enc.person_id not in (select p.person_id from person p where p.name_last_key = "TESTWHS")
+;   and enc.person_id = 14682898
+;	and p_URN.alias = "1037006"
+
+order by uar_get_code_display(enc.loc_nurse_unit_cd), enc.reg_dt_tm, p_urn.alias
+
+with time=360
