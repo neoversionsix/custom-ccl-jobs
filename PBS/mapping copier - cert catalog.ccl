@@ -1,0 +1,13 @@
+SELECT
+; Run this in cert to get the list of synonym ids
+; that need to be mapped to certain P_O_M PBS DRUG IDs
+    SYNONYM_ID = O_C_S.SYNONYM_ID
+    , MNEMONIC = O_C_S.MNEMONIC
+    , MNEMONIC_TYPE = O_C_S.MNEMONIC_TYPE_CD
+FROM
+    ORDER_CATALOG_SYNONYM   O_C_S
+WHERE
+    O_C_S.ACTIVE_IND = 1
+    AND O_C_S.CATALOG_TYPE_CD = 2516 ; PHARMACY
+WITH
+    NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10
