@@ -1,0 +1,29 @@
+; QUERY --------------------------------------------------------------------------------------------------------
+SELECT
+	O_CATALOG_DISP = UAR_GET_CODE_DISPLAY(O_C_S.CATALOG_CD)
+	, O_CATALOG_TYPE_DISP = UAR_GET_CODE_DISPLAY(O_C_S.CATALOG_TYPE_CD)
+	, O_C_S.HIDE_FLAG
+	, O_C_S.UPDT_DT_TM
+	, PR.NAME_FULL_FORMATTED
+
+FROM
+	ORDER_CATALOG_SYNONYM   O_C_S
+	, PRSNL   PR
+
+PLAN O_C_S
+	WHERE
+		O_C_S.CATALOG_TYPE_CD =
+		AND O_C_S.CATALOG_CD =
+		AND
+
+
+JOIN PR
+	WHERE
+		PR.UPDT_ID = reqinfo->updt_id
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT
+
+
+
+
+; UPDATE SCRIPT
