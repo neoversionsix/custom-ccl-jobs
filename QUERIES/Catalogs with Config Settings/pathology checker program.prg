@@ -17,6 +17,7 @@ with OUTDEV
     DECLARE SYNONYM_NAME_SEARCH_COMPARE_VAR = VC with NoConstant("*ADENOVIRUS NAD/PCR SWAB*"),Protect ; EDIT THIS!!!
 
 ;VARIABLES SAVED IN PROGRAM
+    DECLARE SYNONYM_ID_VAR = F8 with NoConstant(0.00),Protect
     DECLARE CATALOG_TYPE_VAR = VC with NoConstant(" "),Protect
     DECLARE ACTIVITY_TYPE_VAR = VC with NoConstant(" "),Protect
     DECLARE ACTIVITY_SUB_TYPE_VAR = VC with NoConstant(" "),Protect
@@ -26,8 +27,10 @@ with OUTDEV
     DECLARE SYNONYM_NAME_VAR = VC with NoConstant(" "),Protect
     DECLARE ACTIVE_CHECKBOX_VAR = I2 with NoConstant(0),Protect
     DECLARE HIDE_CHECKBOX_VAR = VC with NoConstant(" "),Protect
+    DECLARE VIRTUAL_VIEWS_VAR = VC with NoConstant(""),Protect
 
     ; FOR EXISTING SYNONYM COMPARING TO
+    DECLARE SYNONYM_ID_VAR_2 = F8 with NoConstant(0.00),Protect
     DECLARE CATALOG_TYPE_VAR_2 = VC with NoConstant(" "),Protect
     DECLARE ACTIVITY_TYPE_VAR_2 = VC with NoConstant(" "),Protect
     DECLARE ACTIVITY_SUB_TYPE_VAR_2 = VC with NoConstant(" "),Protect
@@ -37,13 +40,15 @@ with OUTDEV
     DECLARE SYNONYM_NAME_VAR_2 = VC with NoConstant(" "),Protect
     DECLARE ACTIVE_CHECKBOX_VAR_2 = I2 with NoConstant(0),Protect
     DECLARE HIDE_CHECKBOX_VAR_2 = VC with NoConstant(" "),Protect
+    DECLARE VIRTUAL_VIEWS_VAR_2 = VC with NoConstant(""),Protect
 
 ;HTML VARIABLES
     DECLARE FINALHTML_VAR = VC with NoConstant(" "),Protect
 
 ; Query for New Synonym
     SELECT INTO "NL:"
-        CATALOG_TYPE = UAR_GET_CODE_DISPLAY(O_C.CATALOG_TYPE_CD)
+        SYNONYM_ID = O_C_S.SYNONYM_ID
+        , CATALOG_TYPE = UAR_GET_CODE_DISPLAY(O_C.CATALOG_TYPE_CD)
         , ACTIVITY_TYPE = UAR_GET_CODE_DISPLAY(O_C.ACTIVITY_TYPE_CD)
         , ACTIVITY_SUB_TYPE = UAR_GET_CODE_DISPLAY(O_C.ACTIVITY_SUBTYPE_CD)
         , DESCRIPTION = O_C.DESCRIPTION
@@ -64,6 +69,7 @@ with OUTDEV
             AND O_C.CATALOG_TYPE_CD = 2513 ; Laboratory
 
     HEAD REPORT ; Setting varibles using info retrieved from the Database in SELECT Seciton
+        SYNONYM_ID_VAR = SYNONYM_ID
         CATALOG_TYPE_VAR = CATALOG_TYPE
         ACTIVITY_TYPE_VAR = ACTIVITY_TYPE
         ACTIVITY_SUB_TYPE_VAR = ACTIVITY_SUB_TYPE
@@ -73,13 +79,28 @@ with OUTDEV
         SYNONYM_NAME_VAR = SYNONYM_NAME
         ACTIVE_CHECKBOX_VAR = ACTIVE_CHECKBOX
         HIDE_CHECKBOX_VAR = HIDE_CHECKBOX
+    WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
 
-WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
+;VIRTUAL VIEWS FOR NEW SYNONYM
+    SELECT INTO "NL:"
+        VIRTUAL_VIEW = UAR_GET_CODE_DISPLAY(O_F_R.FACILITY_CD)
+    FROM
+        OCS_FACILITY_R  O_F_R
+    WHERE
+        O_F_R.SYNONYM_ID = SYNONYM_ID_VAR
+    ORDER BY
+        O_F_R.FACILITY_CD DESC
+    HEAD REPORT O_F_R.SYNONYM_ID
+    DETAIL
+        VIRTUAL_VIEWS_VAR = BUILD2(VIRTUAL_VIEWS_VAR, VIRTUAL_VIEW, "<BR>")
+    WITH TIME = 10
+
 
 
 ; Query for Existing Synonym
     SELECT INTO "NL:"
-        CATALOG_TYPE = UAR_GET_CODE_DISPLAY(O_C.CATALOG_TYPE_CD)
+        SYNONYM_ID = O_C_S.SYNONYM_ID
+        , CATALOG_TYPE = UAR_GET_CODE_DISPLAY(O_C.CATALOG_TYPE_CD)
         , ACTIVITY_TYPE = UAR_GET_CODE_DISPLAY(O_C.ACTIVITY_TYPE_CD)
         , ACTIVITY_SUB_TYPE = UAR_GET_CODE_DISPLAY(O_C.ACTIVITY_SUBTYPE_CD)
         , DESCRIPTION = O_C.DESCRIPTION
@@ -100,6 +121,7 @@ WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
             AND O_C.CATALOG_TYPE_CD = 2513 ; Laboratory
 
     HEAD REPORT ; Setting varibles using info retrieved from the Database in SELECT Seciton
+        SYNONYM_ID_VAR_2 = SYNONYM_ID
         CATALOG_TYPE_VAR_2 = CATALOG_TYPE
         ACTIVITY_TYPE_VAR_2 = ACTIVITY_TYPE
         ACTIVITY_SUB_TYPE_VAR_2 = ACTIVITY_SUB_TYPE
@@ -110,7 +132,21 @@ WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
         ACTIVE_CHECKBOX_VAR_2 = ACTIVE_CHECKBOX
         HIDE_CHECKBOX_VAR_2 = HIDE_CHECKBOX
 
-WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
+    WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
+
+;VIRTUAL VIEWS FOR EXISTING SYNONYM
+    SELECT INTO "NL:"
+        VIRTUAL_VIEW = UAR_GET_CODE_DISPLAY(O_F_R.FACILITY_CD)
+    FROM
+        OCS_FACILITY_R  O_F_R
+    WHERE
+        O_F_R.SYNONYM_ID = SYNONYM_ID_VAR_2
+    ORDER BY
+        O_F_R.FACILITY_CD DESC
+    HEAD REPORT O_F_R.SYNONYM_ID
+    DETAIL
+        VIRTUAL_VIEWS_VAR_2 = BUILD2(VIRTUAL_VIEWS_VAR_2, VIRTUAL_VIEW, "<BR>")
+    WITH TIME = 10
 
 ;HTML
     SET FINALHTML_VAR = BUILD2(
@@ -158,7 +194,7 @@ WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
     ,'</head>'
     ,'<body>'
         ,'<h1>Pathology Orderable Synonym Build Checker</h1>'
-    ,''
+    ,'<h2>DCP Tools - Synonym Tab</h2>'
         ,'<table>'
             ,'<thead>'
                 ,'<tr>'
@@ -168,6 +204,11 @@ WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
                 ,'</tr>'
             ,'</thead>'
             ,'<tbody>'
+                ,'<tr>'
+                    ,'<td>OCS Synonym id</td>'
+                    ,'<td>', SYNONYM_ID_VAR, '</td>'
+                    ,'<td>', SYNONYM_ID_VAR_2, '</td>'
+                ,'</tr>'
                 ,'<tr>'
                     ,'<td>Catalog Type (DCP Tools)</td>'
                     ,'<td>', CATALOG_TYPE_VAR, '</td>'
@@ -199,7 +240,7 @@ WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
                     ,'<td>', SYNONYM_TYPE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>Synonym Name (DCP Tools)/td>'
+                    ,'<td>Synonym Name (DCP Tools)</td>'
                     ,'<td>', SYNONYM_NAME_VAR, '</td>'
                     ,'<td>', SYNONYM_NAME_VAR_2, '</td>'
                 ,'</tr>'
@@ -209,68 +250,39 @@ WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
                     ,'<td>', ACTIVE_CHECKBOX_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>Didden Checkbox (DCP)</td>'
+                    ,'<td>Hidden Checkbox (DCP)</td>'
                     ,'<td>', HIDE_CHECKBOX_VAR, '</td>'
                     ,'<td>', HIDE_CHECKBOX_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                ,'</tr>'
-                ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                ,'</tr>'
-                ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                ,'</tr>'
-                ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                ,'</tr>'
-                ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                ,'</tr>'
-                ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                ,'</tr>'
-                ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                ,'</tr>'
-                ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                ,'</tr>'
-                ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                ,'</tr>'
-                ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                ,'</tr>'
-                ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
+                    ,'<td>Virtual Views (DCP)</td>'
+                    ,'<td>', VIRTUAL_VIEWS_VAR, '</td>'
+                    ,'<td>', VIRTUAL_VIEWS_VAR_2, '</td>'
                 ,'</tr>'
             ,'</tbody>'
         ,'</table>'
-    ,''
+    ,'<h2>DCP Tools - Order Review Tab</h2>'
+        ,'<table>'
+            ,'<thead>'
+                ,'<tr>'
+                    ,'<th>Config Item</th>'
+                    ,'<th>Built Synonym</th>'
+                    ,'<th>Existing Synonym</th>'
+                ,'</tr>'
+            ,'</thead>'
+            ,'<tbody>'
+                ,'<tr>'
+                    ,'<td>OCS Synonym id</td>'
+                    ,'<td>', SYNONYM_ID_VAR, '</td>'
+                    ,'<td>', SYNONYM_ID_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Catalog Type (DCP Tools)</td>'
+                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
+                    ,'<td>', CATALOG_TYPE_VAR_2, '</td>'
+                ,'</tr>'
+            ,'</tbody>'
+        ,'</table>'
         ,'<div class="end-report">END REPORT</div>'
     ,'</body>'
     ,'</html>'
