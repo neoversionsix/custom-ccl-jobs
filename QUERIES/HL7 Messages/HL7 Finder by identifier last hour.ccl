@@ -14,13 +14,11 @@ WHERE
 	/* TIME FROM NOW FILTER */
 	O_T.CREATE_DT_TM > cnvtlookbehind("1,H") ; Just searching the last hour
 	/*
-		O_T.CREATE_DT_TM BETWEEN
-           CNVTDATETIME("10-JAN-2024 23:00")
-           AND
-           CNVTDATETIME("11-JAN-2024 10:00")
+	O_T.CREATE_DT_TM > CNVTDATETIME("10-JAN-2024 23:00")
+    AND O_T.CREATE_DT_TM < CNVTDATETIME("11-JAN-2024 10:00")
 	 */
 	/* Order ID */
-	AND O_T.MSG_TEXT = "*3133452453*" ; order id or other identifier sent
+	AND O_T.MSG_TEXT = "*1613161*" ; order id or other identifier sent
     /* Pathology Messages */
 
 
