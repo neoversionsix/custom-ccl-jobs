@@ -1,0 +1,221 @@
+select	; Pathology benches alignment
+	domain = build(curdomain ,' (', format(sysdate,"yyyymmdd hhmm;3;q"), ")" )
+	, deptorcwizard_listing = if (ocs.mnemonic_type_cd = 2583) sd.short_description	; if mnemonic is a Primary, show departmental display name
+	else ocs.mnemonic	; else show the Direct Care Provider name
+	endif
+	, departmental_long_description = sd.description
+	, dept_name = sd.short_description
+	, procedure_type = uar_get_code_display (sd.bb_processing_cd)
+	, specimen_required = if (sd.specimen_required = 1) "x"
+	else ""
+	endif
+	, service_directory_last_update = format (sd.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, service_directory_last_updater = if(sd.catalog_cd > 0 and sd.updt_id = 0) "0"
+	else p_sd.name_full_formatted
+	endif
+	, primary_synonym = oc.primary_mnemonic
+	, oc_dept_display_name = oc.dept_display_name
+	, orderable_active = ocs.active_ind
+	, orderable_type = evaluate (oc.orderable_type_flag,
+	0,"Normal Orderable",
+          	1,"Normal Orderable",
+          	2,"Supergroup",
+          	3,"CarePlan",
+          	4,"AP Special",
+          	5,"Department Only Orderable",
+          	6,"Order Set",
+          	7,"Home Health Problem",
+          	8,"Multi-ingredient",
+          	9,"Interval Test",
+         	10,"Freetext Orderable")
+	, orders_for_all_synonyms_under_primary = if(o_count.orderable_orders >"0") o_count.orderable_orders
+	else "0"
+	endif
+	, catalog_code = oc.catalog_cd
+	, dept_long_primary_match = if (sd.description = oc.primary_mnemonic) "1"
+	else "0"
+	endif
+	, dept_short_oc_dept_match = if (sd.short_description = oc.dept_display_name) "1"
+	else "0"
+	endif
+	, linked_service_resource = uar_get_code_display (orl.service_resource_cd)
+	, default_service_resource = if (orl.primary_ind = 1 ) "x"
+	else ""
+	endif
+	, service_resource_link_active = if (orl.catalog_cd = 0) ""
+	else cnvtstring (orl.active_ind)
+	endif
+	, service_resource_link_last_update = format (orl.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, service_resource_link_last_updater = if(orl.catalog_cd > 0 and orl.updt_id = 0) "0"
+	else p_orl.name_full_formatted
+	endif
+	, linked_services = count(distinct orl.service_resource_cd) over (partition by oc.catalog_cd)
+	, service_resource_cd = if (orl.catalog_cd = 0) ""
+	else cnvtstring (orl.service_resource_cd)
+	endif
+	, linked_task_assay = uar_get_code_display (ptr.task_assay_cd)
+	, linked_task_assay_req = if (ptr.pending_ind = 1) "x"
+	else ""
+	endif
+	, linked_task_assay_repeat = if (ptr.repeat_ind = 1) "x"
+	else ""
+	endif
+	, linked_task_assay_restrict_display = if (ptr.restrict_display_ind = 1) "x"
+	else ""
+	endif
+	, linked_task_assay_prompt = if (ptr.item_type_flag = 1) "x"
+	else ""
+	endif
+	, linked_task_assay_post_verf = if (ptr.post_prompt_ind = 1) "x"
+	else ""
+	endif
+	, linked_task_assay_prompt_service_resource = if (ptr.catalog_cd > 0  and ptr.prompt_resource_cd = 0) "All"
+	else uar_get_code_display(ptr.prompt_resource_cd)
+	endif
+	, task_assay_link_active = if (ptr.task_assay_cd = 0) ""
+	else cnvtstring(ptr.active_ind)
+	endif
+	, task_assay_link_last_update = format (ptr.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, task_assay_link_last_updater = if(ptr.catalog_cd > 0 and ptr.updt_id = 0) "0"
+	else p_ptr.name_full_formatted
+	endif
+	, linked_task_assays = count(distinct ptr.task_assay_cd) over (partition by oc.catalog_cd)
+	, task_assay_cd = if (ptr.task_assay_cd = 0) ""
+	else cnvtstring(ptr.task_assay_cd)
+	endif
+;	, linked_task_assay_ref_range_specimen = if (rrf.task_assay_cd > 0 and rrf.specimen_type_cd = 0) "(All)"
+;	else uar_get_code_display (rrf.specimen_type_cd)
+;	endif
+;	, linked_task_assay_ref_range_service_resource = if (rrf.task_assay_cd > 0 and rrf.service_resource_cd = 0) "(All)"
+;	else uar_get_code_display (rrf.service_resource_cd)
+;	endif
+;	, linked_task_assay_ref_range_species = if (rrf.task_assay_cd > 0 and rrf.species_cd = 0) "(All)"
+;	else uar_get_code_display (rrf.species_cd)
+;	endif
+;	, linked_task_assay_ref_range_sex = if (rrf.task_assay_cd > 0 and rrf.sex_cd = 0) "(All)"
+;	else uar_get_code_display (rrf.sex_cd)
+;	endif
+;	, linked_task_assay_ref_range_gestation = if (rrf.task_assay_cd > 0 and rrf.gestational_ind = 1) "x"
+;	else ""
+;	endif
+;	, linked_task_assay_ref_range_start_age = if (rrf.task_assay_cd = 0) ""
+;	elseif (uar_get_code_display (rrf.age_from_units_cd) = "Years") cnvtstring(rrf.age_from_minutes/525600)	; minutes/year
+;	elseif (uar_get_code_display (rrf.age_from_units_cd) = "Months") cnvtstring(rrf.age_from_minutes/43200)	; minutes/month
+;	elseif (uar_get_code_display (rrf.age_from_units_cd) = "Weeks") cnvtstring(rrf.age_from_minutes/10080)	; minutes/week
+;	elseif (uar_get_code_display (rrf.age_from_units_cd) = "Days") cnvtstring(rrf.age_from_minutes/1440)	; minutes/day
+;	elseif (uar_get_code_display (rrf.age_from_units_cd) = "Hours") cnvtstring(rrf.age_from_minutes/60)	; minutes/hour
+;	elseif (uar_get_code_display (rrf.age_from_units_cd) = "Seconds") cnvtstring(rrf.age_from_minutes*60)	; seconds/minute
+;	else cnvtstring(rrf.age_from_minutes)
+;	endif
+;	, linked_task_assay_ref_range_units = if (rrf.task_assay_cd > 0 and rrf.age_from_units_cd = 0) "(None)"
+;	else uar_get_code_display (rrf.age_from_units_cd)
+;	endif
+;	, linked_task_assay_ref_range_end_age = if (rrf.task_assay_cd = 0) ""
+;	elseif (uar_get_code_display (rrf.age_to_units_cd) = "Years") cnvtstring(rrf.age_to_minutes/525600)	; minutes/year
+;	elseif (uar_get_code_display (rrf.age_to_units_cd) = "Months") cnvtstring(rrf.age_to_minutes/43200)	; minutes/month
+;	elseif (uar_get_code_display (rrf.age_to_units_cd) = "Weeks") cnvtstring(rrf.age_to_minutes/10080)	; minutes/week
+;	elseif (uar_get_code_display (rrf.age_to_units_cd) = "Days") cnvtstring(rrf.age_to_minutes/1440)	; minutes/day
+;	elseif (uar_get_code_display (rrf.age_to_units_cd) = "Hours") cnvtstring(rrf.age_to_minutes/60)	; minutes/hour
+;	elseif (uar_get_code_display (rrf.age_to_units_cd) = "Seconds") cnvtstring(rrf.age_to_minutes*60)	; seconds/minute
+;	else cnvtstring(rrf.age_to_minutes)
+;	endif
+;	, linked_task_assay_ref_range_units = if (rrf.task_assay_cd > 0 and rrf.age_to_units_cd = 0) "(None)"
+;	else uar_get_code_display (rrf.age_to_units_cd)
+;	endif
+;	, linked_task_assay_ref_range_unknown_age = if (rrf.task_assay_cd > 0 and rrf.unknown_age_ind = 1) "x"
+;	else ""
+;	endif
+;	, linked_task_assay_ref_range_minutes_back = if (rrf.task_assay_cd > 0) cnvtstring(rrf.mins_back)
+;	else ""
+;	endif
+;	, task_assay_ref_range_last_update = format (rrf.updt_dt_tm, "dd/mm/yy hh:mm:ss")
+;	, task_assay_ref_range_last_updater = if(rrf.task_assay_cd > 0 and rrf.updt_id = 0) "0"
+;	else p_rrf.name_full_formatted
+;	endif
+;	, reference_range_factor_id = if (rrf.reference_range_factor_id = 0) ""
+;	else cnvtstring(rrf.reference_range_factor_id)
+;	endif
+	, domain_alignment_comparison_text = if (ocs.active_ind = 1 )
+	build(
+	oc.primary_mnemonic
+	, "|", sd.description
+	, "|", sd.short_description
+	, "|", uar_get_code_display (sd.bb_processing_cd)
+	, "|", sd.specimen_required
+	, if(orl.active_ind = 1) build("|", uar_get_code_display (orl.service_resource_cd)
+	, "|", orl.primary_ind
+	)
+	else ""
+	endif
+	, if(ptr.active_ind = 1) build("|", uar_get_code_display (ptr.task_assay_cd)
+	, "|", ptr.pending_ind
+	, "|", ptr.repeat_ind
+	, "|", ptr.restrict_display_ind
+	, "|", ptr.item_type_flag
+	, "|", ptr.post_prompt_ind
+	, "|", uar_get_code_display (ptr.prompt_resource_cd)
+	)
+	else ""
+	endif
+	)
+	else ""
+	endif
+	, deptorcwizard_rank = dense_rank() over (partition by 0	; no logical database field partition
+	order by
+	if(ocs.mnemonic_type_cd = 2583) cnvtupper(sd.short_description)	; if mnemonic is a Primary, order by departmental display name first
+	else ocs.mnemonic_key_cap	; else order by Direct Care Provider name
+	endif
+	)
+
+from
+	order_catalog oc
+	, (left join order_catalog_synonym ocs on ocs.catalog_cd =  oc.catalog_cd)
+	, (left join service_directory sd on sd.catalog_cd = oc.catalog_cd
+;	and sd.active_ind = 1
+;	and sd.end_effective_dt_tm >= sysdate
+	)
+	, (left join prsnl p_sd on p_sd.person_id = sd.updt_id)
+	, (left join orc_resource_list orl on orl.catalog_cd = oc.catalog_cd
+;	and orl.active_ind = 1
+;	and orl.end_effective_dt_tm >= sysdate
+	)
+	, (left join prsnl p_orl on p_orl.person_id = orl.updt_id)
+	, (left join profile_task_r ptr on ptr.catalog_cd = oc.catalog_cd
+;	and ptr.active_ind = 1
+;	and ptr.end_effective_dt_tm >= sysdate
+	)
+	, (left join prsnl p_ptr on p_ptr.person_id = ptr.updt_id)
+	, (left join reference_range_factor rrf on rrf.task_assay_cd = ptr.task_assay_cd
+	and rrf.end_effective_dt_tm >= sysdate
+	)
+	, (left join prsnl p_rrf on p_rrf.person_id = rrf.updt_id)
+	, (left join (select o.catalog_cd, orderable_orders = count(*) from orders o group by o.catalog_cd) o_count on o_count.catalog_cd = oc.catalog_cd)
+
+plan 	oc
+where	oc.catalog_type_cd = 2513 	; code value for 'Laboratory' from code set 6000
+and	oc.orderable_type_flag not in (2,3,6,8)	; exclude 'Supergroup','CarePlan', 'Order Set', and 'Multi-ingredient' (IV Set) orderables
+;and	cnvtupper (oc.primary_mnemonic) = "Aspirin*"
+;and	cnvtupper (oc.primary_mnemonic) < "M*"	; use these if the audit fails in any domain
+;and	cnvtupper (oc.primary_mnemonic) >= "M*"	; (synonym_rank may be corrupted between the audit divisions)
+;and	oc.catalog_cd = 1234567
+join 	ocs
+join	sd
+join	p_sd
+join	orl
+join	p_orl
+join	ptr
+join	p_ptr
+join	rrf
+join	p_rrf
+join	o_count
+
+order by
+	if(ocs.mnemonic_type_cd = 2583) cnvtupper(sd.short_description)	; if mnemonic is a Primary, order by departmental display name first
+	else ocs.mnemonic_key_cap	; else order by Direct Care Provider name
+	endif
+	, ocs.synonym_id
+	, orl.sequence
+	, uar_get_code_display (ptr.task_assay_cd)
+	, 0
+
+with	time = 60

@@ -18,41 +18,50 @@ with OUTDEV
 
 ;VARIABLES SAVED IN PROGRAM
     DECLARE SYNONYM_ID_VAR = F8 with NoConstant(0.00),Protect
-    DECLARE CATALOG_CD_VAR = F8 with NoConstant(0.00),Protect
-    DECLARE CATALOG_TYPE_VAR = VC with NoConstant(" "),Protect
-    DECLARE ACTIVITY_TYPE_VAR = VC with NoConstant(" "),Protect
-    DECLARE ACTIVITY_SUB_TYPE_VAR = VC with NoConstant(" "),Protect
-    DECLARE DESCRIPTION_VAR = VC with NoConstant(" "),Protect
-    DECLARE DEPT_DISPLAY_NAME_VAR = VC with NoConstant(" "),Protect
-    DECLARE SYNONYM_TYPE_VAR = VC with NoConstant(" "),Protect
-    DECLARE SYNONYM_NAME_VAR = VC with NoConstant(" "),Protect
-    DECLARE ACTIVE_CHECKBOX_VAR = I2 with NoConstant(0),Protect
-    DECLARE HIDE_CHECKBOX_VAR = VC with NoConstant(" "),Protect
-    DECLARE VIRTUAL_VIEWS_VAR = VC with NoConstant(""),Protect
-
-    DECLARE DUP_ACTIVE_IND_VAR = I2 with NoConstant(0),Protect
-    DECLARE DUP_HIT_ACTION_VAR = VC with NoConstant(" "),Protect
-    DECLARE DUP_MIN_AHEAD_VAR = I4 with NoConstant(0),Protect
-    DECLARE DUP_MIN_AHEAD_ACTION_VAR = VC with NoConstant(" "),Protect
-    DECLARE DUP_MIN_BEHIND_VAR = I4 with NoConstant(0),Protect
-    DECLARE DUP_MIN_BEHIND_ACTION_VAR = VC with NoConstant(" "),Protect
-
-    ; FOR EXISTING SYNONYM COMPARING TO
     DECLARE SYNONYM_ID_VAR_2 = F8 with NoConstant(0.00),Protect
+    DECLARE CATALOG_CD_VAR = F8 with NoConstant(0.00),Protect
     DECLARE CATALOG_CD_VAR_2 = F8 with NoConstant(0.00),Protect
-    DECLARE CATALOG_TYPE_VAR_2 = VC with NoConstant(" "),Protect
-    DECLARE ACTIVITY_TYPE_VAR_2 = VC with NoConstant(" "),Protect
-    DECLARE ACTIVITY_SUB_TYPE_VAR_2 = VC with NoConstant(" "),Protect
-    DECLARE DESCRIPTION_VAR_2 = VC with NoConstant(" "),Protect
-    DECLARE DEPT_DISPLAY_NAME_VAR_2 = VC with NoConstant(" "),Protect
-    DECLARE SYNONYM_TYPE_VAR_2 = VC with NoConstant(" "),Protect
-    DECLARE SYNONYM_NAME_VAR_2 = VC with NoConstant(" "),Protect
+    DECLARE CATALOG_TYPE_VAR = VC with NoConstant(""),Protect
+    DECLARE CATALOG_TYPE_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE ACTIVITY_TYPE_VAR = VC with NoConstant(""),Protect
+    DECLARE ACTIVITY_TYPE_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE ACTIVITY_SUB_TYPE_VAR = VC with NoConstant(""),Protect
+    DECLARE ACTIVITY_SUB_TYPE_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE DESCRIPTION_VAR = VC with NoConstant(""),Protect
+    DECLARE DESCRIPTION_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE DEPT_DISPLAY_NAME_VAR = VC with NoConstant(""),Protect
+    DECLARE DEPT_DISPLAY_NAME_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE SYNONYM_TYPE_VAR = VC with NoConstant(""),Protect
+    DECLARE SYNONYM_TYPE_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE SYNONYM_NAME_VAR = VC with NoConstant(""),Protect
+    DECLARE SYNONYM_NAME_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE ACTIVE_CHECKBOX_VAR = I2 with NoConstant(0),Protect
     DECLARE ACTIVE_CHECKBOX_VAR_2 = I2 with NoConstant(0),Protect
-    DECLARE HIDE_CHECKBOX_VAR_2 = VC with NoConstant(" "),Protect
+    DECLARE HIDE_CHECKBOX_VAR = VC with NoConstant(""),Protect
+    DECLARE HIDE_CHECKBOX_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE VIRTUAL_VIEWS_VAR = VC with NoConstant(""),Protect
     DECLARE VIRTUAL_VIEWS_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE DUP_ACTIVE_IND_VAR = I2 with NoConstant(0),Protect
+    DECLARE DUP_ACTIVE_IND_VAR_2 = I2 with NoConstant(0),Protect
+    DECLARE DUP_HIT_ACTION_VAR = VC with NoConstant(""),Protect
+    DECLARE DUP_HIT_ACTION_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE DUP_MIN_AHEAD_VAR = I4 with NoConstant(0),Protect
+    DECLARE DUP_MIN_AHEAD_VAR_2 = I4 with NoConstant(0),Protect
+    DECLARE DUP_MIN_AHEAD_ACTION_VAR = VC with NoConstant(""),Protect
+    DECLARE DUP_MIN_AHEAD_ACTION_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE DUP_MIN_BEHIND_VAR = I4 with NoConstant(0),Protect
+    DECLARE DUP_MIN_BEHIND_VAR_2 = I4 with NoConstant(0),Protect
+    DECLARE DUP_MIN_BEHIND_ACTION_VAR = VC with NoConstant(""),Protect
+    DECLARE DUP_MIN_BEHIND_ACTION_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE ACCESSION_CLASS_VAR = VC with NoConstant(""),Protect
+    DECLARE ACCESSION_CLASS_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE DEFAULT_COLLECTION_METHOD_VAR = VC with NoConstant(""),Protect
+    DECLARE DEFAULT_COLLECTION_METHOD_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE SPECIMEN_TYPE_VAR = VC with NoConstant(""),Protect
+    DECLARE SPECIMEN_TYPE_VAR_2 = VC with NoConstant(""),Protect
 
 ;HTML VARIABLES
-    DECLARE FINALHTML_VAR = VC with NoConstant(" "),Protect
+    DECLARE FINALHTML_VAR = VC with NoConstant(""),Protect
 
 ; Query for New Synonym
     SELECT INTO "NL:"
@@ -91,44 +100,6 @@ with OUTDEV
         ACTIVE_CHECKBOX_VAR = ACTIVE_CHECKBOX
         HIDE_CHECKBOX_VAR = HIDE_CHECKBOX
     WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
-
-;VIRTUAL VIEWS FOR NEW SYNONYM
-    SELECT INTO "NL:"
-        VIRTUAL_VIEW = UAR_GET_CODE_DISPLAY(O_F_R.FACILITY_CD)
-    FROM
-        OCS_FACILITY_R  O_F_R
-    WHERE
-        O_F_R.SYNONYM_ID = SYNONYM_ID_VAR
-    ORDER BY
-        O_F_R.FACILITY_CD DESC
-    HEAD REPORT O_F_R.SYNONYM_ID
-    DETAIL
-        VIRTUAL_VIEWS_VAR = BUILD2(VIRTUAL_VIEWS_VAR, VIRTUAL_VIEW, "<BR>")
-    WITH TIME = 10
-
-; Duplicate Checking for New synonym
-    SELECT INTO "NL:"
-        DUP_ACTIVE_IND = D_C.ACTIVE_IND
-        , DUP_HIT_ACTION = UAR_GET_CODE_DISPLAY(D_C.EXACT_HIT_ACTION_CD)
-        , DUP_MIN_AHEAD = D_C.MIN_AHEAD
-        , DUP_MIN_AHEAD_ACTION =  UAR_GET_CODE_DISPLAY(D_C.MIN_AHEAD_ACTION_CD)
-        , DUP_MIN_BEHIND = D_C.MIN_BEHIND
-        , DUP_MIN_BEHIND_ACTION = UAR_GET_CODE_DISPLAY(D_C.MIN_BEHIND_ACTION_CD)
-    FROM
-        DUP_CHECKING D_C
-    WHERE
-        D_C.CATALOG_CD = CATALOG_CD_VAR
-        AND D_C.ACTIVE_IND = 1
-    HEAD REPORT
-        DUP_ACTIVE_IND_VAR = DUP_ACTIVE_IND
-        DUP_HIT_ACTION_VAR = DUP_HIT_ACTION
-        DUP_MIN_AHEAD_VAR = DUP_MIN_AHEAD
-        DUP_MIN_AHEAD_ACTION_VAR = DUP_MIN_AHEAD_ACTION
-        DUP_MIN_BEHIND_VAR = DUP_MIN_BEHIND
-        DUP_MIN_BEHIND_ACTION_VAR = DUP_MIN_BEHIND_ACTION
-    WITH TIME = 10
-
-
 
 ; Query for Existing Synonym
     SELECT INTO "NL:"
@@ -169,6 +140,20 @@ with OUTDEV
 
     WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
 
+;VIRTUAL VIEWS FOR NEW SYNONYM
+    SELECT INTO "NL:"
+        VIRTUAL_VIEW = UAR_GET_CODE_DISPLAY(O_F_R.FACILITY_CD)
+    FROM
+        OCS_FACILITY_R  O_F_R
+    WHERE
+        O_F_R.SYNONYM_ID = SYNONYM_ID_VAR
+    ORDER BY
+        O_F_R.FACILITY_CD DESC
+    HEAD REPORT O_F_R.SYNONYM_ID
+    DETAIL
+        VIRTUAL_VIEWS_VAR = BUILD2(VIRTUAL_VIEWS_VAR, VIRTUAL_VIEW, "<BR>")
+    WITH TIME = 10
+
 ;VIRTUAL VIEWS FOR EXISTING SYNONYM
     SELECT INTO "NL:"
         VIRTUAL_VIEW = UAR_GET_CODE_DISPLAY(O_F_R.FACILITY_CD)
@@ -181,6 +166,78 @@ with OUTDEV
     HEAD REPORT O_F_R.SYNONYM_ID
     DETAIL
         VIRTUAL_VIEWS_VAR_2 = BUILD2(VIRTUAL_VIEWS_VAR_2, VIRTUAL_VIEW, "<BR>")
+    WITH TIME = 10
+
+; Duplicate Checking for New synonym
+    SELECT INTO "NL:"
+        DUP_ACTIVE_IND = D_C.ACTIVE_IND
+        , DUP_HIT_ACTION = UAR_GET_CODE_DISPLAY(D_C.EXACT_HIT_ACTION_CD)
+        , DUP_MIN_AHEAD = D_C.MIN_AHEAD
+        , DUP_MIN_AHEAD_ACTION =  UAR_GET_CODE_DISPLAY(D_C.MIN_AHEAD_ACTION_CD)
+        , DUP_MIN_BEHIND = D_C.MIN_BEHIND
+        , DUP_MIN_BEHIND_ACTION = UAR_GET_CODE_DISPLAY(D_C.MIN_BEHIND_ACTION_CD)
+    FROM
+        DUP_CHECKING D_C
+    WHERE
+        D_C.CATALOG_CD = CATALOG_CD_VAR
+        AND D_C.ACTIVE_IND = 1
+    HEAD REPORT
+        DUP_ACTIVE_IND_VAR = DUP_ACTIVE_IND
+        DUP_HIT_ACTION_VAR = DUP_HIT_ACTION
+        DUP_MIN_AHEAD_VAR = DUP_MIN_AHEAD
+        DUP_MIN_AHEAD_ACTION_VAR = DUP_MIN_AHEAD_ACTION
+        DUP_MIN_BEHIND_VAR = DUP_MIN_BEHIND
+        DUP_MIN_BEHIND_ACTION_VAR = DUP_MIN_BEHIND_ACTION
+    WITH TIME = 10
+
+; Duplicate Checking for existing synonym
+    SELECT INTO "NL:"
+        DUP_ACTIVE_IND = D_C.ACTIVE_IND
+        , DUP_HIT_ACTION = UAR_GET_CODE_DISPLAY(D_C.EXACT_HIT_ACTION_CD)
+        , DUP_MIN_AHEAD = D_C.MIN_AHEAD
+        , DUP_MIN_AHEAD_ACTION =  UAR_GET_CODE_DISPLAY(D_C.MIN_AHEAD_ACTION_CD)
+        , DUP_MIN_BEHIND = D_C.MIN_BEHIND
+        , DUP_MIN_BEHIND_ACTION = UAR_GET_CODE_DISPLAY(D_C.MIN_BEHIND_ACTION_CD)
+    FROM
+        DUP_CHECKING D_C
+    WHERE
+        D_C.CATALOG_CD = CATALOG_CD_VAR_2
+        AND D_C.ACTIVE_IND = 1
+    HEAD REPORT
+        DUP_ACTIVE_IND_VAR_2 = DUP_ACTIVE_IND
+        DUP_HIT_ACTION_VAR_2 = DUP_HIT_ACTION
+        DUP_MIN_AHEAD_VAR_2 = DUP_MIN_AHEAD
+        DUP_MIN_AHEAD_ACTION_VAR_2 = DUP_MIN_AHEAD_ACTION
+        DUP_MIN_BEHIND_VAR_2 = DUP_MIN_BEHIND
+        DUP_MIN_BEHIND_ACTION_VAR_2 = DUP_MIN_BEHIND_ACTION
+    WITH TIME = 10
+
+; Collection Requirements For New Synonym
+    SELECT INTO "NL:"
+        ACCESSION_CLASS = UAR_GET_CODE_DISPLAY(P.ACCESSION_CLASS_CD)
+        , DEFAULT_COLLECTION_METHOD = UAR_GET_CODE_DISPLAY(P.DEFAULT_COLLECTION_METHOD_CD)
+        , SPECIMEN_TYPE = UAR_GET_CODE_DISPLAY(P.SPECIMEN_TYPE_CD)
+    FROM
+        PROCEDURE_SPECIMEN_TYPE   P
+    WHERE P.CATALOG_CD = CATALOG_CD_VAR
+    HEAD REPORT
+        ACCESSION_CLASS_VAR = ACCESSION_CLASS
+        DEFAULT_COLLECTION_METHOD_VAR = DEFAULT_COLLECTION_METHOD
+        SPECIMEN_TYPE_VAR = SPECIMEN_TYPE
+    WITH TIME = 10
+
+; Collection Requirements For Existing Synonym
+    SELECT INTO "NL:"
+        ACCESSION_CLASS = UAR_GET_CODE_DISPLAY(P.ACCESSION_CLASS_CD)
+        , DEFAULT_COLLECTION_METHOD = UAR_GET_CODE_DISPLAY(P.DEFAULT_COLLECTION_METHOD_CD)
+        , SPECIMEN_TYPE = UAR_GET_CODE_DISPLAY(P.SPECIMEN_TYPE_CD)
+    FROM
+        PROCEDURE_SPECIMEN_TYPE   P
+    WHERE P.CATALOG_CD = CATALOG_CD_VAR_2
+    HEAD REPORT
+        ACCESSION_CLASS_VAR_2 = ACCESSION_CLASS
+        DEFAULT_COLLECTION_METHOD_VAR_2 = DEFAULT_COLLECTION_METHOD
+        SPECIMEN_TYPE_VAR_2 = SPECIMEN_TYPE
     WITH TIME = 10
 
 ;HTML
@@ -297,36 +354,36 @@ with OUTDEV
                 ,'<tr>'
                     ,'<td>Orderable Status Checkbox</td>'
                     ,'<td>', DUP_ACTIVE_IND_VAR, '</td>'
-                    ,'<td>', DUP_ACTIVE_IND_VAR, '</td>'
+                    ,'<td>', DUP_ACTIVE_IND_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
                     ,'<td>Behind Action</td>'
                     ,'<td>', DUP_MIN_BEHIND_ACTION_VAR, '</td>'
-                    ,'<td>', DUP_MIN_BEHIND_ACTION_VAR, '</td>'
+                    ,'<td>', DUP_MIN_BEHIND_ACTION_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
                     ,'<td>Behind Min</td>'
                     ,'<td>', DUP_MIN_BEHIND_VAR, '</td>'
-                    ,'<td>', DUP_MIN_BEHIND_VAR, '</td>'
+                    ,'<td>', DUP_MIN_BEHIND_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
                     ,'<td>Ahead Action</td>'
                     ,'<td>', DUP_MIN_AHEAD_ACTION_VAR, '</td>'
-                    ,'<td>', DUP_MIN_AHEAD_ACTION_VAR, '</td>'
+                    ,'<td>', DUP_MIN_AHEAD_ACTION_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
                     ,'<td>Ahead Min</td>'
                     ,'<td>', DUP_MIN_AHEAD_VAR, '</td>'
-                    ,'<td>', DUP_MIN_AHEAD_VAR, '</td>'
+                    ,'<td>', DUP_MIN_AHEAD_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
                     ,'<td>Exact Action</td>'
                     ,'<td>', DUP_HIT_ACTION_VAR, '</td>'
-                    ,'<td>', DUP_HIT_ACTION_VAR, '</td>'
+                    ,'<td>', DUP_HIT_ACTION_VAR_2, '</td>'
                 ,'</tr>'
             ,'</tbody>'
         ,'</table>'
-    ,'<h2>DCP Tools - Order Review Tab</h2>'
+    ,'<h2>Collection Requirements (collreqmaint)</h2>'
         ,'<table>'
             ,'<thead>'
                 ,'<tr>'
@@ -337,17 +394,24 @@ with OUTDEV
             ,'</thead>'
             ,'<tbody>'
                 ,'<tr>'
-                    ,'<td>OCS Synonym id</td>'
-                    ,'<td>', SYNONYM_ID_VAR, '</td>'
-                    ,'<td>', SYNONYM_ID_VAR_2, '</td>'
+                    ,'<td>Specimen Type</td>'
+                    ,'<td>', SPECIMEN_TYPE_VAR, '</td>'
+                    ,'<td>', SPECIMEN_TYPE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>Catalog Type (DCP Tools)</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR_2, '</td>'
+                    ,'<td>Accession_Class</td>'
+                    ,'<td>', ACCESSION_CLASS_VAR, '</td>'
+                    ,'<td>', ACCESSION_CLASS_VAR_2, '</td>'
                 ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Default Collection Method</td>'
+                    ,'<td>', DEFAULT_COLLECTION_METHOD_VAR, '</td>'
+                    ,'<td>', DEFAULT_COLLECTION_METHOD_VAR_2, '</td>'
+                ,'</tr>'
+
             ,'</tbody>'
         ,'</table>'
+        ,'<BR><BR><BR>'
         ,'<div class="end-report">END REPORT</div>'
     ,'</body>'
     ,'</html>'
