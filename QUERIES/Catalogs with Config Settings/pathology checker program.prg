@@ -59,6 +59,22 @@ with OUTDEV
     DECLARE DEFAULT_COLLECTION_METHOD_VAR_2 = VC with NoConstant(""),Protect
     DECLARE SPECIMEN_TYPE_VAR = VC with NoConstant(""),Protect
     DECLARE SPECIMEN_TYPE_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE SERVICE_RESOURCE_VAR = VC with NoConstant(""),Protect
+    DECLARE SERVICE_RESOURCE_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE AGE_FROM_VAR = I4 with NoConstant(0),Protect
+    DECLARE AGE_FROM_VAR_2 = I4 with NoConstant(0),Protect
+    DECLARE AGE_TO_VAR = I4 with NoConstant(0),Protect
+    DECLARE AGE_TO_VAR_2 = I4 with NoConstant(0),Protect
+    DECLARE COLL_PRIORITY_VAR = VC with NoConstant(""),Protect
+    DECLARE COLL_PRIORITY_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE MIN_VOL_VAR = F8 with NoConstant(0.00),Protect
+    DECLARE MIN_VOL_VAR_2 = F8 with NoConstant(0.00),Protect
+    DECLARE CONTAINER_VAR = VC with NoConstant(""),Protect
+    DECLARE CONTAINER_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE COLLECTION_CLASS_VAR = VC with NoConstant(""),Protect
+    DECLARE COLLECTION_CLASS_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE SPECIAL_HANDLING_VAR = VC with NoConstant(""),Protect
+    DECLARE SPECIAL_HANDLING_VAR_2 = VC with NoConstant(""),Protect
 
 ;HTML VARIABLES
     DECLARE FINALHTML_VAR = VC with NoConstant(""),Protect
@@ -226,6 +242,32 @@ with OUTDEV
         SPECIMEN_TYPE_VAR = SPECIMEN_TYPE
     WITH TIME = 10
 
+    SELECT INTO "NL:"
+        SERVICE_RESOURCE = UAR_GET_CODE_DISPLAY(C.SERVICE_RESOURCE_CD)
+        , AGE_FROM = C.AGE_FROM_MINUTES
+        , AGE_TO = C.AGE_TO_MINUTES
+        , COLL_PRIORITY = IF (C.COLLECTION_PRIORITY_CD = 0) "(All)"
+            ELSE UAR_GET_CODE_DISPLAY(C.COLLECTION_PRIORITY_CD)
+            ENDIF
+        , MIN_VOL = C.MIN_VOL
+        , CONTAINER = UAR_GET_CODE_DISPLAY(C.SPEC_CNTNR_CD)
+        , COLLECTION_CLASS = UAR_GET_CODE_DISPLAY(C.COLL_CLASS_CD)
+        , SPECIAL_HANDLING = UAR_GET_CODE_DISPLAY(C.SPEC_HNDL_CD)
+    FROM
+        COLLECTION_INFO_QUALIFIERS   C
+    WHERE C.CATALOG_CD = CATALOG_CD_VAR
+    HEAD REPORT
+        SERVICE_RESOURCE_VAR = SERVICE_RESOURCE
+        AGE_FROM_VAR = AGE_FROM
+        AGE_TO_VAR = AGE_TO
+        COLL_PRIORITY_VAR = COLL_PRIORITY
+        MIN_VOL_VAR = MIN_VOL
+        CONTAINER_VAR = CONTAINER
+        COLLECTION_CLASS_VAR = COLLECTION_CLASS
+        SPECIAL_HANDLING_VAR = SPECIAL_HANDLING
+    WITH TIME = 10
+
+
 ; Collection Requirements For Existing Synonym
     SELECT INTO "NL:"
         ACCESSION_CLASS = UAR_GET_CODE_DISPLAY(P.ACCESSION_CLASS_CD)
@@ -238,6 +280,31 @@ with OUTDEV
         ACCESSION_CLASS_VAR_2 = ACCESSION_CLASS
         DEFAULT_COLLECTION_METHOD_VAR_2 = DEFAULT_COLLECTION_METHOD
         SPECIMEN_TYPE_VAR_2 = SPECIMEN_TYPE
+    WITH TIME = 10
+
+    SELECT INTO "NL:"
+        SERVICE_RESOURCE = UAR_GET_CODE_DISPLAY(C.SERVICE_RESOURCE_CD)
+        , AGE_FROM = C.AGE_FROM_MINUTES
+        , AGE_TO = C.AGE_TO_MINUTES
+        , COLL_PRIORITY = IF (C.COLLECTION_PRIORITY_CD = 0) "(All)"
+            ELSE UAR_GET_CODE_DISPLAY(C.COLLECTION_PRIORITY_CD)
+            ENDIF
+        , MIN_VOL = C.MIN_VOL
+        , CONTAINER = UAR_GET_CODE_DISPLAY(C.SPEC_CNTNR_CD)
+        , COLLECTION_CLASS = UAR_GET_CODE_DISPLAY(C.COLL_CLASS_CD)
+        , SPECIAL_HANDLING = UAR_GET_CODE_DISPLAY(C.SPEC_HNDL_CD)
+    FROM
+        COLLECTION_INFO_QUALIFIERS   C
+    WHERE C.CATALOG_CD = CATALOG_CD_VAR_2
+    HEAD REPORT
+        SERVICE_RESOURCE_VAR_2 = SERVICE_RESOURCE
+        AGE_FROM_VAR_2 = AGE_FROM
+        AGE_TO_VAR_2 = AGE_TO
+        COLL_PRIORITY_VAR_2 = COLL_PRIORITY
+        MIN_VOL_VAR_2 = MIN_VOL
+        CONTAINER_VAR_2 = CONTAINER
+        COLLECTION_CLASS_VAR_2 = COLLECTION_CLASS
+        SPECIAL_HANDLING_VAR_2 = SPECIAL_HANDLING
     WITH TIME = 10
 
 ;HTML
@@ -408,7 +475,41 @@ with OUTDEV
                     ,'<td>', DEFAULT_COLLECTION_METHOD_VAR, '</td>'
                     ,'<td>', DEFAULT_COLLECTION_METHOD_VAR_2, '</td>'
                 ,'</tr>'
-
+                ,'<tr>'
+                    ,'<td>Age From</td>'
+                    ,'<td>', AGE_FROM_VAR, '</td>'
+                    ,'<td>', AGE_FROM_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Age To</td>'
+                    ,'<td>', AGE_TO_VAR, '</td>'
+                    ,'<td>', AGE_TO_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Coll Priority</td>'
+                    ,'<td>', COLL_PRIORITY_VAR, '</td>'
+                    ,'<td>', COLL_PRIORITY_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Min Vol</td>'
+                    ,'<td>', MIN_VOL_VAR, '</td>'
+                    ,'<td>', MIN_VOL_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Container</td>'
+                    ,'<td>', CONTAINER_VAR, '</td>'
+                    ,'<td>', CONTAINER_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Collection Class</td>'
+                    ,'<td>', COLLECTION_CLASS_VAR, '</td>'
+                    ,'<td>', COLLECTION_CLASS_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Special Handling</td>'
+                    ,'<td>', SPECIAL_HANDLING_VAR, '</td>'
+                    ,'<td>', SPECIAL_HANDLING_VAR_2, '</td>'
+                ,'</tr>'
             ,'</tbody>'
         ,'</table>'
         ,'<BR><BR><BR>'
