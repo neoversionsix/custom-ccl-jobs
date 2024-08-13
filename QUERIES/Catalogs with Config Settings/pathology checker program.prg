@@ -76,6 +76,42 @@ with OUTDEV
 
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
 
+
+; Query for Existing Synonym
+    SELECT INTO "NL:"
+        CATALOG_TYPE = UAR_GET_CODE_DISPLAY(O_C.CATALOG_TYPE_CD)
+        , ACTIVITY_TYPE = UAR_GET_CODE_DISPLAY(O_C.ACTIVITY_TYPE_CD)
+        , ACTIVITY_SUB_TYPE = UAR_GET_CODE_DISPLAY(O_C.ACTIVITY_SUBTYPE_CD)
+        , DESCRIPTION = O_C.DESCRIPTION
+        , DEPT_DISPLAY_NAME = O_C.DEPT_DISPLAY_NAME
+        , SYNONYM_TYPE = UAR_GET_CODE_DISPLAY(O_C_S.MNEMONIC_TYPE_CD)
+        , SYNONYM_NAME = O_C_S.MNEMONIC
+        , ACTIVE_CHECKBOX = O_C_S.ACTIVE_IND
+        , HIDE_CHECKBOX = EVALUATE(O_C_S.HIDE_FLAG, 1, "HIDDEN", 0, "NOT HIDDED")
+    FROM
+        ORDER_CATALOG   O_C
+        , ORDER_CATALOG_SYNONYM   O_C_S
+
+    PLAN O_C_S ; ORDER_CATALOG_SYNONYM
+        WHERE CNVTUPPER(O_C_S.MNEMONIC_KEY_CAP) = PATSTRING(SYNONYM_NAME_SEARCH_COMPARE_VAR)
+
+    JOIN O_C ; ORDER_CATALOG
+        WHERE O_C.CATALOG_CD = O_C_S.CATALOG_CD
+            AND O_C.CATALOG_TYPE_CD = 2513 ; Laboratory
+
+    HEAD REPORT ; Setting varibles using info retrieved from the Database in SELECT Seciton
+        CATALOG_TYPE_VAR_2 = CATALOG_TYPE
+        ACTIVITY_TYPE_VAR_2 = ACTIVITY_TYPE
+        ACTIVITY_SUB_TYPE_VAR_2 = ACTIVITY_SUB_TYPE
+        DESCRIPTION_VAR_2 = DESCRIPTION
+        DEPT_DISPLAY_NAME_VAR_2 = DEPT_DISPLAY_NAME
+        SYNONYM_TYPE_VAR_2 = SYNONYM_TYPE
+        SYNONYM_NAME_VAR_2 = SYNONYM_NAME
+        ACTIVE_CHECKBOX_VAR_2 = ACTIVE_CHECKBOX
+        HIDE_CHECKBOX_VAR_2 = HIDE_CHECKBOX
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
+
 ;HTML
     SET FINALHTML_VAR = BUILD2(
     "<!DOCTYPE html>"
@@ -133,49 +169,49 @@ WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
             ,'</thead>'
             ,'<tbody>'
                 ,'<tr>'
-                    ,'<td>CATALOG TYPE</td>'
+                    ,'<td>Catalog Type (DCP Tools)</td>'
                     ,'<td>', CATALOG_TYPE_VAR, '</td>'
                     ,'<td>', CATALOG_TYPE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>ACTIVITY_TYPE</td>'
+                    ,'<td>Activity Type (DCP Tools)</td>'
                     ,'<td>', ACTIVITY_TYPE_VAR, '</td>'
                     ,'<td>', ACTIVITY_TYPE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>THYROID_FUNC</td>'
+                    ,'<td>Activity Sub Type (DCP Tools)</td>'
                     ,'<td>', ACTIVITY_SUB_TYPE_VAR, '</td>'
                     ,'<td>', ACTIVITY_SUB_TYPE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>LIVER_ENZYMES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
+                    ,'<td>Description (DCP Tools)</td>'
+                    ,'<td>', DESCRIPTION_VAR, '</td>'
+                    ,'<td>', DESCRIPTION_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
+                    ,'<td>Department Display Name (DCP Tools)</td>'
+                    ,'<td>', DEPT_DISPLAY_NAME_VAR, '</td>'
+                    ,'<td>', DEPT_DISPLAY_NAME_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
+                    ,'<td>Synonym Type (DCP Tools) </td>'
+                    ,'<td>', SYNONYM_TYPE_VAR, '</td>'
+                    ,'<td>', SYNONYM_TYPE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
+                    ,'<td>Synonym Name (DCP Tools)/td>'
+                    ,'<td>', SYNONYM_NAME_VAR, '</td>'
+                    ,'<td>', SYNONYM_NAME_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
+                    ,'<td>Active Checkbox (DCP)</td>'
+                    ,'<td>', ACTIVE_CHECKBOX_VAR, '</td>'
+                    ,'<td>', ACTIVE_CHECKBOX_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>ELECTROLYTES</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
-                    ,'<td>', CATALOG_TYPE_VAR, '</td>'
+                    ,'<td>Didden Checkbox (DCP)</td>'
+                    ,'<td>', HIDE_CHECKBOX_VAR, '</td>'
+                    ,'<td>', HIDE_CHECKBOX_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
                     ,'<td>ELECTROLYTES</td>'
