@@ -18,6 +18,7 @@ with OUTDEV
 
 ;VARIABLES SAVED IN PROGRAM
     DECLARE SYNONYM_ID_VAR = F8 with NoConstant(0.00),Protect
+    DECLARE CATALOG_CD_VAR = F8 with NoConstant(0.00),Protect
     DECLARE CATALOG_TYPE_VAR = VC with NoConstant(" "),Protect
     DECLARE ACTIVITY_TYPE_VAR = VC with NoConstant(" "),Protect
     DECLARE ACTIVITY_SUB_TYPE_VAR = VC with NoConstant(" "),Protect
@@ -29,8 +30,16 @@ with OUTDEV
     DECLARE HIDE_CHECKBOX_VAR = VC with NoConstant(" "),Protect
     DECLARE VIRTUAL_VIEWS_VAR = VC with NoConstant(""),Protect
 
+    DECLARE DUP_ACTIVE_IND_VAR = I2 with NoConstant(0),Protect
+    DECLARE DUP_HIT_ACTION_VAR = VC with NoConstant(" "),Protect
+    DECLARE DUP_MIN_AHEAD_VAR = I4 with NoConstant(0),Protect
+    DECLARE DUP_MIN_AHEAD_ACTION_VAR = VC with NoConstant(" "),Protect
+    DECLARE DUP_MIN_BEHIND_VAR = I4 with NoConstant(0),Protect
+    DECLARE DUP_MIN_BEHIND_ACTION_VAR = VC with NoConstant(" "),Protect
+
     ; FOR EXISTING SYNONYM COMPARING TO
     DECLARE SYNONYM_ID_VAR_2 = F8 with NoConstant(0.00),Protect
+    DECLARE CATALOG_CD_VAR_2 = F8 with NoConstant(0.00),Protect
     DECLARE CATALOG_TYPE_VAR_2 = VC with NoConstant(" "),Protect
     DECLARE ACTIVITY_TYPE_VAR_2 = VC with NoConstant(" "),Protect
     DECLARE ACTIVITY_SUB_TYPE_VAR_2 = VC with NoConstant(" "),Protect
@@ -48,6 +57,7 @@ with OUTDEV
 ; Query for New Synonym
     SELECT INTO "NL:"
         SYNONYM_ID = O_C_S.SYNONYM_ID
+        , CATALOG_CD = O_C_S.CATALOG_CD
         , CATALOG_TYPE = UAR_GET_CODE_DISPLAY(O_C.CATALOG_TYPE_CD)
         , ACTIVITY_TYPE = UAR_GET_CODE_DISPLAY(O_C.ACTIVITY_TYPE_CD)
         , ACTIVITY_SUB_TYPE = UAR_GET_CODE_DISPLAY(O_C.ACTIVITY_SUBTYPE_CD)
@@ -70,6 +80,7 @@ with OUTDEV
 
     HEAD REPORT ; Setting varibles using info retrieved from the Database in SELECT Seciton
         SYNONYM_ID_VAR = SYNONYM_ID
+        CATALOG_CD_VAR = CATALOG_CD
         CATALOG_TYPE_VAR = CATALOG_TYPE
         ACTIVITY_TYPE_VAR = ACTIVITY_TYPE
         ACTIVITY_SUB_TYPE_VAR = ACTIVITY_SUB_TYPE
@@ -95,11 +106,34 @@ with OUTDEV
         VIRTUAL_VIEWS_VAR = BUILD2(VIRTUAL_VIEWS_VAR, VIRTUAL_VIEW, "<BR>")
     WITH TIME = 10
 
+; Duplicate Checking for New synonym
+    SELECT INTO "NL:"
+        DUP_ACTIVE_IND = D_C.ACTIVE_IND
+        , DUP_HIT_ACTION = UAR_GET_CODE_DISPLAY(D_C.EXACT_HIT_ACTION_CD)
+        , DUP_MIN_AHEAD = D_C.MIN_AHEAD
+        , DUP_MIN_AHEAD_ACTION =  UAR_GET_CODE_DISPLAY(D_C.MIN_AHEAD_ACTION_CD)
+        , DUP_MIN_BEHIND = D_C.MIN_BEHIND
+        , DUP_MIN_BEHIND_ACTION = UAR_GET_CODE_DISPLAY(D_C.MIN_BEHIND_ACTION_CD)
+    FROM
+        DUP_CHECKING D_C
+    WHERE
+        D_C.CATALOG_CD = CATALOG_CD_VAR
+        AND D_C.ACTIVE_IND = 1
+    HEAD REPORT
+        DUP_ACTIVE_IND_VAR = DUP_ACTIVE_IND
+        DUP_HIT_ACTION_VAR = DUP_HIT_ACTION
+        DUP_MIN_AHEAD_VAR = DUP_MIN_AHEAD
+        DUP_MIN_AHEAD_ACTION_VAR = DUP_MIN_AHEAD_ACTION
+        DUP_MIN_BEHIND_VAR = DUP_MIN_BEHIND
+        DUP_MIN_BEHIND_ACTION_VAR = DUP_MIN_BEHIND_ACTION
+    WITH TIME = 10
+
 
 
 ; Query for Existing Synonym
     SELECT INTO "NL:"
         SYNONYM_ID = O_C_S.SYNONYM_ID
+        , CATALOG_CD = O_C_S.CATALOG_CD
         , CATALOG_TYPE = UAR_GET_CODE_DISPLAY(O_C.CATALOG_TYPE_CD)
         , ACTIVITY_TYPE = UAR_GET_CODE_DISPLAY(O_C.ACTIVITY_TYPE_CD)
         , ACTIVITY_SUB_TYPE = UAR_GET_CODE_DISPLAY(O_C.ACTIVITY_SUBTYPE_CD)
@@ -122,6 +156,7 @@ with OUTDEV
 
     HEAD REPORT ; Setting varibles using info retrieved from the Database in SELECT Seciton
         SYNONYM_ID_VAR_2 = SYNONYM_ID
+        CATALOG_CD_VAR_2 = CATALOG_CD
         CATALOG_TYPE_VAR_2 = CATALOG_TYPE
         ACTIVITY_TYPE_VAR_2 = ACTIVITY_TYPE
         ACTIVITY_SUB_TYPE_VAR_2 = ACTIVITY_SUB_TYPE
@@ -210,37 +245,37 @@ with OUTDEV
                     ,'<td>', SYNONYM_ID_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>Catalog Type (DCP Tools)</td>'
+                    ,'<td>Catalog Type</td>'
                     ,'<td>', CATALOG_TYPE_VAR, '</td>'
                     ,'<td>', CATALOG_TYPE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>Activity Type (DCP Tools)</td>'
+                    ,'<td>Activity Type</td>'
                     ,'<td>', ACTIVITY_TYPE_VAR, '</td>'
                     ,'<td>', ACTIVITY_TYPE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>Activity Sub Type (DCP Tools)</td>'
+                    ,'<td>Activity Sub Type</td>'
                     ,'<td>', ACTIVITY_SUB_TYPE_VAR, '</td>'
                     ,'<td>', ACTIVITY_SUB_TYPE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>Description (DCP Tools)</td>'
+                    ,'<td>Description</td>'
                     ,'<td>', DESCRIPTION_VAR, '</td>'
                     ,'<td>', DESCRIPTION_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>Department Display Name (DCP Tools)</td>'
+                    ,'<td>Department Display Name </td>'
                     ,'<td>', DEPT_DISPLAY_NAME_VAR, '</td>'
                     ,'<td>', DEPT_DISPLAY_NAME_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>Synonym Type (DCP Tools) </td>'
+                    ,'<td>Synonym Type</td>'
                     ,'<td>', SYNONYM_TYPE_VAR, '</td>'
                     ,'<td>', SYNONYM_TYPE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>Synonym Name (DCP Tools)</td>'
+                    ,'<td>Synonym Name</td>'
                     ,'<td>', SYNONYM_NAME_VAR, '</td>'
                     ,'<td>', SYNONYM_NAME_VAR_2, '</td>'
                 ,'</tr>'
@@ -258,6 +293,36 @@ with OUTDEV
                     ,'<td>Virtual Views (DCP)</td>'
                     ,'<td>', VIRTUAL_VIEWS_VAR, '</td>'
                     ,'<td>', VIRTUAL_VIEWS_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Orderable Status Checkbox</td>'
+                    ,'<td>', DUP_ACTIVE_IND_VAR, '</td>'
+                    ,'<td>', DUP_ACTIVE_IND_VAR, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Behind Action</td>'
+                    ,'<td>', DUP_MIN_BEHIND_ACTION_VAR, '</td>'
+                    ,'<td>', DUP_MIN_BEHIND_ACTION_VAR, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Behind Min</td>'
+                    ,'<td>', DUP_MIN_BEHIND_VAR, '</td>'
+                    ,'<td>', DUP_MIN_BEHIND_VAR, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Ahead Action</td>'
+                    ,'<td>', DUP_MIN_AHEAD_ACTION_VAR, '</td>'
+                    ,'<td>', DUP_MIN_AHEAD_ACTION_VAR, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Ahead Min</td>'
+                    ,'<td>', DUP_MIN_AHEAD_VAR, '</td>'
+                    ,'<td>', DUP_MIN_AHEAD_VAR, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Exact Action</td>'
+                    ,'<td>', DUP_HIT_ACTION_VAR, '</td>'
+                    ,'<td>', DUP_HIT_ACTION_VAR, '</td>'
                 ,'</tr>'
             ,'</tbody>'
         ,'</table>'
