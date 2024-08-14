@@ -12,14 +12,13 @@ prompt
 
 with OUTDEV
 
-;USER INPUT VARIABLES---------------------------------------------------------------------------------------------------
+
+
+;USER INPUT VARIABLES IN THIS SECTION-----------------------------------------------------------------------------------
     DECLARE SYNONYM_NAME_SEARCH_VAR = VC with NoConstant("*MPOX*"),Protect ; EDIT THIS!!!!!!!
     ; EDIT THE BELOW IF YOU WISH TO COMPARE WITH A DIFFERENT SYNONYM
     DECLARE SYNONYM_NAME_SEARCH_COMPARE_VAR = VC with NoConstant("*ADENOVIRUS NAD/PCR SWAB*"),Protect ; EDIT THIS!!!
     ;-------------------------------------------------------------------------------------------------------------------
-
-
-
 
 
 ;VARIABLES SAVED IN PROGRAM
@@ -81,6 +80,18 @@ with OUTDEV
     DECLARE COLLECTION_CLASS_VAR_2 = VC with NoConstant(""),Protect
     DECLARE SPECIAL_HANDLING_VAR = VC with NoConstant(""),Protect
     DECLARE SPECIAL_HANDLING_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE ORDER_REVIEW_VAR = VC with NoConstant(""),Protect
+    DECLARE ORDER_REVIEW_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE ALIAS_OUTBOUND_VAR = VC with NoConstant(""),Protect
+    DECLARE ALIAS_OUTBOUND_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE REQUISITION_FORMAT_VAR = VC with NoConstant(""),Protect
+    DECLARE REQUISITION_FORMAT_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE CONSENT_FORM_ROUTING_VAR = VC with NoConstant(""),Protect
+    DECLARE CONSENT_FORM_ROUTING_VAR_2 = VC with NoConstant(""),Protect
+    DECLARE CONSENT_FORM_FORMAT_VAR = VC with NoConstant(""),Protect
+    DECLARE CONSENT_FORM_FORMAT_VAR_2 = VC with NoConstant(""),Protect
+
+
 
 ;HTML VARIABLES
     DECLARE FINALHTML_VAR = VC with NoConstant(""),Protect
@@ -98,17 +109,16 @@ with OUTDEV
         , SYNONYM_NAME = O_C_S.MNEMONIC
         , ACTIVE_CHECKBOX = O_C_S.ACTIVE_IND
         , HIDE_CHECKBOX = EVALUATE(O_C_S.HIDE_FLAG, 1, "HIDDEN", 0, "NOT HIDDED")
+        , REQUISITION_FORMAT = UAR_GET_CODE_DISPLAY (O_C.REQUISITION_FORMAT_CD)
+        , CONSENT_FORM_FORMAT = UAR_GET_CODE_DISPLAY(O_C.CONSENT_FORM_FORMAT_CD)
     FROM
         ORDER_CATALOG   O_C
         , ORDER_CATALOG_SYNONYM   O_C_S
-
     PLAN O_C_S ; ORDER_CATALOG_SYNONYM
         WHERE CNVTUPPER(O_C_S.MNEMONIC_KEY_CAP) = PATSTRING(SYNONYM_NAME_SEARCH_VAR)
-
     JOIN O_C ; ORDER_CATALOG
         WHERE O_C.CATALOG_CD = O_C_S.CATALOG_CD
             AND O_C.CATALOG_TYPE_CD = 2513 ; Laboratory
-
     HEAD REPORT ; Setting varibles using info retrieved from the Database in SELECT Seciton
         SYNONYM_ID_VAR = SYNONYM_ID
         CATALOG_CD_VAR = CATALOG_CD
@@ -121,6 +131,8 @@ with OUTDEV
         SYNONYM_NAME_VAR = SYNONYM_NAME
         ACTIVE_CHECKBOX_VAR = ACTIVE_CHECKBOX
         HIDE_CHECKBOX_VAR = HIDE_CHECKBOX
+        REQUISITION_FORMAT_VAR = REQUISITION_FORMAT
+        CONSENT_FORM_FORMAT_VAR = CONSENT_FORM_FORMAT
     WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
 
 ; Query for Existing Synonym  Order_Catalog & Order_Catalog_Synonym
@@ -136,6 +148,8 @@ with OUTDEV
         , SYNONYM_NAME = O_C_S.MNEMONIC
         , ACTIVE_CHECKBOX = O_C_S.ACTIVE_IND
         , HIDE_CHECKBOX = EVALUATE(O_C_S.HIDE_FLAG, 1, "HIDDEN", 0, "NOT HIDDED")
+        , REQUISITION_FORMAT = UAR_GET_CODE_DISPLAY (O_C.REQUISITION_FORMAT_CD)
+        , CONSENT_FORM_FORMAT = UAR_GET_CODE_DISPLAY(O_C.CONSENT_FORM_FORMAT_CD)
     FROM
         ORDER_CATALOG   O_C
         , ORDER_CATALOG_SYNONYM   O_C_S
@@ -146,7 +160,6 @@ with OUTDEV
     JOIN O_C ; ORDER_CATALOG
         WHERE O_C.CATALOG_CD = O_C_S.CATALOG_CD
             AND O_C.CATALOG_TYPE_CD = 2513 ; Laboratory
-
     HEAD REPORT ; Setting varibles using info retrieved from the Database in SELECT Seciton
         SYNONYM_ID_VAR_2 = SYNONYM_ID
         CATALOG_CD_VAR_2 = CATALOG_CD
@@ -159,8 +172,35 @@ with OUTDEV
         SYNONYM_NAME_VAR_2 = SYNONYM_NAME
         ACTIVE_CHECKBOX_VAR_2 = ACTIVE_CHECKBOX
         HIDE_CHECKBOX_VAR_2 = HIDE_CHECKBOX
-
+        REQUISITION_FORMAT_VAR_2 = REQUISITION_FORMAT
+        CONSENT_FORM_FORMAT_VAR_2 = CONSENT_FORM_FORMAT
     WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
+
+; Consent form routing for new synonym
+    SELECT
+        CONSENT_FORM_ROUTING = d.ROUTE_DESCRIPTION
+    FROM
+        ORDER_CATALOG   O
+        , DCP_OUTPUT_ROUTE d
+    PLAN O
+        WHERE O.CATALOG_CD = CATALOG_CD_VAR
+    JOIN d WHERE d.DCP_OUTPUT_ROUTE_ID = O.CONSENT_FORM_ROUTING_CD
+    HEAD REPORT
+        CONSENT_FORM_ROUTING_VAR = CONSENT_FORM_ROUTING
+    WITH TIME =10
+
+; Consent form routing for existing synonym
+    SELECT
+        CONSENT_FORM_ROUTING = d.ROUTE_DESCRIPTION
+    FROM
+        ORDER_CATALOG   O
+        , DCP_OUTPUT_ROUTE d
+    PLAN O
+        WHERE O.CATALOG_CD = CATALOG_CD_VAR
+    JOIN d WHERE d.DCP_OUTPUT_ROUTE_ID = O.CONSENT_FORM_ROUTING_CD
+    HEAD REPORT
+        CONSENT_FORM_ROUTING_VAR_2 = CONSENT_FORM_ROUTING
+    WITH TIME =10
 
 ;VIRTUAL VIEWS FOR NEW SYNONYM
     SELECT INTO "NL:"
@@ -324,10 +364,91 @@ SELECT
 FROM
 	ORDER_CATALOG_REVIEW   O
 WHERE O.CATALOG_CD = CATALOG_CD_VAR
+HEAD REPORT O.ACTION_TYPE_CD
+DETAIL
+    ORDER_REVIEW_VAR = BUILD2
+    (
+        ORDER_REVIEW_VAR
+        , ACTION_TYPE,": "
+        ,"&nbsp;", COSIGN_REQUIRED
+        ,"&nbsp;", DOCTOR_COSIGN
+        ,"&nbsp;", NURSE_REVIEW
+        ,"&nbsp;", REVIEW_REQUIRED, "<BR>"
+    )
 WITH TIME =10
 
+; Order_Catalog_Review for Existing Orderable
+SELECT
+	ACTION_TYPE = UAR_GET_CODE_DISPLAY(O.ACTION_TYPE_CD)
+	, COSIGN_REQUIRED = O.COSIGN_REQUIRED_IND
+	, DOCTOR_COSIGN = O.DOCTOR_COSIGN_FLAG
+	, NURSE_REVIEW = O.NURSE_REVIEW_FLAG
+	, REVIEW_REQUIRED = O.REVIEW_REQUIRED_IND
+FROM
+	ORDER_CATALOG_REVIEW   O
+WHERE O.CATALOG_CD = CATALOG_CD_VAR_2
+HEAD REPORT O.ACTION_TYPE_CD
+DETAIL
+    ORDER_REVIEW_VAR_2 = BUILD2
+    (
+        ORDER_REVIEW_VAR_2
+        , ACTION_TYPE,": "
+        ,"&nbsp;", COSIGN_REQUIRED
+        ,"&nbsp;", DOCTOR_COSIGN
+        ,"&nbsp;", NURSE_REVIEW
+        ,"&nbsp;", REVIEW_REQUIRED, "<BR>"
+    )
+WITH TIME =10
 
+;Outbound Code Value for New Orderable
+    SELECT
+        SOURCE = UAR_GET_CODE_DISPLAY(C.CONTRIBUTOR_SOURCE_CD)
+        , ALIAS = C.ALIAS
+    FROM
+        CODE_VALUE_OUTBOUND   C
+    WHERE C.CODE_VALUE = CATALOG_CD_VAR
+    HEAD REPORT C.CONTRIBUTOR_SOURCE_CD
+    DETAIL
+        ALIAS_OUTBOUND_VAR = BUILD2
+        (
+            ALIAS_OUTBOUND_VAR
+            ,SOURCE, ":&nbsp;", ALIAS, "<BR>"
+        )
+    WITH TIME = 10
 
+;Outbound Code Value for Existing Orderable
+    SELECT
+        SOURCE = UAR_GET_CODE_DISPLAY(C.CONTRIBUTOR_SOURCE_CD)
+        , ALIAS = C.ALIAS
+    FROM
+        CODE_VALUE_OUTBOUND   C
+    WHERE C.CODE_VALUE = CATALOG_CD_VAR_2
+    HEAD REPORT C.CONTRIBUTOR_SOURCE_CD
+    DETAIL
+        ALIAS_OUTBOUND_VAR_2 = BUILD2
+        (
+            ALIAS_OUTBOUND_VAR_2
+            , SOURCE, ":&nbsp;", ALIAS, "<BR>"
+        )
+    WITH TIME = 10
+
+/* PATH DOES NOT HAVE INBOUND ALIASES
+;Inbound Code Value for New Orderable
+    SELECT
+        SOURCE = UAR_GET_CODE_DISPLAY(C.CONTRIBUTOR_SOURCE_CD)
+        , ALIAS = C.ALIAS
+    FROM
+        CODE_VALUE_ALIAS   C
+    WHERE C.CODE_VALUE = CATALOG_CD_VAR
+    HEAD REPORT C.CONTRIBUTOR_SOURCE_CD
+    DETAIL
+        ALIAS_INBOUND_VAR = BUILD2
+        (
+            ALIAS_INBOUND_VAR
+            ,SOURCE, ":&nbsp;", ALIAS, "<BR>"
+        )
+    WITH TIME = 10
+*/
 
 ;HTML
     SET FINALHTML_VAR = BUILD2(
@@ -469,6 +590,71 @@ WITH TIME =10
                     ,'<td>Exact Action</td>'
                     ,'<td>', DUP_HIT_ACTION_VAR, '</td>'
                     ,'<td>', DUP_HIT_ACTION_VAR_2, '</td>'
+                ,'</tr>'
+            ,'</tbody>'
+        ,'</table>'
+    ,'<h2>DCP Tools - Order Review Tab</h2>'
+    ,'<p>Order Below: 1) Cosign Required 2) Doctor Cosign 3) Nurse Review: 4)Review Required</p>'
+        ,'<table>'
+            ,'<thead>'
+                ,'<tr>'
+                    ,'<th>Built Synonym</th>'
+                    ,'<th>Existing Synonym</th>'
+                ,'</tr>'
+            ,'</thead>'
+            ,'<tbody>'
+                ,'<tr>'
+                    ,'<td>', ORDER_REVIEW_VAR, '</td>'
+                    ,'<td>', ORDER_REVIEW_VAR_2, '</td>'
+                ,'</tr>'
+            ,'</tbody>'
+        ,'</table>'
+    ,'<h2>DCP Tools - Print Misc Tab</h2>'
+    ,'<p>Order Below: 1) Cosign Required 2) Doctor Cosign 3) Nurse Review: 4)Review Required</p>'
+        ,'<table>'
+            ,'<thead>'
+                ,'<tr>'
+                    ,'<th>Config Item</th>'
+                    ,'<th>Built Synonym</th>'
+                    ,'<th>Existing Synonym</th>'
+                ,'</tr>'
+            ,'</thead>'
+            ,'<tbody>'
+                ,'<tr>'
+                    ,'<td>Consent Form Format</td>'
+                    ,'<td>', CONSENT_FORM_FORMAT_VAR , '</td>'
+                    ,'<td>', CONSENT_FORM_FORMAT_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Consent Form Routing</td>'
+                    ,'<td>', CONSENT_FORM_ROUTING_VAR , '</td>'
+                    ,'<td>', CONSENT_FORM_ROUTING_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Requisition Format</td>'
+                    ,'<td>', REQUISITION_FORMAT_VAR , '</td>'
+                    ,'<td>', REQUISITION_FORMAT_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Requisition Routing</td>'
+                    ,'<td>', 'placeholder' , '</td>'
+                    ,'<td>', 'placeholder', '</td>'
+                ,'</tr>'
+            ,'</tbody>'
+        ,'</table>'
+    ,'<h2>Outbound Aliasing</h2>'
+    ,'<p> Note: Pathology does not have inbound aliasing</p>'
+        ,'<table>'
+            ,'<thead>'
+                ,'<tr>'
+                    ,'<th>Built Synonym</th>'
+                    ,'<th>Existing Synonym</th>'
+                ,'</tr>'
+            ,'</thead>'
+            ,'<tbody>'
+                ,'<tr>'
+                    ,'<td>', ALIAS_OUTBOUND_VAR, '</td>'
+                    ,'<td>', ALIAS_OUTBOUND_VAR_2, '</td>'
                 ,'</tr>'
             ,'</tbody>'
         ,'</table>'
