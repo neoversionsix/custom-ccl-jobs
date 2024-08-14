@@ -1,6 +1,7 @@
 /*
 Programmer: Jason Whittle
 This is to check if you have built a pathology orderable correctly
+Edit the User Input Variable Section save build and run.
 */
 
 drop program wh_testing_query_88:dba go
@@ -11,10 +12,15 @@ prompt
 
 with OUTDEV
 
-;USER INPUT VARIABLES
+;USER INPUT VARIABLES---------------------------------------------------------------------------------------------------
     DECLARE SYNONYM_NAME_SEARCH_VAR = VC with NoConstant("*MPOX*"),Protect ; EDIT THIS!!!!!!!
     ; EDIT THE BELOW IF YOU WISH TO COMPARE WITH A DIFFERENT SYNONYM
     DECLARE SYNONYM_NAME_SEARCH_COMPARE_VAR = VC with NoConstant("*ADENOVIRUS NAD/PCR SWAB*"),Protect ; EDIT THIS!!!
+    ;-------------------------------------------------------------------------------------------------------------------
+
+
+
+
 
 ;VARIABLES SAVED IN PROGRAM
     DECLARE SYNONYM_ID_VAR = F8 with NoConstant(0.00),Protect
@@ -79,7 +85,7 @@ with OUTDEV
 ;HTML VARIABLES
     DECLARE FINALHTML_VAR = VC with NoConstant(""),Protect
 
-; Query for New Synonym
+; Query for New Synonym Order_Catalog & Order_Catalog_Synonym
     SELECT INTO "NL:"
         SYNONYM_ID = O_C_S.SYNONYM_ID
         , CATALOG_CD = O_C_S.CATALOG_CD
@@ -117,7 +123,7 @@ with OUTDEV
         HIDE_CHECKBOX_VAR = HIDE_CHECKBOX
     WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
 
-; Query for Existing Synonym
+; Query for Existing Synonym  Order_Catalog & Order_Catalog_Synonym
     SELECT INTO "NL:"
         SYNONYM_ID = O_C_S.SYNONYM_ID
         , CATALOG_CD = O_C_S.CATALOG_CD
@@ -228,7 +234,7 @@ with OUTDEV
         DUP_MIN_BEHIND_ACTION_VAR_2 = DUP_MIN_BEHIND_ACTION
     WITH TIME = 10
 
-; Collection Requirements For New Synonym
+; Procedure_Specimen_Type For New Synonym
     SELECT INTO "NL:"
         ACCESSION_CLASS = UAR_GET_CODE_DISPLAY(P.ACCESSION_CLASS_CD)
         , DEFAULT_COLLECTION_METHOD = UAR_GET_CODE_DISPLAY(P.DEFAULT_COLLECTION_METHOD_CD)
@@ -242,6 +248,21 @@ with OUTDEV
         SPECIMEN_TYPE_VAR = SPECIMEN_TYPE
     WITH TIME = 10
 
+; Procedure_Specimen_Type For Existing Synonym
+    SELECT INTO "NL:"
+        ACCESSION_CLASS = UAR_GET_CODE_DISPLAY(P.ACCESSION_CLASS_CD)
+        , DEFAULT_COLLECTION_METHOD = UAR_GET_CODE_DISPLAY(P.DEFAULT_COLLECTION_METHOD_CD)
+        , SPECIMEN_TYPE = UAR_GET_CODE_DISPLAY(P.SPECIMEN_TYPE_CD)
+    FROM
+        PROCEDURE_SPECIMEN_TYPE   P
+    WHERE P.CATALOG_CD = CATALOG_CD_VAR_2
+    HEAD REPORT
+        ACCESSION_CLASS_VAR_2 = ACCESSION_CLASS
+        DEFAULT_COLLECTION_METHOD_VAR_2 = DEFAULT_COLLECTION_METHOD
+        SPECIMEN_TYPE_VAR_2 = SPECIMEN_TYPE
+    WITH TIME = 10
+
+; Collection_Info_Qualifiers for New Synonym
     SELECT INTO "NL:"
         SERVICE_RESOURCE = UAR_GET_CODE_DISPLAY(C.SERVICE_RESOURCE_CD)
         , AGE_FROM = C.AGE_FROM_MINUTES
@@ -267,21 +288,7 @@ with OUTDEV
         SPECIAL_HANDLING_VAR = SPECIAL_HANDLING
     WITH TIME = 10
 
-
-; Collection Requirements For Existing Synonym
-    SELECT INTO "NL:"
-        ACCESSION_CLASS = UAR_GET_CODE_DISPLAY(P.ACCESSION_CLASS_CD)
-        , DEFAULT_COLLECTION_METHOD = UAR_GET_CODE_DISPLAY(P.DEFAULT_COLLECTION_METHOD_CD)
-        , SPECIMEN_TYPE = UAR_GET_CODE_DISPLAY(P.SPECIMEN_TYPE_CD)
-    FROM
-        PROCEDURE_SPECIMEN_TYPE   P
-    WHERE P.CATALOG_CD = CATALOG_CD_VAR_2
-    HEAD REPORT
-        ACCESSION_CLASS_VAR_2 = ACCESSION_CLASS
-        DEFAULT_COLLECTION_METHOD_VAR_2 = DEFAULT_COLLECTION_METHOD
-        SPECIMEN_TYPE_VAR_2 = SPECIMEN_TYPE
-    WITH TIME = 10
-
+; Collection_Info_Qualifiers for Existing Synonym
     SELECT INTO "NL:"
         SERVICE_RESOURCE = UAR_GET_CODE_DISPLAY(C.SERVICE_RESOURCE_CD)
         , AGE_FROM = C.AGE_FROM_MINUTES
@@ -306,6 +313,21 @@ with OUTDEV
         COLLECTION_CLASS_VAR_2 = COLLECTION_CLASS
         SPECIAL_HANDLING_VAR_2 = SPECIAL_HANDLING
     WITH TIME = 10
+
+; Order_Catalog_Review for New Orderable
+SELECT
+	ACTION_TYPE = UAR_GET_CODE_DISPLAY(O.ACTION_TYPE_CD)
+	, COSIGN_REQUIRED = O.COSIGN_REQUIRED_IND
+	, DOCTOR_COSIGN = O.DOCTOR_COSIGN_FLAG
+	, NURSE_REVIEW = O.NURSE_REVIEW_FLAG
+	, REVIEW_REQUIRED = O.REVIEW_REQUIRED_IND
+FROM
+	ORDER_CATALOG_REVIEW   O
+WHERE O.CATALOG_CD = CATALOG_CD_VAR
+WITH TIME =10
+
+
+
 
 ;HTML
     SET FINALHTML_VAR = BUILD2(
@@ -466,7 +488,7 @@ with OUTDEV
                     ,'<td>', SPECIMEN_TYPE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
-                    ,'<td>Accession_Class</td>'
+                    ,'<td>Accession Class</td>'
                     ,'<td>', ACCESSION_CLASS_VAR, '</td>'
                     ,'<td>', ACCESSION_CLASS_VAR_2, '</td>'
                 ,'</tr>'
@@ -474,6 +496,11 @@ with OUTDEV
                     ,'<td>Default Collection Method</td>'
                     ,'<td>', DEFAULT_COLLECTION_METHOD_VAR, '</td>'
                     ,'<td>', DEFAULT_COLLECTION_METHOD_VAR_2, '</td>'
+                ,'</tr>'
+                ,'<tr>'
+                    ,'<td>Service Resource (Pre config in deptorcwizard)</td>'
+                    ,'<td>', SERVICE_RESOURCE_VAR, '</td>'
+                    ,'<td>', SERVICE_RESOURCE_VAR_2, '</td>'
                 ,'</tr>'
                 ,'<tr>'
                     ,'<td>Age From</td>'
