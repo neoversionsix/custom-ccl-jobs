@@ -1,0 +1,13 @@
+SELECT
+	O.START_DT_TM "dd/mm/yyyy hh:mm:ss"
+	, O.END_DT_TM "dd/mm/yyyy hh:mm:ss"
+	, O.TOTAL_COUNT
+
+
+FROM
+	OEN_TX_STATS_LOG   O
+
+ORDER BY
+    O.START_DT_TM DESC
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10
