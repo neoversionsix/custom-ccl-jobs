@@ -1,5 +1,11 @@
 SELECT
-	E.MSH_MSG_TYPE
+    CREATED = O_T.CREATE_DT_TM "DD-MMM-YYYY HH:MM:SS"
+	, GOING =
+		IF (O_T.EVENTID = "1001") "INBOUND"
+		ELSEIF (O_T.EVENTID = "2001") "OUTBOUND"
+		ELSE O_T.EVENTID
+		ENDIF
+	, E.MSH_MSG_TYPE
 	, E.MSH_SENDING_APP
 	, E.HL7_ENTITY_CODE
 	, E.ACTIVE_IND
@@ -37,21 +43,26 @@ SELECT
 	, E.QUEUE_ID
 	, E.TX_KEY
 	, E.UPDT_ID
+    , HL7 = O_T.MSG_TEXT
 
 FROM
 	ESI_LOG   E
-    OEN_TXLOG   O_T
+    , OEN_TXLOG   O_T
 
-WHERE E.UPDT_DT_TM > CNVTLOOKBEHIND("5,D")
-	and E.CONTRIBUTOR_SYSTEM_CD = (select code_value from code_value where description = "Western Health Radiology")
-	and E.ENCNTR_ID IN
-    (
-        SELECT E_A.ENCNTR_ID
-        FROM ENCNTR_ALIAS E_A
-        WHERE E_A.ALIAS = "30599293" ; EDIT THIS!
-            AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077	; 'FIN NBR' from code set 319
-            AND E_A.ACTIVE_IND = 1	; active FIN NBRs only
-            AND E_A.END_EFFECTIVE_DT_TM > SYSDATE	; effective FIN NBRs only
-    )
+PLAN E
+    WHERE E.UPDT_DT_TM > CNVTLOOKBEHIND("5,D")
+        and E.CONTRIBUTOR_SYSTEM_CD = (select code_value from code_value where description = "Western Health Radiology")
+        and E.ENCNTR_ID IN
+        (
+            SELECT E_A.ENCNTR_ID
+            FROM ENCNTR_ALIAS E_A
+            WHERE E_A.ALIAS = "30599293" ; EDIT THIS!
+                AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077	; 'FIN NBR' from code set 319
+                AND E_A.ACTIVE_IND = 1	; active FIN NBRs only
+                AND E_A.END_EFFECTIVE_DT_TM > SYSDATE	; effective FIN NBRs only
+        )
+
+JOIN O_T
+    WHERE O_T.MSGID = OUTERJOIN(E.MSGID)
 
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 60
