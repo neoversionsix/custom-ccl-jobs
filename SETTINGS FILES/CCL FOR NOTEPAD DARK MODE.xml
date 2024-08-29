@@ -24,7 +24,7 @@
             <Keywords name="Folders in comment, open"></Keywords>
             <Keywords name="Folders in comment, middle"></Keywords>
             <Keywords name="Folders in comment, close"></Keywords>
-            <Keywords name="Keywords1">call case create declare define drop else elseif end endcase endfor endif endmacro endwhile execute for free go if of program range record return set subroutine to translate while</Keywords>
+            <Keywords name="Keywords1">call case create declare define drop else elseif end endcase endfor endif endmacro endwhile execute for free go if of program range return set subroutine to translate while</Keywords>
             <Keywords name="Keywords2">and by commit delete dummyt from group insert into join left maxrec merge none not or order outerjoin plan rdb rollback select seq union update where with</Keywords>
             <Keywords name="Keywords3">break col detail foot head macro report row</Keywords>
             <Keywords name="Keywords4">%B %C %#DEFINE %D %E %#ELSE %#ENDIF %H %#IFDEF %#IFNDEF %I %J %K %L %M %O %P %R %S %T %#UNDEF %V</Keywords>

@@ -3,7 +3,7 @@ create program wh_patient_weight_cust:dba
 /**
 NOTES
 */
- 
+
 /***********************************************************************************************************************************
 * DECLARATIONS *********************************************************************************************************************
 ***********************************************************************************************************************************/
@@ -13,7 +13,7 @@ NOTES
 ***********************************************************************************************************************************/
 /* The reply record must be declared by the consuming script, with the appropriate person details available.
 
-record reply (
+reply (
   1 person[*]
     2 person_id = f8
     2 encntr_id = f8
@@ -25,9 +25,9 @@ record reply (
       3 secondary = vc
 %i cclsource:status_block.inc
 ) with protect
- 
+
 */
- 
+
 /***********************************************************************************************************************************
 * Subroutines                                                                                                                      *
 ***********************************************************************************************************************************/
@@ -38,11 +38,11 @@ declare PUBLIC::GetWeight(null) = null with protect
 * Main PROGRAM *********************************************************************************************************************
 ***********************************************************************************************************************************/
 call Main(null)
- 
+
 /***********************************************************************************************************************************
 * SUBROUTINES **********************************************************************************************************************
 ***********************************************************************************************************************************/
- 
+
 /***********************************************************************************************************************************
 * Main                                                                                                                             *
 ***********************************************************************************************************************************/
@@ -55,7 +55,7 @@ subroutine PUBLIC::Main(null)
   call GetWeight(null)
   set reply->status_data.status = "S"
 end ; Main
- 
+
 /***********************************************************************************************************************************
 * GetWeight                                                                                                     *
 ***********************************************************************************************************************************/
@@ -73,7 +73,7 @@ subroutine PUBLIC::GetWeight(null)
   select
     into "nl:"
       order_cnt = COUNT(ce.clinical_event_id) OVER(PARTITION BY ce.encntr_id)
-    from 
+    from
       clinical_event ce
         ; FILTERS [jw]
         where EXPAND(exp_idx, 1, PERSON_CNT, ce.encntr_id, reply->person[exp_idx].encntr_id)
@@ -92,9 +92,9 @@ subroutine PUBLIC::GetWeight(null)
       order_idx = 0
       person_idx = LOCATEVAL(loc_idx, 1, PERSON_CNT, ce.encntr_id, reply->person[loc_idx].encntr_id)
       first_idx = person_idx
-      
+
       reply->person[person_idx].count = CNVTINT(order_cnt) ; Get the order count from the OLAP expression.
-      
+
       call ALTERLIST(reply->person[person_idx].contents, CNVTINT(order_cnt))
     head ce.clinical_event_id
       order_idx = order_idx + 1
@@ -104,30 +104,30 @@ subroutine PUBLIC::GetWeight(null)
       reply->person[person_idx].contents[order_idx].primary = TRIM(ce.result_val)
       ; Commenting out the date below as it's now already in ce.order_detail_display_line [JW]
       reply->person[person_idx].contents[order_idx].secondary = FORMAT(ce.PERFORMED_DT_TM, "@SHORTDATETIME")
-    
+
     foot ce.encntr_id
       person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, ce.encntr_id, reply->person[loc_idx].encntr_id)
-      
+
       ; Since the same visit could have multiple occurrences in the Worklist, loop through the visit list to look for duplicates.
       while (person_idx > 0)
         reply->person[person_idx].count = CNVTINT(order_cnt)
-        
+
         ; Copy the popup list from the first occurrence to each duplicate.
         stat = MOVERECLIST(reply->person[first_idx].contents, reply->person[person_idx].contents, 1, 0, CNVTINT(order_cnt), TRUE)
-        
+
         person_idx = LOCATEVAL(loc_idx, person_idx + 1, PERSON_CNT, ce.encntr_id, reply->person[loc_idx].encntr_id)
       endwhile
   with nocounter
 end ; GetWeight
- 
+
 /***********************************************************************************************************************************
 * EXIT PROGRAM *********************************************************************************************************************
 ***********************************************************************************************************************************/
 #EXIT_SCRIPT
- 
+
 if (reqdata->loglevel >= 4 or VALIDATE(debug_ind, 0) > 0)
   call echorecord(reply)
 endif
- 
+
 end
 go
