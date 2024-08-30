@@ -23,7 +23,7 @@ E.ENCNTR_ID IN
 p.updt_id = reqinfo->updt_id
 
 
-
+; PERSON ID for a urn
 (SELECT P_A.PERSON_ID FROM PERSON_ALIAS P_A WHERE P_A.ALIAS = "1586739")
 
 
