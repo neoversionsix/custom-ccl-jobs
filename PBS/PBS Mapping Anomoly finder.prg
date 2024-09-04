@@ -2,6 +2,8 @@
 ; we want to identify these because pbs items with the same primary/brand/form
 ; should always have the exact same synonyms mapped to them.
 
+; IN DEVELOPMENT!!!!!!!!!!!!!!
+
 drop program wh_testing_query_88:dba go
 create program wh_testing_query_88:dba
 
