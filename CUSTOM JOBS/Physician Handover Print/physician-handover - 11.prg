@@ -9,10 +9,8 @@ Programmer: Jason Whittle
 Date: May 2024
  */
 
-
 drop program wh_physician_handover go
 create program wh_physician_handover
-
 
 ; The two prompts below are recieved by the program ans stored in the two variables
 ; in the with section of the program
