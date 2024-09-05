@@ -120,7 +120,6 @@ with
 		3 mcomment					= vc
 		2 code_status				= vc
 		2 patient_summary			= vc
-		2 patient_summary_author	= vc
 		2 sit_aware_cnt				= i4
 		2 sit_aware[*]
 		3 comment					= vc
@@ -642,6 +641,7 @@ with
 			BUILD2
 			(
 				patient_summary_and_author_var
+				, '<BR>'
 				, '['
 				, trim(pr.name_full_formatted,3)
 				, ']'
@@ -651,6 +651,7 @@ with
 			BUILD2
 			(
 				patient_summary_and_author_var
+				, '<BR>'
 				, '['
 				, "No author for summary found"
 				, ']'
@@ -875,8 +876,6 @@ with
 			,"<td class=patient-data-header-twofive>","Patient Summary","</td>"
 			,"<td class=patient-info-wide>"
 				, data->list[x].patient_summary
-				,"<BR>"
-				, "[",data->list[x].patient_summary_author,"]"
 			,"</td>"
 			,"</tr>"
 			,"<tr>"
