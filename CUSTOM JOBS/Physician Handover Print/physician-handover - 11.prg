@@ -643,6 +643,7 @@ with
 				, '['
 				, trim(pr.name_full_formatted,3)
 				, ']'
+				, '<BR>'
 			)
 		else
 			patient_summary_and_author_var =
@@ -653,6 +654,7 @@ with
 				, '['
 				, "No author for summary found"
 				, ']'
+				, '<BR>'
 			)
 		endif
 	foot pi.ENCNTR_ID
