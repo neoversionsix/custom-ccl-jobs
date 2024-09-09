@@ -65,6 +65,7 @@ with
 	1 list[*]
 		2 PERSON_ID					= f8
 		2 ENCNTR_ID					= f8
+		2 CARE_TEAM_ID				= f8
 		2 unit_disp					= vc
 		2 room_disp					= vc
 		2 bed_disp					= vc
@@ -165,6 +166,7 @@ with
 	FOR (x=1 to total_number_of_encounters)
 		SET data->list[x].ENCNTR_ID = print_options->qual[x].ENCNTR_ID
 		SET data->list[x].PERSON_ID = print_options->qual[x].PERSON_ID
+		SET data->list[x].CARE_TEAM_ID = print_options->qual[x].CARE_TEAM_ID
 		SET data->list[x].age = trim(print_options->qual[x].pat_age,3)
 	ENDFOR
 
@@ -612,6 +614,7 @@ with
 		, prsnl pr
 	plan pi
 		where expand(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		and expand(idx,1,total_number_of_encounters,PI.PCT_CARE_TEAM_ID,data->list[idx].CARE_TEAM_ID)
 		and pi.active_ind = 1
 		and pi.end_effective_dt_tm >= sysdate
 		and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD
@@ -1037,7 +1040,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>Program V10.1.3, Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>Program V11, Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
