@@ -26,14 +26,19 @@ with
 	set stat = cnvtjsontorec($jsondata,0,0,0,0)
 
 ;Get the total number of encounters passed over from powerchart
-	SET total_number_of_encounters = SIZE(print_options->qual,5)
+	SET total_number_of_encounters = SIZE(PRINT_OPTIONS->QUAL,5)
 
-;Check if there thing you're after existing in the data structure (inherited from the json file)
+;;Check if there thing you're after existing in the data structure (inherited from the json file)
+;;use this loop for multiple values
 for(x = 1 to total_number_of_encounters)
-    set test_string_var = build2(test_string_var, "<BR>", PRINT_OPTIONS->QUAL->CARE_TEAM_ID[X])
+    set test_string_var = build2(test_string_var, "x = ", x, " - ",  PRINT_OPTIONS->QUAL[x].CARE_TEAM_ID, "<BR>")
+endfor
 
-html_var = build2(
-,'<!DOCTYPE html>'
+;; To check just a single value
+;set test_string_var = build2(cnvtstring(test_string_var), "<BR>", PRINT_OPTIONS->QUAL[x].CARE_TEAM_ID)
+
+set html_var = build2(
+'<!DOCTYPE html>'
 ,'<html lang="en">'
 ,'<head>'
     ,'<meta charset="UTF-8">'
@@ -41,7 +46,7 @@ html_var = build2(
     ,'<title>Output</title>'
 ,'</head>'
 ,'<body>'
-    ,'<h1>',test_string_var,'</h1>'
+    ,'<p>', test_string_var,'</p>'
 ,'</body>'
 ,'</html>'
 )
