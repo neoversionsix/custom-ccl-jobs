@@ -9,8 +9,10 @@ Programmer: Jason Whittle
 Date: May 2024
  */
 
+
 drop program wh_physician_handover go
 create program wh_physician_handover
+
 
 ; The two prompts below are recieved by the program ans stored in the two variables
 ; in the with section of the program
@@ -44,7 +46,6 @@ with
 	declare C_R_PROTEIN_CD_VAR = f8 with constant(4055520.00),protect
 	declare CREATININE_CD_VAR = f8 with constant(2700655.00),protect
 	declare ACTIVE_12025_CD_VAR = f8 with constant(3299.00),protect
-	declare VERSION_VAR = vc with constant("11.2"),protect
 
 
 ;Declare Variables
@@ -57,7 +58,6 @@ with
 	declare printuser_name = vc with noconstant(" "),protect
 	declare displayed_list_name = vc with noconstant(" "),protect
 	declare total_number_of_encounters = i4 with noconstant(0),protect
-	declare patient_summary_and_author_var = vc with noconstant(""),protect
 
 
 ;Declare Records
@@ -66,7 +66,6 @@ with
 	1 list[*]
 		2 PERSON_ID					= f8
 		2 ENCNTR_ID					= f8
-		2 CARE_TEAM_ID				= f8
 		2 unit_disp					= vc
 		2 room_disp					= vc
 		2 bed_disp					= vc
@@ -120,6 +119,7 @@ with
 		3 mcomment					= vc
 		2 code_status				= vc
 		2 patient_summary			= vc
+		2 patient_summary_author	= vc
 		2 sit_aware_cnt				= i4
 		2 sit_aware[*]
 		3 comment					= vc
@@ -153,7 +153,7 @@ with
 		printuser_name = trim(p.name_full_formatted, 3)
 
 	with nocounter
-	, maxcol=1000000
+	, maxcol=100000
 
 ;Add json patients to data record called print_options as inherited by PChart
 	set stat = cnvtjsontorec($jsondata,0,0,0,0)
@@ -167,7 +167,6 @@ with
 	FOR (x=1 to total_number_of_encounters)
 		SET data->list[x].ENCNTR_ID = print_options->qual[x].ENCNTR_ID
 		SET data->list[x].PERSON_ID = print_options->qual[x].PERSON_ID
-		SET data->list[x].CARE_TEAM_ID = print_options->qual[x].CARE_TEAM_ID
 		SET data->list[x].age = trim(print_options->qual[x].pat_age,3)
 	ENDFOR
 
@@ -177,6 +176,7 @@ with
 		person p
 	plan p
 		where expand(idx,1,total_number_of_encounters,p.PERSON_ID,data->list[idx].PERSON_ID)
+
 
 	head p.PERSON_ID
 		pos = locateval(idx,1,total_number_of_encounters,p.PERSON_ID,data->list[idx].PERSON_ID)
@@ -190,7 +190,7 @@ with
 		 null
 
 	with expand = 2
-	, maxcol=1000000
+	, maxcol=100000
 
 ;Get encounter data
 	select into "nl:"
@@ -214,7 +214,7 @@ with
 		null
 
 	with expand = 2
-	, maxcol=1000000
+	, maxcol=100000
 
 ;GET MPAGE COMMENTS
 	select into "nl:"
@@ -242,7 +242,7 @@ with
 			data->list[pos].mcomments_cnt = cnt
 		endif
 	with expand = 2
-	, maxcol=1000000
+	, maxcol=100000
 
 
 
@@ -264,7 +264,7 @@ with
 	foot ea.ENCNTR_ID
 		null
 	with expand = 2
-	, maxcol=1000000
+	, maxcol=100000
 
 
 ;GET ADMITTING DR
@@ -321,7 +321,7 @@ with
 			data->list[pos].diagnosisps_cnt = cnt
 		endif
 	with expand = 2
-	, maxcol=1000000
+	, maxcol=100000
 
 
 ;Get Additional Diagnosis'
@@ -355,7 +355,7 @@ with
 			data->list[pos].diagnosisas_cnt = cnt
 		endif
 	with expand = 2
-	, maxcol=1000000
+	, maxcol=100000
 
 
 
@@ -391,7 +391,7 @@ with
 		endif
 	WITH
 		expand = 2
-		, maxcol=1000000
+		, maxcol=100000
 
 	;White Cell Count (Blood) (4054950) (whitecc) (whiteccdatedsp)
 	SELECT INTO "nl:"
@@ -425,7 +425,7 @@ with
 		endif
 	WITH
 		expand = 2
-		, maxcol=1000000
+		, maxcol=100000
 
 
 	;Platelet Count (Blood) (4054852)
@@ -463,7 +463,7 @@ with
 
 	WITH
 		expand = 2
-		, maxcol=1000000
+		, maxcol=100000
 
 	;C-Reactive Protein (4055520)
 	SELECT INTO "nl:"
@@ -500,7 +500,7 @@ with
 		endif
 	WITH
 		expand = 2
-		, maxcol=1000000
+		, maxcol=100000
 
 
 	;Creatinine Level (Serum/Plasma) (2700655) (creatinine)
@@ -538,7 +538,7 @@ with
 		endif
 	WITH
 		expand = 2
-		, maxcol=1000000
+		, maxcol=100000
 
 
 ;Get Illness Severity
@@ -563,7 +563,7 @@ with
 	foot pi.ENCNTR_ID
 		null
 	with expand = 2
-	, maxcol=1000000
+	, maxcol=100000
 
 
 ;Get Code Status
@@ -593,83 +593,10 @@ with
 	foot o.ENCNTR_ID
 		null
 	with expand = 2
-	, maxcol=1000000
+	, maxcol=100000
 
 
-;Get Patient Summary
-	select into "nl:"
-		; IF there is no long text id just return the sticky note text
-		; else return the long text
-		result = evaluate
-		(
-			 sn.long_text_id
-			, 0
-			, REPLACE(TRIM(sn.sticky_note_text, 3), char(10), "<BR>", 0)
-			, REPLACE(TRIM(lt.long_text, 3), char(10), "<BR>", 0)
-		)
-	from
-		  pct_ipass pi
-		, pct_ipass pip
-		, sticky_note sn
-		, long_text lt
-		, prsnl pr
-	plan pi
-		where expand(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-		and pi.active_ind = 1
-		and pi.end_effective_dt_tm >= sysdate
-		and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD
-	join pip
-		where expand(idx,1,total_number_of_encounters,pip.PCT_CARE_TEAM_ID,data->list[idx].CARE_TEAM_ID)
-		and pip.parent_entity_id = pi.parent_entity_id
-	join sn
-		where sn.sticky_note_id = pi.parent_entity_id
-		and sn.beg_effective_dt_tm <= sysdate
-		and sn.end_effective_dt_tm >= sysdate
-	join lt
-		where lt.long_text_id = outerjoin(sn.long_text_id)
-		and lt.active_ind = outerjoin(1)
-	join pr
-		where pr.person_id = outerjoin(pi.updt_id)
-		and pr.active_ind = outerjoin(1)
-		and pr.END_EFFECTIVE_DT_TM > outerjoin(sysdate)
-		and pr.BEG_EFFECTIVE_DT_TM < outerjoin(sysdate)
-	order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
-	head pi.ENCNTR_ID
-		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-		patient_summary_and_author_var = ""
-	head pi.ENCNTR_ID
-		patient_summary_and_author_var = result
-		if (pr.person_id > 0)
-			patient_summary_and_author_var =
-			BUILD2
-			(
-				patient_summary_and_author_var
-				, '<BR>'
-				, '['
-				, trim(pr.name_full_formatted,3)
-				, ']'
-				, '<BR>'
-			)
-		else
-			patient_summary_and_author_var =
-			BUILD2
-			(
-				patient_summary_and_author_var
-				, '<BR>'
-				, '['
-				, "No author for summary found"
-				, ']'
-				, '<BR>'
-			)
-		endif
-	foot pi.ENCNTR_ID
-		data->list[pos].patient_summary = patient_summary_and_author_var
-	foot pi.ENCNTR_ID
-		patient_summary_and_author_var = ""
-	with expand = 2
-		, maxcol=1000000
-
-;Get Situation Awareness & Planning
+;Get Patient Summary and Situation Awareness & Planning
 	select into "nl:"
 		result = evaluate
 		(
@@ -687,7 +614,10 @@ with
 		where expand(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and pi.active_ind = 1
 		and pi.end_effective_dt_tm >= sysdate
-		and pi.ipass_data_type_cd = 4003147_COMMENT_CD
+		and pi.ipass_data_type_cd in (
+			4003147_COMMENT_CD,
+			4003147_PATIENTSUMMARY_CD
+			)
 	join sn
 		where sn.sticky_note_id = pi.parent_entity_id
 		and sn.beg_effective_dt_tm <= sysdate
@@ -704,6 +634,16 @@ with
 	head pi.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
+	head pi.ipass_data_type_cd
+		if(pos > 0 and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD)
+			data->list[pos].patient_summary = result
+		endif
+
+		if (pos > 0 and pr.person_id > 0)
+			data->list[pos].patient_summary_author = trim(pr.name_full_formatted,3)
+		else
+			data->list[pos].patient_summary_author = "No author for summary found"
+		endif
 	detail
 		if(pos > 0 and pi.ipass_data_type_cd = 4003147_COMMENT_CD)
 			cnt += 1
@@ -717,7 +657,7 @@ with
 	foot pi.ENCNTR_ID
 		null
 	with expand = 2
-	, maxcol=1000000
+	, maxcol=100000
 
 
 ;Get Actions
@@ -757,7 +697,8 @@ with
 			data->list[pos].actions_cnt = cnt
 		endif
 	with expand = 2
-	, maxcol=1000000
+	, maxcol=100000
+
 
 ;Get Allergies
 	select into "nl:"
@@ -791,7 +732,7 @@ with
 			data->list[pos].allergy_cnt = cnt
 		endif
 	with expand = 2
-	, maxcol=1000000
+	, maxcol=100000
 
 	call echojson(print_options,trim(concat(trim(logical("ccluserdir"),3),"/ph_print_testing.dat"),3))
 
@@ -882,6 +823,8 @@ with
 			,"<td class=patient-data-header-twofive>","Patient Summary","</td>"
 			,"<td class=patient-info-wide>"
 				, data->list[x].patient_summary
+				,"<BR>"
+				, "[",data->list[x].patient_summary_author,"]"
 			,"</td>"
 			,"</tr>"
 			,"<tr>"
@@ -1043,7 +986,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>Program V", VERSION_VAR," Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>Program V10.1.3, Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
@@ -1152,7 +1095,7 @@ set finalhtmlsimplified = build2( finalhtmlsimplified, patienthtmlsimplified
     ,'</table>'
 	,'</body>'
 	,'<footer style="margin-top: 20px; font-weight: bold; font-size: 30%; text-align: center;">'
-		,'Program v', VERSION_VAR,'     If found, please return to the nearest ward clerk'
+		,'Program V10.1.3     If found, please return to the nearest ward clerk'
 	,'</footer>'
 	,'</html>'
 )
