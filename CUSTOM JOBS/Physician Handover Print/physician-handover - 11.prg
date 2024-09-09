@@ -44,7 +44,7 @@ with
 	declare C_R_PROTEIN_CD_VAR = f8 with constant(4055520.00),protect
 	declare CREATININE_CD_VAR = f8 with constant(2700655.00),protect
 	declare ACTIVE_12025_CD_VAR = f8 with constant(3299.00),protect
-	declare VERSION_VAR = vc with constant("11.2"),protect
+	declare VERSION_VAR = vc with constant("11.8"),protect
 
 
 ;Declare Variables
@@ -67,6 +67,7 @@ with
 		2 PERSON_ID					= f8
 		2 ENCNTR_ID					= f8
 		2 CARE_TEAM_ID				= f8
+		2 MED_SERVICE_CD			= f8
 		2 unit_disp					= vc
 		2 room_disp					= vc
 		2 bed_disp					= vc
@@ -595,6 +596,22 @@ with
 	with expand = 2
 	, maxcol=1000000
 
+;Get Care Team Med Service Code
+	select into "nl:"
+		p.pct_med_service_cd
+	from pct_care_team p
+	plan p
+		where expand(idx,1,total_number_of_encounters,p.PCT_CARE_TEAM_ID,data->list[idx].CARE_TEAM_ID)
+	head p.PCT_CARE_TEAM_ID
+		pos = locateval(idx,1,total_number_of_encounters,p.PCT_CARE_TEAM_ID,data->list[idx].ENCNTR_ID)
+		if(pos > 0)
+			data->list[pos].MED_SERVICE_CD = p.pct_med_service_cd
+		endif
+	foot p.PCT_CARE_TEAM_ID
+		null
+	with
+		expand = 2, maxcol=1000000
+
 
 ;Get Patient Summary
 	select into "nl:"
@@ -609,7 +626,7 @@ with
 		)
 	from
 		  pct_ipass pi
-		, pct_ipass pip
+		, pct_care_team p
 		, sticky_note sn
 		, long_text lt
 		, prsnl pr
@@ -618,9 +635,9 @@ with
 		and pi.active_ind = 1
 		and pi.end_effective_dt_tm >= sysdate
 		and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD
-	join pip
-		where expand(idx,1,total_number_of_encounters,pip.PCT_CARE_TEAM_ID,data->list[idx].CARE_TEAM_ID)
-		and pip.parent_entity_id = pi.parent_entity_id
+	join p
+		where p.PCT_CARE_TEAM_ID = pi.PCT_CARE_TEAM_ID
+		and expand(idx,1,total_number_of_encounters,p.pct_med_service_cd,data->list[idx].MED_SERVICE_CD)
 	join sn
 		where sn.sticky_note_id = pi.parent_entity_id
 		and sn.beg_effective_dt_tm <= sysdate
@@ -637,7 +654,6 @@ with
 	head pi.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		patient_summary_and_author_var = ""
-	head pi.ENCNTR_ID
 		patient_summary_and_author_var = result
 		if (pr.person_id > 0)
 			patient_summary_and_author_var =
@@ -662,12 +678,12 @@ with
 				, '<BR>'
 			)
 		endif
-	foot pi.ENCNTR_ID
-		data->list[pos].patient_summary = patient_summary_and_author_var
+		if(pos > 0)
+			data->list[pos].patient_summary = patient_summary_and_author_var
+		endif
 	foot pi.ENCNTR_ID
 		patient_summary_and_author_var = ""
-	with expand = 2
-		, maxcol=1000000
+	with expand = 2, maxcol=1000000
 
 ;Get Situation Awareness & Planning
 	select into "nl:"
