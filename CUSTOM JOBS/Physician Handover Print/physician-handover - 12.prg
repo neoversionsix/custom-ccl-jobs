@@ -1,6 +1,5 @@
 /*
-NOTE: NEVER GOT THIS VERSION V11 WORKING!
-CUSTOM PRINT LAYOUT FOR THE Medical Worklist. Note: never got this version working!
+CUSTOM PRINT LAYOUT FOR THE Medical Worklist.
 
 Notes:
 This program was built using code from msj_ph_custom_print.prg, February 2019, tecrfx
@@ -10,8 +9,10 @@ Programmer: Jason Whittle
 Date: May 2024
  */
 
+
 drop program wh_physician_handover go
 create program wh_physician_handover
+
 
 ; The two prompts below are recieved by the program ans stored in the two variables
 ; in the with section of the program
@@ -57,7 +58,6 @@ with
 	declare printuser_name = vc with noconstant(" "),protect
 	declare displayed_list_name = vc with noconstant(" "),protect
 	declare total_number_of_encounters = i4 with noconstant(0),protect
-	declare patient_summary_and_author_var = vc with noconstant(""),protect
 
 
 ;Declare Records
@@ -119,6 +119,7 @@ with
 		3 mcomment					= vc
 		2 code_status				= vc
 		2 patient_summary			= vc
+		2 patient_summary_author	= vc
 		2 sit_aware_cnt				= i4
 		2 sit_aware[*]
 		3 comment					= vc
@@ -595,10 +596,8 @@ with
 	, maxcol=100000
 
 
-;Get Patient Summary
+;Get Patient Summary and Situation Awareness & Planning
 	select into "nl:"
-		; IF there is no long text id just return the sticky note text
-		; if there is a long text id then return the long text
 		result = evaluate
 		(
 			 sn.long_text_id
@@ -615,7 +614,10 @@ with
 		where expand(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and pi.active_ind = 1
 		and pi.end_effective_dt_tm >= sysdate
-		and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD
+		and pi.ipass_data_type_cd in (
+			4003147_COMMENT_CD,
+			4003147_PATIENTSUMMARY_CD
+			)
 	join sn
 		where sn.sticky_note_id = pi.parent_entity_id
 		and sn.beg_effective_dt_tm <= sysdate
@@ -632,72 +634,16 @@ with
 	head pi.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
-		patient_summary_and_author_var = ""
-	detail pi.parent_entity_id
-		patient_summary_and_author_var = BUILD2(patient_summary_and_author_var, result)
-		if (pos > 0 and pr.person_id > 0)
-			patient_summary_and_author_var =
-			BUILD2
-			(
-				patient_summary_and_author_var
-				, '<BR>'
-				, '['
-				, trim(pr.name_full_formatted,3)
-				, ']'
-				, '<BR>'
-			)
-		else
-			patient_summary_and_author_var =
-			BUILD2
-			(
-				patient_summary_and_author_var
-				, '<BR>'
-				, '['
-				, "No author for summary found"
-				, ']'
-				, '<BR>'
-			)
+	head pi.ipass_data_type_cd
+		if(pos > 0 and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD)
+			data->list[pos].patient_summary = result
 		endif
-	foot pi.ENCNTR_ID
-		data->list[pos].patient_summary = patient_summary_and_author_var
-	with expand = 2
-		, maxcol=100000
 
-;Get Situation Awareness & Planning
-	select into "nl:"
-		result = evaluate
-		(
-			 sn.long_text_id
-			, 0
-			, REPLACE(TRIM(sn.sticky_note_text, 3), char(10), "<BR>", 0)
-			, REPLACE(TRIM(lt.long_text, 3), char(10), "<BR>", 0)
-		)
-	from
-		  pct_ipass pi
-		, sticky_note sn
-		, long_text lt
-		, prsnl pr
-	plan pi
-		where expand(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-		and pi.active_ind = 1
-		and pi.end_effective_dt_tm >= sysdate
-		and pi.ipass_data_type_cd = 4003147_COMMENT_CD
-	join sn
-		where sn.sticky_note_id = pi.parent_entity_id
-		and sn.beg_effective_dt_tm <= sysdate
-		and sn.end_effective_dt_tm >= sysdate
-	join lt
-		where lt.long_text_id = outerjoin(sn.long_text_id)
-		and lt.active_ind = outerjoin(1)
-	join pr
-		where pr.person_id = outerjoin(pi.updt_id)
-		and pr.active_ind = outerjoin(1)
-		and pr.END_EFFECTIVE_DT_TM > outerjoin(sysdate)
-		and pr.BEG_EFFECTIVE_DT_TM < outerjoin(sysdate)
-	order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
-	head pi.ENCNTR_ID
-		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-		cnt = 0
+		if (pos > 0 and pr.person_id > 0)
+			data->list[pos].patient_summary_author = trim(pr.name_full_formatted,3)
+		else
+			data->list[pos].patient_summary_author = "No author for summary found"
+		endif
 	detail
 		if(pos > 0 and pi.ipass_data_type_cd = 4003147_COMMENT_CD)
 			cnt += 1
@@ -877,6 +823,8 @@ with
 			,"<td class=patient-data-header-twofive>","Patient Summary","</td>"
 			,"<td class=patient-info-wide>"
 				, data->list[x].patient_summary
+				,"<BR>"
+				, "[",data->list[x].patient_summary_author,"]"
 			,"</td>"
 			,"</tr>"
 			,"<tr>"
