@@ -1,0 +1,60 @@
+SELECT
+	result = evaluate
+		(
+			 sn.long_text_id
+			, 0
+			, REPLACE(TRIM(sn.sticky_note_text, 3), char(10), "<BR>", 0)
+			, REPLACE(TRIM(lt.long_text, 3), char(10), "<BR>", 0)
+		)
+	, pi.PCT_CARE_TEAM_ID
+	, p.PCT_MED_SERVICE_CD
+
+FROM
+	pct_ipass   pi
+		;, pct_ipass pip
+	, sticky_note   sn
+	, long_text   lt
+	, prsnl   pr
+	, pct_care_team   p
+
+plan pi
+		where
+		pi.ENCNTR_ID IN
+    (
+        SELECT E_A.ENCNTR_ID
+        FROM ENCNTR_ALIAS E_A
+        WHERE E_A.ALIAS = "30323000" ; EDIT THIS!
+            AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077	; 'FIN NBR' from code set 319
+            AND E_A.ACTIVE_IND = 1	; active FIN NBRs only
+            AND E_A.END_EFFECTIVE_DT_TM > SYSDATE	; effective FIN NBRs only
+    )
+		and pi.active_ind = 1
+		and pi.end_effective_dt_tm >= sysdate
+		and pi.ipass_data_type_cd = 82070321.00
+;	join pip
+;		where pip.PCT_CARE_TEAM_ID = 257342.00
+;		and pip.ENCNTR_ID = pi.ENCNTR_ID
+	join sn
+		where sn.sticky_note_id = pi.parent_entity_id
+		and sn.beg_effective_dt_tm <= sysdate
+		and sn.end_effective_dt_tm >= sysdate
+	join lt
+		where lt.long_text_id = outerjoin(sn.long_text_id)
+		and lt.active_ind = outerjoin(1)
+	join pr
+		where pr.person_id = outerjoin(pi.updt_id)
+		and pr.active_ind = outerjoin(1)
+		and pr.END_EFFECTIVE_DT_TM > outerjoin(sysdate)
+		and pr.BEG_EFFECTIVE_DT_TM < outerjoin(sysdate)
+join p
+	where p.PCT_CARE_TEAM_ID = pi.PCT_CARE_TEAM_ID
+	and p.PCT_MED_SERVICE_CD  = (select i.PCT_MED_SERVICE_CD from pct_care_team i where i.PCT_CARE_TEAM_ID = 257342.00 )
+
+	;IN (select i.PCT_CARE_TEAM_ID from pct_care_team i where i.PCT_MED_SERVICE_CD = 103026019.00)
+
+ORDER BY
+	pi.ENCNTR_ID
+	, pi.ipass_data_type_cd
+	, pi.begin_effective_dt_tm   DESC
+
+WITH time = 5, format, seperator = " "
