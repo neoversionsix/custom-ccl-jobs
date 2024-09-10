@@ -46,6 +46,7 @@ with
 	declare C_R_PROTEIN_CD_VAR = f8 with constant(4055520.00),protect
 	declare CREATININE_CD_VAR = f8 with constant(2700655.00),protect
 	declare ACTIVE_12025_CD_VAR = f8 with constant(3299.00),protect
+	declare VERSION_VAR = vc with constant("v12"),protect
 
 
 ;Declare Variables
@@ -58,6 +59,7 @@ with
 	declare printuser_name = vc with noconstant(" "),protect
 	declare displayed_list_name = vc with noconstant(" "),protect
 	declare total_number_of_encounters = i4 with noconstant(0),protect
+	declare patient_summary_and_author_var = vc with noconstant(""),protect
 
 
 ;Declare Records
@@ -596,7 +598,7 @@ with
 	, maxcol=100000
 
 
-;Get Patient Summary and Situation Awareness & Planning
+;Get Patient Summary
 	select into "nl:"
 		result = evaluate
 		(
@@ -614,10 +616,7 @@ with
 		where expand(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		and pi.active_ind = 1
 		and pi.end_effective_dt_tm >= sysdate
-		and pi.ipass_data_type_cd in (
-			4003147_COMMENT_CD,
-			4003147_PATIENTSUMMARY_CD
-			)
+		and pi.ipass_data_type_cd =	4003147_PATIENTSUMMARY_CD
 	join sn
 		where sn.sticky_note_id = pi.parent_entity_id
 		and sn.beg_effective_dt_tm <= sysdate
@@ -634,7 +633,6 @@ with
 	head pi.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
-	head pi.ipass_data_type_cd
 		if(pos > 0 and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD)
 			data->list[pos].patient_summary = result
 		endif
@@ -644,20 +642,56 @@ with
 		else
 			data->list[pos].patient_summary_author = "No author for summary found"
 		endif
+	foot pi.ENCNTR_ID
+		null
+	with expand = 2, maxcol=100000
+
+;Get Situation Awareness & Planning
+	select into "nl:"
+		result = evaluate
+		(
+			 sn.long_text_id
+			, 0
+			, REPLACE(TRIM(sn.sticky_note_text, 3), char(10), "<BR>", 0)
+			, REPLACE(TRIM(lt.long_text, 3), char(10), "<BR>", 0)
+		)
+	from
+		  pct_ipass pi
+		, sticky_note sn
+		, long_text lt
+		, prsnl pr
+	plan pi
+		where expand(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		and pi.active_ind = 1
+		and pi.end_effective_dt_tm >= sysdate
+		and pi.ipass_data_type_cd = 4003147_COMMENT_CD
+	join sn
+		where sn.sticky_note_id = pi.parent_entity_id
+		and sn.beg_effective_dt_tm <= sysdate
+		and sn.end_effective_dt_tm >= sysdate
+	join lt
+		where lt.long_text_id = outerjoin(sn.long_text_id)
+		and lt.active_ind = outerjoin(1)
+	join pr
+		where pr.person_id = outerjoin(pi.updt_id)
+		and pr.active_ind = outerjoin(1)
+		and pr.END_EFFECTIVE_DT_TM > outerjoin(sysdate)
+		and pr.BEG_EFFECTIVE_DT_TM < outerjoin(sysdate)
+	order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
+	head pi.ENCNTR_ID
+		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		cnt = 0
 	detail
 		if(pos > 0 and pi.ipass_data_type_cd = 4003147_COMMENT_CD)
 			cnt += 1
 			stat = alterlist(data->list[pos]->sit_aware, cnt)
 			data->list[pos]->sit_aware[cnt].comment = result
 		endif
-	foot pi.ipass_data_type_cd
+	foot pi.ENCNTR_ID
 		if(pos > 0)
 			data->list[pos].sit_aware_cnt = cnt
 		endif
-	foot pi.ENCNTR_ID
-		null
-	with expand = 2
-	, maxcol=100000
+	with expand = 2	, maxcol=100000
 
 
 ;Get Actions
@@ -986,7 +1020,7 @@ with
 		,"<div id='print-container'>"
 		,"<div class='print-header'>"
 		,"<div class='printed-by-user'>"
-		,"<span>Program V10.1.3, Printed By: </span><span>", printuser_name, "</span>"
+		,"<span>Program: ", VERSION_VAR,", Printed By: </span><span>", printuser_name, "</span>"
 		,"</div>"
 		,"<div class='print-title'><span>Medical Worklist</span></div>"
 		,"<div class='printed-date'><span>PRINTED: ", format(sysdate,"dd/mm/yyyy hh:mm;;d"), "</span></div>"
@@ -1002,109 +1036,109 @@ with
 	);
 
 
-set finalhtmlsimplified = build2(
-'<!DOCTYPE html>'
-,'<html lang="en">'
-,'<head>'
-    ,'<meta charset="UTF-8">'
-    ,'<meta name="viewport" content="width=device-width, initial-scale=1.0">'
-    ,'<title>Medical Worklist</title>'
-    ,'<style>'
-        ,'body {'
-            ,'font-family: Arial, sans-serif;'
-            ,'margin: 20px;'
-        ,'}'
-        ,'table {'
-            ,'width: 100%;'
-            ,'border-collapse: collapse;'
-            ,'margin-top: 20px;'
-			, 'font-size: 55%;'
-        ,'}'
-        ,'table, th, td {'
-            ,'border: 1px solid black;'
-			,'border-left: none;' /* Remove left border */
-			,'border-right: none;' /* Remove right border */
-        ,'}'
-        ,'th, td {'
-            ,'padding: 10px;'
-            ,'text-align: left;'
-        ,'}'
-        ,'th {'
-            ,'background-color: #f2f2f2;'
-        ,'}'
-		,'table tr {'
-            ,'border-top: 1px solid black;' /* Add top border to each row */
-            ,'border-bottom: 1px solid black;' /* Add bottom border to each row */
-        ,'}'
-		,'th.notes, td.notes {'
-        , 'width: 50%;'
-    	, '}'
-    ,'</style>'
-,'</head>'
-,'<body>'
-    ,'<p style = "font-size: 65%;">Printed:&nbsp;', format(sysdate,"dd/mm/yyyy hh:mm;;d"), "&nbsp;", printuser_name,'</p>'
-    ,'<p style = "font-size: 65%;">List:', displayed_list_name ,'</p>'
-,''
-    ,'<table>'
-        ,'<tr>'
-            ,'<th>Location</th>'
-            ,'<th>Patient</th>'
-            ,'<th>MRN</th>'
-			,'<th>Principal Diagnosis</th>'
-            ,'<th>Illness Severity</th>'
-            ,'<th>Admit Date</th>'
-			,'<th>Notes</th>'
-        ,'</tr>'
-)
-for(x = 1 to total_number_of_encounters)
-	set patienthtmlsimplified = build2(patienthtmlsimplified
+	set finalhtmlsimplified = build2(
+	'<!DOCTYPE html>'
+	,'<html lang="en">'
+	,'<head>'
+		,'<meta charset="UTF-8">'
+		,'<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+		,'<title>Medical Worklist</title>'
+		,'<style>'
+			,'body {'
+				,'font-family: Arial, sans-serif;'
+				,'margin: 20px;'
+			,'}'
+			,'table {'
+				,'width: 100%;'
+				,'border-collapse: collapse;'
+				,'margin-top: 20px;'
+				, 'font-size: 55%;'
+			,'}'
+			,'table, th, td {'
+				,'border: 1px solid black;'
+				,'border-left: none;' /* Remove left border */
+				,'border-right: none;' /* Remove right border */
+			,'}'
+			,'th, td {'
+				,'padding: 10px;'
+				,'text-align: left;'
+			,'}'
+			,'th {'
+				,'background-color: #f2f2f2;'
+			,'}'
+			,'table tr {'
+				,'border-top: 1px solid black;' /* Add top border to each row */
+				,'border-bottom: 1px solid black;' /* Add bottom border to each row */
+			,'}'
+			,'th.notes, td.notes {'
+			, 'width: 50%;'
+			, '}'
+		,'</style>'
+	,'</head>'
+	,'<body>'
+		,'<p style = "font-size: 65%;">Printed:&nbsp;', format(sysdate,"dd/mm/yyyy hh:mm;;d"), "&nbsp;", printuser_name,'</p>'
+		,'<p style = "font-size: 65%;">List:', displayed_list_name ,'</p>'
+	,''
+		,'<table>'
 			,'<tr>'
-				,'<td>'
-					, data->list[x].unit_disp,",&nbsp;"
-					, data->list[x].room_disp,",&nbsp;"
-					, data->list[x].bed_disp
-				,'</td>'
-				,'<td>'
-					,data->list[x].patient_name
-					," "
-					,data->list[x].age
-					," ",data->list[x].gender
-				,'</td>'
-				,'<td>'
-					, data->list[x].urn
-				, '</td>'
-				,'<td>'
-	)
-	for(y = 1 to data->list[x].diagnosisps_cnt)
-		set patienthtmlsimplified = build2(patienthtmlsimplified
-			,data->list[x]->diagnosisps[y].diagnosisp,",&nbsp"
-		)
-	endfor
-	set patienthtmlsimplified = build2(patienthtmlsimplified
-				, '</td>'
-				,'<td>',data->list[x].illness_severity,'</td>'
-				,'<td>'
-				, data->list[x].admit_dt_tm_disp
-				, '</td>'
-				,'<td class="notes"></td>'
+				,'<th>Location</th>'
+				,'<th>Patient</th>'
+				,'<th>MRN</th>'
+				,'<th>Principal Diagnosis</th>'
+				,'<th>Illness Severity</th>'
+				,'<th>Admit Date</th>'
+				,'<th>Notes</th>'
 			,'</tr>'
 	)
-endfor
+	for(x = 1 to total_number_of_encounters)
+		set patienthtmlsimplified = build2(patienthtmlsimplified
+				,'<tr>'
+					,'<td>'
+						, data->list[x].unit_disp,",&nbsp;"
+						, data->list[x].room_disp,",&nbsp;"
+						, data->list[x].bed_disp
+					,'</td>'
+					,'<td>'
+						,data->list[x].patient_name
+						," "
+						,data->list[x].age
+						," ",data->list[x].gender
+					,'</td>'
+					,'<td>'
+						, data->list[x].urn
+					, '</td>'
+					,'<td>'
+		)
+		for(y = 1 to data->list[x].diagnosisps_cnt)
+			set patienthtmlsimplified = build2(patienthtmlsimplified
+				,data->list[x]->diagnosisps[y].diagnosisp,",&nbsp"
+			)
+		endfor
+		set patienthtmlsimplified = build2(patienthtmlsimplified
+					, '</td>'
+					,'<td>',data->list[x].illness_severity,'</td>'
+					,'<td>'
+					, data->list[x].admit_dt_tm_disp
+					, '</td>'
+					,'<td class="notes"></td>'
+				,'</tr>'
+		)
+	endfor
 
-set finalhtmlsimplified = build2( finalhtmlsimplified, patienthtmlsimplified
-    ,'</table>'
-	,'</body>'
-	,'<footer style="margin-top: 20px; font-weight: bold; font-size: 30%; text-align: center;">'
-		,'Program V10.1.3     If found, please return to the nearest ward clerk'
-	,'</footer>'
-	,'</html>'
-)
+	set finalhtmlsimplified = build2( finalhtmlsimplified, patienthtmlsimplified
+		,'</table>'
+		,'</body>'
+		,'<footer style="margin-top: 20px; font-weight: bold; font-size: 30%; text-align: center;">'
+			,'Program:', VERSION_VAR,'     If found, please return to the nearest ward clerk'
+		,'</footer>'
+		,'</html>'
+	)
 ; Print the detailed list if checked on powerchart otherwise print the simplified
-if (cnvtlower(trim(print_options->print_style)) = "detailed")
-	set _memory_reply_string = finalhtml
-else
-	set _memory_reply_string = finalhtmlsimplified
-endif
+	if (cnvtlower(trim(print_options->print_style)) = "detailed")
+		set _memory_reply_string = finalhtml
+	else
+		set _memory_reply_string = finalhtmlsimplified
+	endif
 
 end
 go
