@@ -46,7 +46,7 @@ with
 	declare C_R_PROTEIN_CD_VAR = f8 with constant(4055520.00),protect
 	declare CREATININE_CD_VAR = f8 with constant(2700655.00),protect
 	declare ACTIVE_12025_CD_VAR = f8 with constant(3299.00),protect
-	declare VERSION_VAR = vc with constant("v12"),protect
+	declare VERSION_VAR = vc with constant("v12.3"),protect
 
 
 ;Declare Variables
@@ -121,7 +121,7 @@ with
 		3 mcomment					= vc
 		2 code_status				= vc
 		2 patient_summary			= vc
-		2 patient_summary_author	= vc
+		; 2 patient_summary_author	= vc
 		2 sit_aware_cnt				= i4
 		2 sit_aware[*]
 		3 comment					= vc
@@ -633,17 +633,30 @@ with
 	head pi.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
-		if(pos > 0 and pi.ipass_data_type_cd = 4003147_PATIENTSUMMARY_CD)
-			data->list[pos].patient_summary = result
+		if(pos > 0)
+			patient_summary_and_author_var = result
+			;data->list[pos].patient_summary = result
 		endif
 
 		if (pos > 0 and pr.person_id > 0)
-			data->list[pos].patient_summary_author = trim(pr.name_full_formatted,3)
+			patient_summary_and_author_var = build2(patient_summary_and_author_var
+				,"<BR>"
+				,"["
+				, trim(pr.name_full_formatted,3)
+				,"]"
+			)
+			;data->list[pos].patient_summary_author = trim(pr.name_full_formatted,3)
 		else
-			data->list[pos].patient_summary_author = "No author for summary found"
+			patient_summary_and_author_var = build2(patient_summary_and_author_var
+				,"<BR>[No author for summary found]"
+			)
+		endif
+
+		if(pos > 0)
+			data->list[pos].patient_summary = patient_summary_and_author_var
 		endif
 	foot pi.ENCNTR_ID
-		null
+		patient_summary_and_author_var = ""
 	with expand = 2, maxcol=100000
 
 ;Get Situation Awareness & Planning
@@ -857,8 +870,6 @@ with
 			,"<td class=patient-data-header-twofive>","Patient Summary","</td>"
 			,"<td class=patient-info-wide>"
 				, data->list[x].patient_summary
-				,"<BR>"
-				, "[",data->list[x].patient_summary_author,"]"
 			,"</td>"
 			,"</tr>"
 			,"<tr>"
