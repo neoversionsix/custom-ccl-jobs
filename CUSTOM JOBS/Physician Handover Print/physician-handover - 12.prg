@@ -1,12 +1,11 @@
 /*
 CUSTOM PRINT LAYOUT FOR THE Medical Worklist.
 
-Notes:
-This program was built using code from msj_ph_custom_print.prg, February 2019, tecrfx
-
 Cherwell: 793507
 Programmer: Jason Whittle
 Date: May 2024
+
+Updating Patient Summary to extract Based on Care Teams Med Service
  */
 
 
@@ -46,7 +45,7 @@ with
 	declare C_R_PROTEIN_CD_VAR = f8 with constant(4055520.00),protect
 	declare CREATININE_CD_VAR = f8 with constant(2700655.00),protect
 	declare ACTIVE_12025_CD_VAR = f8 with constant(3299.00),protect
-	declare VERSION_VAR = vc with constant("v12.3"),protect
+	declare VERSION_VAR = vc with constant("v12.4"),protect
 
 
 ;Declare Variables
@@ -68,6 +67,7 @@ with
 	1 list[*]
 		2 PERSON_ID					= f8
 		2 ENCNTR_ID					= f8
+		2 CARE_TEAM_ID				= f8
 		2 unit_disp					= vc
 		2 room_disp					= vc
 		2 bed_disp					= vc
@@ -170,6 +170,7 @@ with
 		SET data->list[x].ENCNTR_ID = print_options->qual[x].ENCNTR_ID
 		SET data->list[x].PERSON_ID = print_options->qual[x].PERSON_ID
 		SET data->list[x].age = trim(print_options->qual[x].pat_age,3)
+		SET data->list[x].CARE_TEAM_ID = print_options->qual[x].CARE_TEAM_ID
 	ENDFOR
 
 ;Get patient name gender

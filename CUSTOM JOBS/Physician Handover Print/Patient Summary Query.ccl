@@ -30,7 +30,7 @@ plan pi
     )
 		and pi.active_ind = 1
 		and pi.end_effective_dt_tm >= sysdate
-		and pi.ipass_data_type_cd = 82070321.00
+		and pi.ipass_data_type_cd = 82070321.00 ; code value CDF = "PATSUMMARY"
 ;	join pip
 ;		where pip.PCT_CARE_TEAM_ID = 257342.00
 ;		and pip.ENCNTR_ID = pi.ENCNTR_ID
