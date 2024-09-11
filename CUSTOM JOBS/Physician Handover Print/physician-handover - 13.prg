@@ -72,7 +72,6 @@ with
 		2 PERSON_ID					= f8
 		2 ENCNTR_ID					= f8
 		2 CARE_TEAM_ID				= f8
-		2 MED_SERVICE_CD			= f8
 		2 unit_disp					= vc
 		2 room_disp					= vc
 		2 bed_disp					= vc
@@ -601,95 +600,65 @@ with
 	with expand = 2
 	, maxcol=100000
 
-;Get Med Service for the Associated Care team in powerchart
-	for(x = 1 to total_number_of_encounters)
-		SET current_care_team_id_var = data->list[x].CARE_TEAM_ID
-		SET current_encounter_id_var = data->list[x].ENCNTR_ID
 
-		select into "nl:"
-			MS = p.PCT_MED_SERVICE_CD
-			, pi.ENCNTR_ID
-		from
-			pct_ipass   pi
-			, pct_care_team   p
-		plan pi
-			where pi.encntr_id = current_encounter_id_var
-			and pi.PCT_CARE_TEAM_ID = current_care_team_id_var
-		join p
-			where p.PCT_CARE_TEAM_ID = pi.PCT_CARE_TEAM_ID
-		head pi.encntr_id
-			pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
-
-			current_medservice_code_var = MS
-		WITH maxcol = 1000000
-
-		SET data->list[x].MED_SERVICE_CD = current_medservice_code_var
-	endfor
 
 ;Get Patient Summary
-	for(x = 1 to total_number_of_encounters)
-		SET current_encounter_id_var = data->list[x].ENCNTR_ID
-		SET current_medservice_code_var = data->list[x].MED_SERVICE_CD
-
-		select into "nl:"
-			result = evaluate
-			(
-				sn.long_text_id
-				, 0
-				, REPLACE(TRIM(sn.sticky_note_text, 3), char(10), "<BR>", 0)
-				, REPLACE(TRIM(lt.long_text, 3), char(10), "<BR>", 0)
+	select into "nl:"
+		result = evaluate
+		(
+			sn.long_text_id
+			, 0
+			, REPLACE(TRIM(sn.sticky_note_text, 3), char(10), "<BR>", 0)
+			, REPLACE(TRIM(lt.long_text, 3), char(10), "<BR>", 0)
+		)
+	from
+		pct_ipass pi
+		, sticky_note sn
+		, long_text lt
+		, prsnl pr
+		, pct_care_team pct
+	plan pi
+		where expand(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		and pi.active_ind = 1
+		and pi.end_effective_dt_tm >= sysdate
+		and pi.ipass_data_type_cd =	4003147_PATIENTSUMMARY_CD
+	join pct
+		where pct.PCT_CARE_TEAM_ID = pi.PCT_CARE_TEAM_ID
+	join sn
+		where sn.sticky_note_id = pi.parent_entity_id
+		and sn.beg_effective_dt_tm <= sysdate
+		and sn.end_effective_dt_tm >= sysdate
+	join lt
+		where lt.long_text_id = outerjoin(sn.long_text_id)
+		and lt.active_ind = outerjoin(1)
+	join pr
+		where pr.person_id = outerjoin(pi.updt_id)
+		and pr.active_ind = outerjoin(1)
+		and pr.END_EFFECTIVE_DT_TM > outerjoin(sysdate)
+		and pr.BEG_EFFECTIVE_DT_TM < outerjoin(sysdate)
+	order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
+	head pi.ENCNTR_ID
+		patient_summary_and_author_var = ""
+		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		if(pos > 0)
+			patient_summary_and_author_var = result
+		endif
+		if (pos > 0 and pr.person_id > 0)
+			patient_summary_and_author_var = build2(patient_summary_and_author_var
+				,"<BR>"
+				,"["
+				, trim(pr.name_full_formatted,3)
+				,"]"
 			)
-		from
-			pct_ipass pi
-			, sticky_note sn
-			, long_text lt
-			, prsnl pr
-			, pct_care_team pct
-		plan pi
-			where pi.ENCNTR_ID = current_encounter_id_var
-			and pi.active_ind = 1
-			and pi.end_effective_dt_tm >= sysdate
-			and pi.ipass_data_type_cd =	4003147_PATIENTSUMMARY_CD
-		join pct
-			where pct.PCT_CARE_TEAM_ID = pi.PCT_CARE_TEAM_ID
-			and pct.pct_med_service_cd = current_medservice_code_var
-		join sn
-			where sn.sticky_note_id = pi.parent_entity_id
-			and sn.beg_effective_dt_tm <= sysdate
-			and sn.end_effective_dt_tm >= sysdate
-		join lt
-			where lt.long_text_id = outerjoin(sn.long_text_id)
-			and lt.active_ind = outerjoin(1)
-		join pr
-			where pr.person_id = outerjoin(pi.updt_id)
-			and pr.active_ind = outerjoin(1)
-			and pr.END_EFFECTIVE_DT_TM > outerjoin(sysdate)
-			and pr.BEG_EFFECTIVE_DT_TM < outerjoin(sysdate)
-		order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
-		head pi.ENCNTR_ID
-			if(x > 0)
-				patient_summary_and_author_var = result
-			endif
-
-			if (x > 0 and pr.person_id > 0)
-				patient_summary_and_author_var = build2(patient_summary_and_author_var
-					,"<BR>"
-					,"["
-					, trim(pr.name_full_formatted,3)
-					,"]"
-				)
-			else
-				patient_summary_and_author_var = build2(patient_summary_and_author_var
-					,"<BR>[No author for summary found]"
-				)
-			endif
-		foot pi.ENCNTR_ID
-			NULL
-		with maxcol=100000
-
-		SET data->list[x].patient_summary = patient_summary_and_author_var
-		SET patient_summary_and_author_var = ""
-	endfor
+		else
+			patient_summary_and_author_var = build2(patient_summary_and_author_var
+				,"<BR>[No author for summary found]"
+			)
+		endif
+		data->list[pos].patient_summary = result
+	foot pi.ENCNTR_ID
+		NULL
+	with maxcol=100000
 
 ;Get Situation Awareness & Planning
 	select into "nl:"

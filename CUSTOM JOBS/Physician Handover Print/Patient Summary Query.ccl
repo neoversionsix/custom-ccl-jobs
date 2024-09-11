@@ -6,8 +6,6 @@ SELECT
 			, REPLACE(TRIM(sn.sticky_note_text, 3), char(10), "<BR>", 0)
 			, REPLACE(TRIM(lt.long_text, 3), char(10), "<BR>", 0)
 		)
-	, pi.PCT_CARE_TEAM_ID
-	, p.PCT_MED_SERVICE_CD
 
 FROM
 	pct_ipass   pi
