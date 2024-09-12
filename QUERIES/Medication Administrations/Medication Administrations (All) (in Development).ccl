@@ -1,4 +1,50 @@
-SELECT
+/*
+Programmer: Jason Whittle
+All medication administrations regardless of in surgery or not
+*/
+drop program wh_testing_query_88:dba go
+create program wh_testing_query_88:dba
+prompt
+	"Output to File/Printer/MINE" = "MINE"
+with OUTDEV
+
+;USER INPUT VARIABLES IN THIS SECTION-----------------------------------------------------------------------------------
+    DECLARE START_DATE_VAR = VC with NoConstant("01-SEP-2024 00:00"),Protect ; EDIT THIS!!!!!!!
+    DECLARE END_DATE_VAR = VC with NoConstant("05-SEP-2024 00:00"),Protect ; EDIT THIS!!!!!!!
+    DECLARE URN_VAR = VC with NoConstant("1613161"),Protect ; EDIT THIS!!!!!!!
+    Declare CNT_ORD = I4
+    ;-------------------------------------------------------------------------------------------------------------------
+
+;create a record structure to store all the order id's
+RECORD RECORD_STRUCTURE_ORDERS (
+     1 ORDERS[*]
+          2 ORDER_ID = F8
+)
+
+SELECT INTO "NL:"
+        M_OID = M.ORDER_ID
+    ,   S_OID = S.ORDER_ID
+FROM
+        MED_ADMIN_EVENT       M
+    ,   SA_MEDICATION_ADMIN   S
+
+PLAN M
+    WHERE
+            M.BEG_DT_TM >= CNVTDATETIME(START_DATE_VAR)
+        AND M.BEG_DT_TM <= CNVTDATETIME(END_DATE_VAR)
+        AND M.EVENT_TYPE_CD = 4093094.00 ; Administered
+        AND M.ORDER_ID > 0
+JOIN S
+    WHERE
+            S.ORDER_ID = OUTERJOIN (M.ORDER_ID)
+        AND S.ADMIN_START_DT_TM >= OUTERJOIN(CNVTDATETIME(START_DATE_VAR))
+        AND S.ADMIN_START_DT_TM <= OUTERJOIN(CNVTDATETIME(END_DATE_VAR))
+        AND S.ORDER_ID > OUTERJOIN(0)
+
+
+
+
+SELECT INTO $OUTDEV
 	M_A_E_POSITION_DISP = UAR_GET_CODE_DISPLAY(M_A_E.POSITION_CD) ; POSITION
 	, O.ORIG_ORDER_DT_TM "dd/mmm/yyyy hh:mm"
 	, M_A_E.BEG_DT_TM "dd/mmm/yyyy hh:mm"
@@ -12,15 +58,14 @@ SELECT
     , PATIENT_URN = P_A.ALIAS
     , ORDERER = PR.NAME_FULL_FORMATTED
 
-
 FROM
 	; ORDER_DETAIL            O_D
     ORDER_ACTION          O_A
 	; , ORDER_INGREDIENT      O_I
 	, ORDERS                O
 	, ENCOUNTER             E
-	; , MED_ADMIN_EVENT       M_A_E
-    , SA_MEDICATION_ADMIN   S_M_A
+	, MED_ADMIN_EVENT       M_A_E
+    ;, SA_MEDICATION_ADMIN   S_M_A
     , PRSNL                 PR
     , PERSON_ALIAS          P_A
     , ENCNTR_ALIAS          E_A
@@ -32,10 +77,16 @@ PLAN
     WHERE
 ;	M_A_E.BEG_DT_TM > CNVTLOOKBEHIND ("1,H")
 ;	AND
-	M_A_E.EVENT_TYPE_CD !=     4093095.00	;Not Administered/Task Purged
-    AND M_A_E.BEG_DT_TM >= CNVTDATETIME("31-OCT-2023")
-    AND M_A_E.BEG_DT_TM <= CNVTDATETIME("5-NOV-2023")
+	M_A_E.EVENT_TYPE_CD = 4093094.00
+    AND M_A_E.BEG_DT_TM >= CNVTDATETIME(START_DATE_VAR)
+    AND M_A_E.BEG_DT_TM <= CNVTDATETIME(END_DATE_VAR)
 
+    /*
+    Not Administered/Task Purged	    4093095.00
+    Administered	    4093094.00
+    Not Given	    4093097.00
+    Not Done	    4093096.00
+     */
 
 
 JOIN O_A ; ORDER_ACTION
@@ -69,7 +120,7 @@ JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
     P_A.ACTIVE_IND = 1
     /* Patient URN */
     AND
-    P_A.ALIAS = "1599017"                                                       ; ENTER URN!!!!!!!!!!!!!!!!!!!!
+    P_A.ALIAS = URN_VAR ; ENTER URN!!!!!!!!!!!!!!!!!!!!
 
 /* Encounter Identifiers such as the Financial Number */
 JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
@@ -92,7 +143,10 @@ JOIN PR;PRSNL
 ORDER BY
 	O.ORDER_ID
 
-WITH TIME = 10,
+WITH TIME = 30,
 	NOCOUNTER,
 	SEPARATOR=" ",
 	FORMAT
+
+end
+go

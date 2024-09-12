@@ -45,8 +45,7 @@ with
 	declare C_R_PROTEIN_CD_VAR = f8 with constant(4055520.00),protect
 	declare CREATININE_CD_VAR = f8 with constant(2700655.00),protect
 	declare ACTIVE_12025_CD_VAR = f8 with constant(3299.00),protect
-	declare VERSION_VAR = vc with constant("v13.14"),protect
-
+	declare VERSION_VAR = vc with constant("v13.26"),protect
 
 ;Declare Variables
 	declare idx = i4 with noconstant(0),protect
@@ -62,8 +61,6 @@ with
 	declare current_encounter_id_var = f8 with noconstant(0.00),protect
 	declare current_care_team_id_var = f8 with noconstant(0.00),protect
 	declare current_medservice_code_var = f8 with noconstant(0.00),protect
-
-
 
 ;Declare Records
 	record data (
@@ -166,7 +163,7 @@ with
 ;Get the total number of encounters passed over from powerchart
 	SET total_number_of_encounters = SIZE(print_options->qual,5)
 
-; Copy Information from JSON Record structure to data record structure
+; Copy Information from JSON Record structure to new 'data' record structure
 	SET stat = alterlist(data->list,total_number_of_encounters) ; Allocate Memory
 	FOR (x=1 to total_number_of_encounters)
 		SET data->list[x].ENCNTR_ID = print_options->qual[x].ENCNTR_ID
@@ -611,6 +608,7 @@ with
 			, REPLACE(TRIM(sn.sticky_note_text, 3), char(10), "<BR>", 0)
 			, REPLACE(TRIM(lt.long_text, 3), char(10), "<BR>", 0)
 		)
+		, P_PCT_MED_SERVICE_DISP = UAR_GET_CODE_DISPLAY(PCT.PCT_MED_SERVICE_CD)
 	from
 		pct_ipass pi
 		, sticky_note sn
@@ -636,28 +634,38 @@ with
 		and pr.active_ind = outerjoin(1)
 		and pr.END_EFFECTIVE_DT_TM > outerjoin(sysdate)
 		and pr.BEG_EFFECTIVE_DT_TM < outerjoin(sysdate)
-	order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
+	order by pi.ENCNTR_ID, pi.parent_entity_id, pi.begin_effective_dt_tm desc
 	head pi.ENCNTR_ID
-		patient_summary_and_author_var = ""
 		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+		patient_summary_and_author_var = ""
+	head pi.parent_entity_id
+		null
+	detail
 		if(pos > 0)
-			patient_summary_and_author_var = result
+			patient_summary_and_author_var = build2(patient_summary_and_author_var
+			, "<b>["
+			, P_PCT_MED_SERVICE_DISP
+			, "]</b><BR>"
+			, result)
 		endif
 		if (pos > 0 and pr.person_id > 0)
 			patient_summary_and_author_var = build2(patient_summary_and_author_var
 				,"<BR>"
 				,"["
 				, trim(pr.name_full_formatted,3)
-				,"]"
+				,"]<BR>"
 			)
 		else
 			patient_summary_and_author_var = build2(patient_summary_and_author_var
-				,"<BR>[No author for summary found]"
+				,"<BR>[No author for summary found]<BR>"
 			)
 		endif
-		data->list[pos].patient_summary = result
+	foot pi.parent_entity_id
+		if(pos > 0)
+			data->list[pos]->patient_summary = patient_summary_and_author_var
+		endif
 	foot pi.ENCNTR_ID
-		NULL
+		patient_summary_and_author_var = ""
 	with maxcol=100000
 
 ;Get Situation Awareness & Planning
@@ -691,22 +699,25 @@ with
 		and pr.active_ind = outerjoin(1)
 		and pr.END_EFFECTIVE_DT_TM > outerjoin(sysdate)
 		and pr.BEG_EFFECTIVE_DT_TM < outerjoin(sysdate)
-	order by pi.ENCNTR_ID, pi.ipass_data_type_cd, pi.begin_effective_dt_tm desc
+	order by pi.ENCNTR_ID, pi.parent_entity_id, pi.begin_effective_dt_tm desc
 	head pi.ENCNTR_ID
 		pos = locateval(idx,1,total_number_of_encounters,pi.ENCNTR_ID,data->list[idx].ENCNTR_ID)
 		cnt = 0
+	head pi.parent_entity_id
+		NULL
 	detail
-		if(pos > 0 and pi.ipass_data_type_cd = 4003147_COMMENT_CD)
+		if(pos > 0)
 			cnt += 1
 			stat = alterlist(data->list[pos]->sit_aware, cnt)
 			data->list[pos]->sit_aware[cnt].comment = result
 		endif
-	foot pi.ENCNTR_ID
+	foot pi.parent_entity_id
 		if(pos > 0)
 			data->list[pos].sit_aware_cnt = cnt
 		endif
+	foot pi.ENCNTR_ID
+		null
 	with expand = 2	, maxcol=100000
-
 
 ;Get Actions
 	select into "nl:"
