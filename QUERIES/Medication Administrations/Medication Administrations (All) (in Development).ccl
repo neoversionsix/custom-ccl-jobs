@@ -40,9 +40,18 @@ JOIN S
         AND S.ADMIN_START_DT_TM >= OUTERJOIN(CNVTDATETIME(START_DATE_VAR))
         AND S.ADMIN_START_DT_TM <= OUTERJOIN(CNVTDATETIME(END_DATE_VAR))
         AND S.ORDER_ID > OUTERJOIN(0)
+HEAD REPORT
+    ;allocate memory to store information for 100 group orders
+	call alterlist(RECORD_STRUCTURE_ORDERS->ORDERS,100)
+HEAD M.ORDER_ID
+    CNT_ORD = CNT_ORD + 1
 
 
+count the number of orders
 
+add all orders ids to a record structure
+
+query db to outdev using expand in for the order ids stored in the record structure.
 
 SELECT INTO $OUTDEV
 	M_A_E_POSITION_DISP = UAR_GET_CODE_DISPLAY(M_A_E.POSITION_CD) ; POSITION
