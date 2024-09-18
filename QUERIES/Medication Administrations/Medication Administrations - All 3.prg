@@ -2,8 +2,9 @@ drop program wh_med_administrations2 go
 create program wh_med_administrations2
 /*
 Programmer: Jason Whittle
-Date: 16 Nov 2023
-Use: Medication Administrations
+Created: 16 Nov 2023
+Updated: 18 Sep 2024
+Use: Medication Administrations (including surgery)
  */
 
 prompt
@@ -27,7 +28,10 @@ SELECT DISTINCT INTO $OUTDEV
 	PATIENT = P.NAME_FULL_FORMATTED
 	, PATIENT_URN = P_A.ALIAS
 	, ENCOUNTER_ = E_A.ALIAS
-	, EVENT_TYPE = UAR_GET_CODE_DISPLAY(M_A_E.EVENT_TYPE_CD); EVENT TYPE
+	, EVENT_TYPE =
+        IF(M_A_E.BEG_DT_TM>0) UAR_GET_CODE_DISPLAY(M_A_E.EVENT_TYPE_CD); EVENT TYPE
+        ELSE "SURGINET"
+        ENDIF
     , INTERFACE = ; POWERCHART OR SURGINET?
         IF (M_A_E.MED_ADMIN_EVENT_ID>0) "POWERCHART"
         ELSE "SURGINET"
