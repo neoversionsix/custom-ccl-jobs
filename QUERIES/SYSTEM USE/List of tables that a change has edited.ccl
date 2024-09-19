@@ -1,0 +1,24 @@
+SELECT
+/*
+This is used for when we want to check which tables are touched by a change
+generally this is run to help craft an update script
+ */
+	D.TABLE_NAME
+    , D.UPDT_DT_TM
+	, D.CHG_DT_TM
+	, D.COL_STRING
+	, D.CONTEXT_NAME
+	, D.DELETE_IND
+	, D.LOG_ID
+	, D.PK_WHERE
+	, D.PK_WHERE_HASH
+	, D.PK_WHERE_VALUE
+	, D.PTAM_MATCH_RESULT_STR
+	, D.UPDT_ID
+FROM
+	DM_CHG_LOG   D
+WHERE
+        D.UPDT_DT_TM > CNVTLOOKBEHIND("1,H")
+    AND D.UPDT_ID = (SELECT I.PERSON_ID FROM PRSNL I WHERE I.USERNAME = "WHITTLJ2")
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 30
