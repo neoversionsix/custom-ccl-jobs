@@ -1,0 +1,109 @@
+SELECT
+	PATIENT = P.NAME_FULL_FORMATTED
+	, PATIENT_URN = P_A.ALIAS
+	, ENCOUNTER_ = E_A.ALIAS
+	, ITEM = O.ORDER_MNEMONIC
+	, INTERFACE = "SURGINET ONLY"
+	, ORDERED_TIME = O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+    , ENCOUNTER_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
+    , ADMINISTERED_BY = PR.NAME_FULL_FORMATTED
+    , ORDERED_BY = PR_2.NAME_FULL_FORMATTED
+
+FROM
+    ORDER_ACTION          	O_A
+    , ORDER_ACTION          O_A_2
+	, ORDERS                O
+	, ENCOUNTER             E
+	; , MED_ADMIN_EVENT       M_A_E
+    , PRSNL                 PR
+    , PRSNL                 PR_2
+    , PERSON				P
+    , PERSON_ALIAS          P_A
+    , ENCNTR_ALIAS          E_A
+
+PLAN O_A ; ORDER_ACTION
+    WHERE
+    O_A.ORDER_STATUS_CD IN(2548, 2543) 	; In process or complete orders only
+    AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+    AND O_A.ACTION_DT_TM >= CNVTDATETIME("01-OCT-2023")
+    AND O_A.ACTION_DT_TM <= CNVTDATETIME("01-NOV-2023")
+
+JOIN PR;PRSNL
+    WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID);X.UPDT_ID
+    AND PR.ACTIVE_IND = OUTERJOIN(1)
+
+/* Joining Order Action table again to get the original ordering personell */
+JOIN O_A_2 ; ORDER_ACTION
+    WHERE O_A_2.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
+    AND O_A_2.ACTION_TYPE_CD = OUTERJOIN(2534); New Order
+
+JOIN PR_2;PRSNL
+    WHERE PR_2.PERSON_ID = OUTERJOIN(O_A_2.ACTION_PERSONNEL_ID);X.UPDT_ID
+    AND PR_2.ACTIVE_IND = OUTERJOIN(1)
+
+; JOIN M_A_E ;MED_ADMIN_EVENT
+;     WHERE M_A_E.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
+
+JOIN O ; ORDERS
+	WHERE O.ORDER_ID = O_A.ORDER_ID
+    /*Pharmacy Catalog only */
+    AND O.CATALOG_TYPE_CD = 2516.00;
+    AND (
+           CNVTUPPER(O.ORDER_MNEMONIC) = "*Vecuroinium*"
+        OR CNVTUPPER(O.ORDER_MNEMONIC) = "*Rocuronium*"
+        OR CNVTUPPER(O.ORDER_MNEMONIC) = "*Suxemethonium*"
+    )
+    AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME("01-SEP-2024")
+    ;AND O.ORIG_ORDER_DT_TM <= CNVTDATETIME("01-NOV-2023")
+
+JOIN E ; ENCOUNTER
+	WHERE E.ENCNTR_ID = O.ENCNTR_ID
+    AND E.ACTIVE_IND = 1
+    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    AND E.LOC_FACILITY_CD != 4038465.00
+
+/* Patient Identifiers such as URN Medicare no etc */
+JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
+    WHERE P_A.PERSON_ID = E.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
+    /* Patient URN */
+    ; AND
+    ; P_A.ALIAS = "ENTERURN#" ; ENTER URN!
+
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = E.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    ;AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+/* Encounter Identifiers such as the Financial Number */
+JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+	/* active FIN NBRs only */
+    AND E_A.ACTIVE_IND = 1
+    /* effective FIN NBRs only */
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+
+ORDER BY
+    O.PERSON_ID
+	, O.ORDER_ID
+
+WITH TIME = 200,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT
