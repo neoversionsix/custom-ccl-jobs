@@ -66,7 +66,6 @@ PLAN O_A ; ORDER_ACTION
     rocuronium	    9741965
     vecuronium infusion NEO (2.5 mg/kg in 25 mL) in Glucose 5%	  152032015
     vecuronium infusion NEO (2.5 mg/kg in 25mL) in Sodium Chloride 0.9%	  152019995
-
      */
 
 JOIN PR;PRSNL
