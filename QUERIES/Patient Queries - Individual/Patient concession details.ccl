@@ -1,0 +1,119 @@
+SELECT
+      URN = PA.Alias
+    , PATIENT = P.NAME_FULL_FORMATTED
+    , ALIAS_POOL = UAR_GET_CODE_DISPLAY(PA.ALIAS_POOL_CD)
+    , ALIAS = PA.ALIAS
+    ; , HEALTH_CARE_CARD = UAR_GET_CODE_DISPLAY()
+    ; , PENSION_CARD =
+    ; , SAFETY_NET_CARD =
+    ; , DVAS =
+    ; , MEDICARE =
+
+
+FROM
+      PERSON            P
+    , PERSON_ALIAS      PA
+PLAN P;PERSON
+    WHERE
+        P.PERSON_ID =
+        (
+	        SELECT I.PERSON_ID
+	        FROM PERSON_ALIAS I
+	        WHERE
+                I.ALIAS_POOL_CD = 9569589.00; URN
+                ;AND I.ALIAS = "*9*"
+                AND I.UPDT_DT_TM > CNVTLOOKBEHIND("5,D")
+        )
+JOIN PA
+	WHERE
+		PA.PERSON_ID = P.PERSON_ID
+
+ORDER BY
+    P.PERSON_ID
+WITH
+      TIME = 5
+    , MAXREC = 100
+    , FORMAT
+    , SEPARATOR = " "
+
+
+/*
+ALIAS_POOL_CD	ALIAS_POOL
+    4039501.00	DVA GOLD
+   13075331.00	Carer Payment Pension
+    4455022.00	TAC
+    4081892.00	Safety Net Concession Card
+   14966006.00	Unemployment Related Benefits
+   10719999.00	Safety Net Entitlement Card
+    9569589.00	WHS UR Number
+    6797507.00	DVA Number
+   14966012.00	Emergency ID
+    4039507.00	Medicare No
+   13079326.00	Pension Concession Card
+  174930721.00	NDIS Participant Identifier
+   13079325.00	Disability Support Pension
+    4081893.00	Healthcare Card
+  152031769.00	CONSUMER_MESSAGING
+   10726213.00	Pension - Other
+    4443217.00	Work Cover
+    6797508.00	Commonwealth Seniors Health Card
+    4039502.00	DVA WHITE
+
+
+
+ */
+
+
+/*
+hi Jason,
+
+can you pls create a ccl that pulls in patient's recorded concession details - like you did for GP details so it can be used in a dyndoc?
+
+concession card (Health Care Card) = HC
+
+pension card = PENC
+
+safety net card = SNCC
+
+DVAs = DV
+
+Medicare = MC
+
+thanks
+
+Annie
+
+
+aliases/code sets Mark found:
+
+HC
+code set 4; 'Person Alias Type', for code value 19; 'State Healthcare Card'
+code set 263; 'Alias Pool' for code value 4081893; 'Healthcare Card'
+
+1:55
+
+PENC
+code set 263; 'Alias Pool' for code value 4037745; 'Pension Concession Card'
+
+1:56
+
+SNCC
+code set 4; 'Person Alias Type', for code value 4072902; 'Safety Net Concession Card'
+code set 263; 'Alias Pool' for code value 4081892; 'Safety Net Concession Card'
+
+1:58
+
+DV
+code set 4; 'Person Alias Type', for code value 9641670; 'DVA'
+code set 263; 'Alias Pool' for code value 6797507; 'DVA Number'
+
+1:59
+
+MC
+code set 4; 'Person Alias Type', for code value 18; 'Medicare Number'
+code set 263; 'Alias Pool' for code value 4039507; 'Medicare No'
+
+
+
+
+ */

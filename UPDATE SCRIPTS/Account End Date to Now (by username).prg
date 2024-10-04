@@ -7,5 +7,4 @@ UPDATE INTO PRSNL P
         , P.UPDT_CNT = P.UPDT_CNT + 1
     WHERE
         P.USERNAME = "_USERNAME_" ; <---COLUMN HEADER NAME FOR GENERATOR
-
 ;------------------------------------------------------------------------
