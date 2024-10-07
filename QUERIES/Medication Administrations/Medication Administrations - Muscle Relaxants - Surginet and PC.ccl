@@ -10,7 +10,7 @@ SELECT DISTINCT
         IF (M_A_E.MED_ADMIN_EVENT_ID>0) "POWERCHART"
         ELSE "SURGINET"
         ENDIF
-	, O_MNEMONIC = O.ORDER_MNEMONIC
+	, ITEM = O.ORDER_MNEMONIC
 	, ORD_DETAIL = O_A.ORDER_DETAIL_DISPLAY_LINE
 	, EVENT_TAG = C.EVENT_TAG
 	, ORDERED_TIME = FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
@@ -59,15 +59,24 @@ PLAN O_A ; ORDER_ACTION
     AND O_A.SYNONYM_ID IN (
         SELECT I.SYNONYM_ID
         FROM ORDER_CATALOG_SYNONYM I
-        WHERE I.CATALOG_CD IN (9742339,9741970,9741965,152032015,152019995)
+        WHERE I.CATALOG_CD IN (9742339,9741970,9741965,152032015,152019995,9743115,
+            9742466,9742139,152026725,152019409,151938025,152019927)
     )
 
-/*
+    /*
     suxamethonium	9742339
     vecuronium	    9741970
     rocuronium	    9741965
     vecuronium infusion NEO (2.5 mg/kg in 25 mL) in Glucose 5%	  152032015
     vecuronium infusion NEO (2.5 mg/kg in 25mL) in Sodium Chloride 0.9%	  152019995
+
+    cisatracurium	    9743115.00
+    mivacurium	    9742466.00
+    atracurium	    9742139.00
+    atracurium infusion 250 mg in Sodium Chloride 0.9% 50 mL CONTINUOUS (CRIT CARE)	  152026725.00
+    cisatracurium infusion 50 mg in Glucose 5% 50 mL CONTINUOUS (CRIT CARE)	  152019409.00
+    cisatracurium infusion 50 mg in Sodium Chloride 0.9% 50 mL CONTINUOUS (CRIT CARE)	  151938025.00
+    atracurium IV infusion 250 mg in Sodium Chloride 0.9% 50 mL CONTINUOUS (CRIT CARE)	  152019927.00
      */
 
 JOIN PR;PRSNL
