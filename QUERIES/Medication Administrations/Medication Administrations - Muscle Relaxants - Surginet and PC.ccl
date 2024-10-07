@@ -11,7 +11,6 @@ SELECT DISTINCT
         ELSE "SURGINET"
         ENDIF
 	, O_MNEMONIC = O.ORDER_MNEMONIC
-	, OCS_MNEMONIC = OC.MNEMONIC
 	, ORD_DETAIL = O_A.ORDER_DETAIL_DISPLAY_LINE
 	, EVENT_TAG = C.EVENT_TAG
 	, ORDERED_TIME = FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
@@ -49,7 +48,6 @@ FROM
 	, SA_MEDICATION_ADMIN   S
 	, CLINICAL_EVENT   C
 	, ENCNTR_LOC_HIST   E_L_H
-	, ORDER_CATALOG_SYNONYM   OC
 
 PLAN O_A ; ORDER_ACTION
     WHERE
@@ -71,10 +69,6 @@ PLAN O_A ; ORDER_ACTION
     vecuronium infusion NEO (2.5 mg/kg in 25 mL) in Glucose 5%	  152032015
     vecuronium infusion NEO (2.5 mg/kg in 25mL) in Sodium Chloride 0.9%	  152019995
      */
-
-JOIN OC
-	WHERE
-		O_A.SYNONYM_ID = OC.SYNONYM_ID
 
 JOIN PR;PRSNL
     ; This is to get the person completing/administering the medication
