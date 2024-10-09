@@ -2,7 +2,6 @@ SELECT DISTINCT
 /* This code in in development for Coung
 8651100 incident
 requested to cound from Nicole
-
  */
 
 	PATIENT = P.NAME_FULL_FORMATTED
