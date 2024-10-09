@@ -37,8 +37,8 @@ FROM
 PLAN O
     WHERE
     ;Filter update time
-    O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-FEB-2024 00:00:00")
-    AND O.ORIG_ORDER_DT_TM < CNVTDATETIME("01-JUN-2024 00:00:00")
+    O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-AUG-2024 00:00:00")
+    AND O.ORIG_ORDER_DT_TM < CNVTDATETIME("01-OCT-2024 00:00:00")
     AND O.ACTIVE_IND = 1 ;Active Only
     AND O.CATALOG_CD = 90228280.00 ; Primary Code = "Consult to Medical Specialty (MO Use Only)"
     AND O.ORDER_ID IN ; Orders where FIELD and FIELD Entry are the following
