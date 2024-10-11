@@ -1,7 +1,6 @@
 SELECT DISTINCT
 /*
-This will give filter for encounters with certain surgeries
-and then provide Anaesthesia and Surgery times for those encounters
+Filters certain type of surgery and drugs were in process or complete during the surgery
  */
 
       PATIENT = PATIENT.NAME_FULL_FORMATTED
@@ -98,6 +97,13 @@ JOIN O_DRUG; ORDERS
             ;     OR
             ;     O_DRUG.CATALOG_CD = OUTERJOIN(9741965)
             ; )
+
+; JOIN S ;SA_MEDICATION_ADMIN
+;     WHERE
+;         S.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
+;         AND S.ORDER_ID > OUTERJOIN(0)
+;         AND S.EVENT_ID > OUTERJOIN(0)
+;         AND S.ACTIVE_IND = OUTERJOIN(1)
 
 JOIN OCS_DRUG ;ORDER_CATALOG_SYNONYM
 	WHERE OCS_DRUG.SYNONYM_ID = (O_DRUG.SYNONYM_ID)
