@@ -1,0 +1,44 @@
+SELECT
+
+FROM
+      CLINICAL_EVENT    C_E
+    , PRSNL             PR
+    , PERSON_ALIAS      P_A
+    , PERSON            P
+
+PLAN C_E;CLINICAL_EVENT
+    WHERE
+    /* Removes Update rows effectively grabs the row with the latest update*/
+    C_E.VALID_UNTIL_DT_TM > SYSDATE
+    /* Test Patient filter out */
+    AND C_E.PERSON_ID NOT IN
+        (
+    	SELECT PERSON_FILTER.PERSON_ID
+        FROM PERSON PERSON_FILTER
+        WHERE PERSON_FILTER.NAME_LAST_KEY = "*TESTWHS*"
+        )
+    AND C_E.UPDT_DT_TM > CNVTLOOKBEHIND("10,H")
+
+JOIN PR;PRSNL
+    WHERE PR.PERSON_ID = C_E.UPDT_ID
+    AND PR.USERNAME = "MAHMOOM"
+
+
+JOIN P_A;PERSON_ALIAS
+    WHERE P_A.PERSON_ID = C_E.PERSON_ID
+	AND P_A.PERSON_ALIAS_TYPE_CD = 10 ; 'URN' FROM CODE SET 319
+    AND P_A.ALIAS_POOL_CD = 9569589.00 ; WHS UR Number
+	AND P_A.ACTIVE_IND = 1	; ACTIVE URNS ONLY
+	AND P_A.END_EFFECTIVE_DT_TM > SYSDATE	; EFFECTIVE URNS ONLY
+
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = C_E.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+JOIN
