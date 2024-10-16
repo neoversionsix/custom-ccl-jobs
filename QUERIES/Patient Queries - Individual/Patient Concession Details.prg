@@ -1,7 +1,7 @@
 /*
 Programmer: Jason Whittle
 Requester: Annie.L
-Cherwells: 766199, 770993
+Cherwells: 766199, 770993, 704272, TASK 189622
 
 Use: Pulls back patient concession details for a dyndoc: Pharmacy Admission
 #dynamic document
@@ -21,47 +21,57 @@ CREATE PROGRAM WH_GP_DETAILS_PERSON
 DECLARE ENCNTR_ID_VAR                           = F8 WITH CONSTANT(REQUEST->VISIT[1].ENCNTR_ID), PROTECT
 ; Store patient person_id from powerchart
 DECLARE PERSON_ID_VAR                           = F8 WITH CONSTANT(REQUEST->PERSON[1].PERSON_ID), PROTECT
-; Store Code value for a concession
+
+; Store Code value for DVA GOLD
 DECLARE DVA_GOLD_CD_VAR                         = F8 WITH CONSTANT(4039501.00)
-; Create a placeholder variable for the concession var char retrieved from the database
+; Create a placeholder variable for the DVA GOLD value retrieved from the database
 DECLARE DVA_GOLD_VA                             = VC WITH NOCONSTANT("")
-; Do the same for the rest
-DECLARE CARER_PAYMENT_PENSION_CD_VAR            = F8 WITH CONSTANT(13075331.00)
-DECLARE CARER_PAYMENT_PENSION_VAR               = VC WITH NOCONSTANT("")
-DECLARE TAC_CD_VAR                              = F8 WITH CONSTANT(4455022.00)
-DECLARE TAC_VAR                                 = VC WITH NOCONSTANT("")
+
+; Store Code value for Safety Net Concession Card
 DECLARE SAFETY_NET_CONCESSION_CD_VAR            = F8 WITH CONSTANT(4081892.00)
+; Create a placeholder variable for the Safety Net Concession Card value retrieved from the database
 DECLARE SAFETY_NET_CONCESSION_VAR               = VC WITH NOCONSTANT("")
-DECLARE UNEMPLOYMENT_RELATED_BENEFITS_CD_VAR    = F8 WITH CONSTANT(14966006.00)
-DECLARE UNEMPLOYMENT_RELATED_BENEFITS_VAR       = VC WITH NOCONSTANT("")
+
+; Store Code value for Safety Net Entitlement Card
 DECLARE SAFETY_NET_ENTITLEMENT_CD_VAR           = F8 WITH CONSTANT(10719999.00)
+; Create a placeholder variable for the Safety Net Entitlement Card value retrieved from the database
 DECLARE SAFETY_NET_ENTITLEMENT_VAR              = VC WITH NOCONSTANT("")
-DECLARE WHS_UR_NUMBER_CD_VAR                    = F8 WITH CONSTANT(9569589.00)
-DECLARE WHS_UR_NUMBER_VAR                       = VC WITH NOCONSTANT("")
+
+; Store Code value for DVA Number
 DECLARE DVA_NUMBER_CD_VAR                       = F8 WITH CONSTANT(6797507.00)
+; Create a placeholder variable for the DVA Number value retrieved from the database
 DECLARE DVA_NUMBER_VAR                          = VC WITH NOCONSTANT("")
-DECLARE EMERGENCY_ID_CD_VAR                     = F8 WITH CONSTANT(14966012.00)
-DECLARE EMERGENCY_ID_VAR                        = VC WITH NOCONSTANT("")
+
+; Store Code value for Medicare No
 DECLARE MEDICARE_NO_CD_VAR                      = F8 WITH CONSTANT(4039507.00)
+; Create a placeholder variable for the Medicare No value retrieved from the database
 DECLARE MEDICARE_NO_VAR                         = VC WITH NOCONSTANT("")
+
+; Store Code value for Pension Concession Card
 DECLARE PENSION_CONCESSION_CD_VAR               = F8 WITH CONSTANT(13079326.00)
+; Create a placeholder variable for the Pension Concession Card value retrieved from the database
 DECLARE PENSION_CONCESSION_VAR                  = VC WITH NOCONSTANT("")
-DECLARE NDIS_PARTICIPANT_ID_CD_VAR              = F8 WITH CONSTANT(174930721.00)
-DECLARE NDIS_PARTICIPANT_ID_VAR                 = VC WITH NOCONSTANT("")
-DECLARE DISABILITY_SUPPORT_CD_VAR               = F8 WITH CONSTANT(13079325.00)
-DECLARE DISABILITY_SUPPORT_VAR                  = VC WITH NOCONSTANT("")
+
+; Store Code value for Healthcare Card
 DECLARE HEALTHCARE_CARD_CD_VAR                  = F8 WITH CONSTANT(4081893.00)
+; Create a placeholder variable for the Healthcare Card value retrieved from the database
 DECLARE HEALTHCARE_CARD_VAR                     = VC WITH NOCONSTANT("")
-DECLARE CONSUMER_MESSAGING_CD_VAR               = F8 WITH CONSTANT(152031769.00)
-DECLARE CONSUMER_MESSAGING_VAR                  = VC WITH NOCONSTANT("")
+
+; Store Code value for Pension - Other
 DECLARE PENSION_OTHER_CD_VAR                    = F8 WITH CONSTANT(10726213.00)
+; Create a placeholder variable for the Pension - Other value retrieved from the database
 DECLARE PENSION_OTHER_VAR                       = VC WITH NOCONSTANT("")
-DECLARE WORK_COVER_CD_VAR                       = F8 WITH CONSTANT(4443217.00)
-DECLARE WORK_COVER_VAR                          = VC WITH NOCONSTANT("")
+
+; Store Code value for Commonwealth Seniors Health Card
 DECLARE COMMONWEALTH_SENIORS_HEALTH_CD_VAR      = F8 WITH CONSTANT(6797508.00)
+; Create a placeholder variable for the Commonwealth Seniors Health Card value retrieved from the database
 DECLARE COMMONWEALTH_SENIORS_HEALTH_VAR         = VC WITH NOCONSTANT("")
+
+; Store Code value for DVA WHITE
 DECLARE DVA_WHITE_CD_VAR                        = F8 WITH CONSTANT(4039502.00)
+; Create a placeholder variable for the DVA WHITE value retrieved from the database
 DECLARE DVA_WHITE_VAR                           = VC WITH NOCONSTANT("")
+
 
 
 /*
@@ -88,138 +98,227 @@ ALIAS_POOL_CD	ALIAS_POOL
     4039502.00	DVA WHITE
 */
 
+/* LIST TO INCLUDE
+Alias Pool code from the ALIAS_POOL_CD column on the PERSON_ALIAS table
+ALIAS_POOL_CD	ALIAS_POOL
+    4039501.00	DVA GOLD
+    4081892.00	Safety Net Concession Card
+   10719999.00	Safety Net Entitlement Card
+    6797507.00	DVA Number
+    4039507.00	Medicare No
+   13079326.00	Pension Concession Card
+    4081893.00	Healthcare Card
+   10726213.00	Pension - Other
+    6797508.00	Commonwealth Seniors Health Card
+    4039502.00	DVA WHITE
+*/
+
 ; Get Concession - DVA Gold
 SELECT INTO "NL:"
     ALIAS = PA.ALIAS
 FROM
-    PERSON_ALIAS      PA
+    PERSON_ALIAS PA
 WHERE
         PA.PERSON_ID = PERSON_ID_VAR
-    AND	PA.ALIAS_POOL_CD = DVA_GOLD_CD_VAR
+    AND PA.ALIAS_POOL_CD = DVA_GOLD_CD_VAR
     AND PA.ACTIVE_IND = 1
 DETAIL
-    DVA_GOLD_VAR = TRIM(ALIAS, 3)
+    DVA_GOLD_VA = TRIM(ALIAS, 3)
 WITH
-    TIME = 5
+    TIME = 5, maxcol = 1000000
+
+; Get Concession - Safety Net Concession Card
+SELECT INTO "NL:"
+    ALIAS = PA.ALIAS
+FROM
+    PERSON_ALIAS PA
+WHERE
+        PA.PERSON_ID = PERSON_ID_VAR
+    AND PA.ALIAS_POOL_CD = SAFETY_NET_CONCESSION_CD_VAR
+    AND PA.ACTIVE_IND = 1
+DETAIL
+    SAFETY_NET_CONCESSION_VAR = TRIM(ALIAS, 3)
+WITH
+    TIME = 5, maxcol = 1000000
+
+; Get Concession - Safety Net Entitlement Card
+SELECT INTO "NL:"
+    ALIAS = PA.ALIAS
+FROM
+    PERSON_ALIAS PA
+WHERE
+        PA.PERSON_ID = PERSON_ID_VAR
+    AND PA.ALIAS_POOL_CD = SAFETY_NET_ENTITLEMENT_CD_VAR
+    AND PA.ACTIVE_IND = 1
+DETAIL
+    SAFETY_NET_ENTITLEMENT_VAR = TRIM(ALIAS, 3)
+WITH
+    TIME = 5, maxcol = 1000000
+
+; Get Concession - DVA Number
+SELECT INTO "NL:"
+    ALIAS = PA.ALIAS
+FROM
+    PERSON_ALIAS PA
+WHERE
+        PA.PERSON_ID = PERSON_ID_VAR
+    AND PA.ALIAS_POOL_CD = DVA_NUMBER_CD_VAR
+    AND PA.ACTIVE_IND = 1
+DETAIL
+    DVA_NUMBER_VAR = TRIM(ALIAS, 3)
+WITH
+    TIME = 5, maxcol = 1000000
+
+; Get Concession - Medicare No
+SELECT INTO "NL:"
+    ALIAS = PA.ALIAS
+FROM
+    PERSON_ALIAS PA
+WHERE
+        PA.PERSON_ID = PERSON_ID_VAR
+    AND PA.ALIAS_POOL_CD = MEDICARE_NO_CD_VAR
+    AND PA.ACTIVE_IND = 1
+DETAIL
+    MEDICARE_NO_VAR = TRIM(ALIAS, 3)
+WITH
+    TIME = 5, maxcol = 1000000
+
+; Get Concession - Pension Concession Card
+SELECT INTO "NL:"
+    ALIAS = PA.ALIAS
+FROM
+    PERSON_ALIAS PA
+WHERE
+        PA.PERSON_ID = PERSON_ID_VAR
+    AND PA.ALIAS_POOL_CD = PENSION_CONCESSION_CD_VAR
+    AND PA.ACTIVE_IND = 1
+DETAIL
+    PENSION_CONCESSION_VAR = TRIM(ALIAS, 3)
+WITH
+    TIME = 5, maxcol = 1000000
+
+; Get Concession - Healthcare Card
+SELECT INTO "NL:"
+    ALIAS = PA.ALIAS
+FROM
+    PERSON_ALIAS PA
+WHERE
+        PA.PERSON_ID = PERSON_ID_VAR
+    AND PA.ALIAS_POOL_CD = HEALTHCARE_CARD_CD_VAR
+    AND PA.ACTIVE_IND = 1
+DETAIL
+    HEALTHCARE_CARD_VAR = TRIM(ALIAS, 3)
+WITH
+    TIME = 5, maxcol = 1000000
+
+; Get Concession - Pension - Other
+SELECT INTO "NL:"
+    ALIAS = PA.ALIAS
+FROM
+    PERSON_ALIAS PA
+WHERE
+        PA.PERSON_ID = PERSON_ID_VAR
+    AND PA.ALIAS_POOL_CD = PENSION_OTHER_CD_VAR
+    AND PA.ACTIVE_IND = 1
+DETAIL
+    PENSION_OTHER_VAR = TRIM(ALIAS, 3)
+WITH
+    TIME = 5, maxcol = 1000000
+
+; Get Concession - Commonwealth Seniors Health Card
+SELECT INTO "NL:"
+    ALIAS = PA.ALIAS
+FROM
+    PERSON_ALIAS PA
+WHERE
+        PA.PERSON_ID = PERSON_ID_VAR
+    AND PA.ALIAS_POOL_CD = COMMONWEALTH_SENIORS_HEALTH_CD_VAR
+    AND PA.ACTIVE_IND = 1
+DETAIL
+    COMMONWEALTH_SENIORS_HEALTH_VAR = TRIM(ALIAS, 3)
+WITH
+    TIME = 5, maxcol = 1000000
+
+; Get Concession - DVA WHITE
+SELECT INTO "NL:"
+    ALIAS = PA.ALIAS
+FROM
+    PERSON_ALIAS PA
+WHERE
+        PA.PERSON_ID = PERSON_ID_VAR
+    AND PA.ALIAS_POOL_CD = DVA_WHITE_CD_VAR
+    AND PA.ACTIVE_IND = 1
+DETAIL
+    DVA_WHITE_VAR = TRIM(ALIAS, 3)
+WITH
+    TIME = 5, maxcol = 1000000
+
 
 ; DISPLAY THE DATA ON THE FRONT END
 CALL APPLYFONT(ACTIVE_FONTS->NORMAL)
 
-; Display concession details if they exist
-IF(TEXTLEN(DVA_GOLD_VA) > 1)
-    CALL PRINTTEXT("DVA GOLD: ",0,0,0)
-    CALL PRINTTEXT(DVA_GOLD_VA)
-    CALL NEXTLINE(1)
-ENDIF
-
-IF(TEXTLEN(CARER_PAYMENT_PENSION_VAR) > 1)
-    CALL PRINTTEXT("Carer Payment Pension: ",0,0,0)
-    CALL PRINTTEXT(CARER_PAYMENT_PENSION_VAR)
-    CALL NEXTLINE(1)
-ENDIF
-
-IF(TEXTLEN(TAC_VAR) > 1)
-    CALL PRINTTEXT("TAC: ",0,0,0)
-    CALL PRINTTEXT(TAC_VAR)
-    CALL NEXTLINE(1)
-ENDIF
-
+; Display Safety Net Concession Card only if it exists
 IF(TEXTLEN(SAFETY_NET_CONCESSION_VAR) > 1)
     CALL PRINTTEXT("Safety Net Concession Card: ",0,0,0)
-    CALL PRINTTEXT(SAFETY_NET_CONCESSION_VAR)
+    CALL PRINTTEXT(BUILD2(SAFETY_NET_CONCESSION_VAR),0,0,0)
     CALL NEXTLINE(1)
 ENDIF
 
-IF(TEXTLEN(UNEMPLOYMENT_RELATED_BENEFITS_VAR) > 1)
-    CALL PRINTTEXT("Unemployment Related Benefits: ",0,0,0)
-    CALL PRINTTEXT(UNEMPLOYMENT_RELATED_BENEFITS_VAR)
-    CALL NEXTLINE(1)
-ENDIF
-
+; Display Safety Net Entitlement Card only if it exists
 IF(TEXTLEN(SAFETY_NET_ENTITLEMENT_VAR) > 1)
     CALL PRINTTEXT("Safety Net Entitlement Card: ",0,0,0)
-    CALL PRINTTEXT(SAFETY_NET_ENTITLEMENT_VAR)
+    CALL PRINTTEXT(BUILD2(SAFETY_NET_ENTITLEMENT_VAR),0,0,0)
     CALL NEXTLINE(1)
 ENDIF
 
-IF(TEXTLEN(WHS_UR_NUMBER_VAR) > 1)
-    CALL PRINTTEXT("WHS UR Number: ",0,0,0)
-    CALL PRINTTEXT(WHS_UR_NUMBER_VAR)
-    CALL NEXTLINE(1)
-ENDIF
-
+; Display DVA Number only if it exists
 IF(TEXTLEN(DVA_NUMBER_VAR) > 1)
     CALL PRINTTEXT("DVA Number: ",0,0,0)
-    CALL PRINTTEXT(DVA_NUMBER_VAR)
+    CALL PRINTTEXT(BUILD2(DVA_NUMBER_VAR),0,0,0)
     CALL NEXTLINE(1)
 ENDIF
 
-IF(TEXTLEN(EMERGENCY_ID_VAR) > 1)
-    CALL PRINTTEXT("Emergency ID: ",0,0,0)
-    CALL PRINTTEXT(EMERGENCY_ID_VAR)
-    CALL NEXTLINE(1)
-ENDIF
-
+; Display Medicare No only if it exists
 IF(TEXTLEN(MEDICARE_NO_VAR) > 1)
     CALL PRINTTEXT("Medicare No: ",0,0,0)
-    CALL PRINTTEXT(MEDICARE_NO_VAR)
+    CALL PRINTTEXT(BUILD2(MEDICARE_NO_VAR),0,0,0)
     CALL NEXTLINE(1)
 ENDIF
 
+; Display Pension Concession Card only if it exists
 IF(TEXTLEN(PENSION_CONCESSION_VAR) > 1)
     CALL PRINTTEXT("Pension Concession Card: ",0,0,0)
-    CALL PRINTTEXT(PENSION_CONCESSION_VAR)
+    CALL PRINTTEXT(BUILD2(PENSION_CONCESSION_VAR),0,0,0)
     CALL NEXTLINE(1)
 ENDIF
 
-IF(TEXTLEN(NDIS_PARTICIPANT_ID_VAR) > 1)
-    CALL PRINTTEXT("NDIS Participant Identifier: ",0,0,0)
-    CALL PRINTTEXT(NDIS_PARTICIPANT_ID_VAR)
-    CALL NEXTLINE(1)
-ENDIF
-
-IF(TEXTLEN(DISABILITY_SUPPORT_VAR) > 1)
-    CALL PRINTTEXT("Disability Support Pension: ",0,0,0)
-    CALL PRINTTEXT(DISABILITY_SUPPORT_VAR)
-    CALL NEXTLINE(1)
-ENDIF
-
+; Display Healthcare Card only if it exists
 IF(TEXTLEN(HEALTHCARE_CARD_VAR) > 1)
     CALL PRINTTEXT("Healthcare Card: ",0,0,0)
-    CALL PRINTTEXT(HEALTHCARE_CARD_VAR)
+    CALL PRINTTEXT(BUILD2(HEALTHCARE_CARD_VAR),0,0,0)
     CALL NEXTLINE(1)
 ENDIF
 
-IF(TEXTLEN(CONSUMER_MESSAGING_VAR) > 1)
-    CALL PRINTTEXT("Consumer Messaging: ",0,0,0)
-    CALL PRINTTEXT(CONSUMER_MESSAGING_VAR)
-    CALL NEXTLINE(1)
-ENDIF
-
+; Display Pension - Other only if it exists
 IF(TEXTLEN(PENSION_OTHER_VAR) > 1)
     CALL PRINTTEXT("Pension - Other: ",0,0,0)
-    CALL PRINTTEXT(PENSION_OTHER_VAR)
+    CALL PRINTTEXT(BUILD2(PENSION_OTHER_VAR),0,0,0)
     CALL NEXTLINE(1)
 ENDIF
 
-IF(TEXTLEN(WORK_COVER_VAR) > 1)
-    CALL PRINTTEXT("Work Cover: ",0,0,0)
-    CALL PRINTTEXT(WORK_COVER_VAR)
-    CALL NEXTLINE(1)
-ENDIF
-
+; Display Commonwealth Seniors Health Card only if it exists
 IF(TEXTLEN(COMMONWEALTH_SENIORS_HEALTH_VAR) > 1)
     CALL PRINTTEXT("Commonwealth Seniors Health Card: ",0,0,0)
-    CALL PRINTTEXT(COMMONWEALTH_SENIORS_HEALTH_VAR)
+    CALL PRINTTEXT(BUILD2(COMMONWEALTH_SENIORS_HEALTH_VAR),0,0,0)
     CALL NEXTLINE(1)
 ENDIF
 
+; Display DVA WHITE only if it exists
 IF(TEXTLEN(DVA_WHITE_VAR) > 1)
     CALL PRINTTEXT("DVA WHITE: ",0,0,0)
-    CALL PRINTTEXT(DVA_WHITE_VAR)
+    CALL PRINTTEXT(BUILD2(DVA_WHITE_VAR),0,0,0)
     CALL NEXTLINE(1)
 ENDIF
-
 
 ; Send the text to Output
 CALL FINISHTEXT(0)
