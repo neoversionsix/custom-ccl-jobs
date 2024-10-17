@@ -28,6 +28,20 @@ PLAN P;PERSON
 JOIN PA
 	WHERE
 		PA.PERSON_ID = P.PERSON_ID
+    AND PA.ALIAS_POOL_CD IN
+    (
+        4081893.00	;Healthcare Card
+      , 4039507.00	;Medicare No
+      , 13079326.00	;Pension Concession Card
+      , 4039501.00	;DVA GOLD
+      , 6797507.00	;DVA Number
+      , 174930721.00	;NDIS Participant Identifier
+      , 13079325.00	;Disability Support Pension
+      , 10726213.00	;Pension - Other
+      , 4443217.00	;Work Cover
+      , 6797508.00	;Commonwealth Seniors Health Card
+      , 4039502.00	;DVA WHITE
+    )
 
 ORDER BY
     P.PERSON_ID
