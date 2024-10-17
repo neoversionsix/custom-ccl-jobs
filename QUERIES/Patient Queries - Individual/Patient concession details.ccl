@@ -1,6 +1,5 @@
 SELECT
-      URN = PA.Alias
-    , PATIENT = P.NAME_FULL_FORMATTED
+      PATIENT = P.NAME_FULL_FORMATTED
     , ALIAS_POOL = UAR_GET_CODE_DISPLAY(PA.ALIAS_POOL_CD)
     , ALIAS = PA.ALIAS
     ; , HEALTH_CARE_CARD = UAR_GET_CODE_DISPLAY()
@@ -15,15 +14,17 @@ FROM
     , PERSON_ALIAS      PA
 PLAN P;PERSON
     WHERE
+        ; FOR A PARTICULAR URN
         P.PERSON_ID =
         (
 	        SELECT I.PERSON_ID
 	        FROM PERSON_ALIAS I
 	        WHERE
                 I.ALIAS_POOL_CD = 9569589.00; URN
-                ;AND I.ALIAS = "*9*"
-                AND I.UPDT_DT_TM > CNVTLOOKBEHIND("5,D")
+                AND I.ALIAS = "*9*"
+                ;AND I.UPDT_DT_TM > CNVTLOOKBEHIND("5,D")
         )
+
 JOIN PA
 	WHERE
 		PA.PERSON_ID = P.PERSON_ID

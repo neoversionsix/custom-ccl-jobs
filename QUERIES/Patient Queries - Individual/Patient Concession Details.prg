@@ -6,13 +6,10 @@ Cherwells: 766199, 770993, 704272, TASK 189622
 Use: Pulls back patient concession details for a dyndoc: Pharmacy Admission
 #dynamic document
 
-testing in t2031 using WH_GP_DETAILS_PERSON and dyndoc Discharge Summary
  */
 
-; DROP PROGRAM WH_PATIENT_CONCESSIONS GO
-; CREATE PROGRAM WH_PATIENT_CONCESSIONS
-DROP PROGRAM WH_GP_DETAILS_PERSON GO
-CREATE PROGRAM WH_GP_DETAILS_PERSON
+DROP PROGRAM WH_PATIENT_CONCESSIONS GO
+CREATE PROGRAM WH_PATIENT_CONCESSIONS
 
 %I CUST_SCRIPT:MA_RTF_TAGS.INC
 %I CUST_SCRIPT:VIC_DS_COMMON_FONTS.INC
@@ -25,7 +22,7 @@ DECLARE PERSON_ID_VAR                           = F8 WITH CONSTANT(REQUEST->PERS
 ; Store Code value for DVA GOLD
 DECLARE DVA_GOLD_CD_VAR                         = F8 WITH CONSTANT(4039501.00)
 ; Create a placeholder variable for the DVA GOLD value retrieved from the database
-DECLARE DVA_GOLD_VA                             = VC WITH NOCONSTANT("")
+DECLARE DVA_GOLD_VAR                             = VC WITH NOCONSTANT("")
 
 ; Store Code value for Safety Net Concession Card
 DECLARE SAFETY_NET_CONCESSION_CD_VAR            = F8 WITH CONSTANT(4081892.00)
@@ -72,7 +69,10 @@ DECLARE DVA_WHITE_CD_VAR                        = F8 WITH CONSTANT(4039502.00)
 ; Create a placeholder variable for the DVA WHITE value retrieved from the database
 DECLARE DVA_WHITE_VAR                           = VC WITH NOCONSTANT("")
 
-
+; Store Code value for NDIS Participant Identifier
+DECLARE NDIS_PARTICIPANT_IDENTIFIER_CD_VAR      = F8 WITH CONSTANT(174930721.00)
+; Create a placeholder variable for the NDIS Participant Identifier value retrieved from the database
+DECLARE NDIS_PARTICIPANT_IDENTIFIER_VAR         = VC WITH NOCONSTANT("")
 
 /*
 Alias Pool code from the ALIAS_POOL_CD column on the PERSON_ALIAS table
@@ -111,6 +111,7 @@ ALIAS_POOL_CD	ALIAS_POOL
    10726213.00	Pension - Other
     6797508.00	Commonwealth Seniors Health Card
     4039502.00	DVA WHITE
+    174930721.00	NDIS Participant Identifier
 */
 
 ; Get Concession - DVA Gold
@@ -123,7 +124,7 @@ WHERE
     AND PA.ALIAS_POOL_CD = DVA_GOLD_CD_VAR
     AND PA.ACTIVE_IND = 1
 DETAIL
-    DVA_GOLD_VA = TRIM(ALIAS, 3)
+    DVA_GOLD_VAR = TRIM(ALIAS, 3)
 WITH
     TIME = 5, maxcol = 1000000
 
@@ -254,6 +255,20 @@ WITH
     TIME = 5, maxcol = 1000000
 
 
+; Get Concession - NDIS Participant Identifier
+SELECT INTO "NL:"
+    ALIAS = PA.ALIAS
+FROM
+    PERSON_ALIAS PA
+WHERE
+        PA.PERSON_ID = PERSON_ID_VAR
+    AND PA.ALIAS_POOL_CD = NDIS_PARTICIPANT_IDENTIFIER_CD_VAR
+    AND PA.ACTIVE_IND = 1
+DETAIL
+    NDIS_PARTICIPANT_IDENTIFIER_VAR = TRIM(ALIAS, 3)
+WITH
+    TIME = 5, maxcol = 1000000
+
 ; DISPLAY THE DATA ON THE FRONT END
 CALL APPLYFONT(ACTIVE_FONTS->NORMAL)
 
@@ -278,6 +293,20 @@ IF(TEXTLEN(DVA_NUMBER_VAR) > 1)
     CALL NEXTLINE(1)
 ENDIF
 
+; Display DVA WHITE only if it exists
+IF(TEXTLEN(DVA_WHITE_VAR) > 1)
+    CALL PRINTTEXT("DVA WHITE: ",0,0,0)
+    CALL PRINTTEXT(BUILD2(DVA_WHITE_VAR),0,0,0)
+    CALL NEXTLINE(1)
+ENDIF
+
+; Display DVA GOLD only if it exists
+IF(TEXTLEN(DVA_GOLD_VAR) > 1)
+    CALL PRINTTEXT("DVA GOLD: ",0,0,0)
+    CALL PRINTTEXT(BUILD2(DVA_GOLD_VAR),0,0,0)
+    CALL NEXTLINE(1)
+ENDIF
+
 ; Display Medicare No only if it exists
 IF(TEXTLEN(MEDICARE_NO_VAR) > 1)
     CALL PRINTTEXT("Medicare No: ",0,0,0)
@@ -292,17 +321,17 @@ IF(TEXTLEN(PENSION_CONCESSION_VAR) > 1)
     CALL NEXTLINE(1)
 ENDIF
 
-; Display Healthcare Card only if it exists
-IF(TEXTLEN(HEALTHCARE_CARD_VAR) > 1)
-    CALL PRINTTEXT("Healthcare Card: ",0,0,0)
-    CALL PRINTTEXT(BUILD2(HEALTHCARE_CARD_VAR),0,0,0)
-    CALL NEXTLINE(1)
-ENDIF
-
 ; Display Pension - Other only if it exists
 IF(TEXTLEN(PENSION_OTHER_VAR) > 1)
     CALL PRINTTEXT("Pension - Other: ",0,0,0)
     CALL PRINTTEXT(BUILD2(PENSION_OTHER_VAR),0,0,0)
+    CALL NEXTLINE(1)
+ENDIF
+
+; Display Healthcare Card only if it exists
+IF(TEXTLEN(HEALTHCARE_CARD_VAR) > 1)
+    CALL PRINTTEXT("Healthcare Card: ",0,0,0)
+    CALL PRINTTEXT(BUILD2(HEALTHCARE_CARD_VAR),0,0,0)
     CALL NEXTLINE(1)
 ENDIF
 
@@ -313,10 +342,10 @@ IF(TEXTLEN(COMMONWEALTH_SENIORS_HEALTH_VAR) > 1)
     CALL NEXTLINE(1)
 ENDIF
 
-; Display DVA WHITE only if it exists
-IF(TEXTLEN(DVA_WHITE_VAR) > 1)
-    CALL PRINTTEXT("DVA WHITE: ",0,0,0)
-    CALL PRINTTEXT(BUILD2(DVA_WHITE_VAR),0,0,0)
+; Display NDIS Participant Identifier only if it exists
+IF(TEXTLEN(NDIS_PARTICIPANT_IDENTIFIER_VAR) > 1)
+    CALL PRINTTEXT("NDIS Participant Identifier: ",0,0,0)
+    CALL PRINTTEXT(BUILD2(NDIS_PARTICIPANT_IDENTIFIER_VAR),0,0,0)
     CALL NEXTLINE(1)
 ENDIF
 
