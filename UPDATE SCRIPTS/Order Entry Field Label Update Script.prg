@@ -25,7 +25,7 @@ SELECT DISTINCT
     You will need to delete rows and columns from excel to just focus on the
     stuff you want to edit
      */
-    _NEW_LABEL_TEXT_ = "Interpreter needed? (Add comment)" ; Put in the new label text in here
+    _NEW_LABEL_TEXT_ = "Known pregnant" ; Put in the new label text in here
     , _OE_FORMAT_ID_ = O_F_F.OE_FORMAT_ID
     , _ACTION_TYPE_CD_ = O_F_F.ACTION_TYPE_CD
     , _OE_FIELD_ID_ = O_F_F.OE_FIELD_ID
