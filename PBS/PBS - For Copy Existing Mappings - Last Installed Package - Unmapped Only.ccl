@@ -1,9 +1,22 @@
 SELECT
 /*
 
-Notes:
-This is in development - trying to get mappings that can be copied to the new
-items to map
+Programmer: Jason Whittle
+
+Use:
+This Code is used for extracting all the new PBS Items from
+the last installed package, WHICH ALSO HAVE 0 ASSOCAITED
+MAPPINGS. It is designed to be uploaded into the
+pbs-mapping-copier.exe tool. The tool figures out what
+mappings can be applied to the new items and gives the
+user an update script that applies those mappings in the
+database
+
+Repo Location for this script:
+https://github.com/neoversionsix/custom-ccl-jobs/blob/9cfa307dde57044f914224f39d5b27367fc0e7f7/PBS/PBS%20-%20For%20Copy%20Existing%20Mappings%20-%20Last%20Installed%20Package.ccl
+
+Repo Location for the associated tool:
+https://github.com/neoversionsix/pbs-existing-mapping-copier-tool/blob/148ff6917d0998f49f06d96392eb36a3632fbd19/pbs-mapping-copier.py
 
 */
     MAPPING_KEY = CONCAT (TRIM(P_I.DRUG_NAME), " - ", TRIM(P_D.BRAND_NAME), " - ", TRIM(P_D.FORM_STRENGTH))
@@ -47,7 +60,7 @@ JOIN	P_L
     WHERE	P_L.PBS_LISTING_ID = P_I.PBS_LISTING_ID
     ; DON'T MAP THE PRIVATE HOSPITAL CODES ETC
     AND	P_L.DRUG_TYPE_MEAN NOT IN ("DB", "HS", "IN", "PQ", "TY")
-    AND	P_L.PBS_ITEM_CODE NOT IN
+    AND P_L.PBS_ITEM_CODE  IN
         (
             SELECT PBS_ITEM_CODE FROM PBS_PRESCRIBER
             WHERE PRESCRIBER_TYPE_CD IN
@@ -55,7 +68,7 @@ JOIN	P_L
                 SELECT CV.CODE_VALUE FROM CODE_VALUE CV
                 WHERE CV.CODE_SET = 4386008
                 ;DON'T MAP DENTAL AND OPTOMETRIST CODES
-                AND CV.DISPLAY_KEY IN ("DENTALPRACTITIONER", "OPTOMETRICALPRACTITIONER")
+                AND CV.DISPLAY_KEY IN ("MEDICALPRACTITIONER", "NURSEPRACTITIONER", "MIDWIFE")
             )
             AND	END_EFFECTIVE_DT_TM = CNVTDATETIME("31-DEC-2100")
         )
