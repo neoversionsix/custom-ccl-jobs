@@ -6,7 +6,7 @@ This is in development - trying to get mappings that can be copied to the new
 items to map
 
 */
-    PBS_DRUG_CONCATENATED = CONCAT (TRIM(P_I.DRUG_NAME), " - ", TRIM(P_D.BRAND_NAME), " - ", TRIM(P_D.FORM_STRENGTH))
+    MAPPING_KEY = CONCAT (TRIM(P_I.DRUG_NAME), " - ", TRIM(P_D.BRAND_NAME), " - ", TRIM(P_D.FORM_STRENGTH))
     , MAP_PBS_DRUG_ID_ = P_D.PBS_DRUG_ID
 	, PBS_CODE = P_L.PBS_ITEM_CODE
     ; Concatenated version of primary - brand and form used for matching mappings
