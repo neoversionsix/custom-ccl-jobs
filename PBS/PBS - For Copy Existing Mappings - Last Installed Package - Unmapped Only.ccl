@@ -10,7 +10,8 @@ MAPPINGS. It is designed to be uploaded into the
 pbs-mapping-copier.exe tool. The tool figures out what
 mappings can be applied to the new items and gives the
 user an update script that applies those mappings in the
-database
+database. Paste the extracted data into the 'need-mapping'
+sheet of 'copier.xlsx'
 
 Repo Location for this script:
 https://github.com/neoversionsix/custom-ccl-jobs/blob/9cfa307dde57044f914224f39d5b27367fc0e7f7/PBS/PBS%20-%20For%20Copy%20Existing%20Mappings%20-%20Last%20Installed%20Package.ccl

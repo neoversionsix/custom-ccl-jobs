@@ -1,4 +1,23 @@
 SELECT DISTINCT
+/*
+
+Programmer: Jason Whittle
+
+Use:
+This Code is used for extracting all the PBS Mappings.
+It is designed to be uploaded into the
+pbs-mapping-copier.exe tool. The tool figures out what
+mappings can be applied to the new items and gives the
+user an update script that applies those mappings in the
+database. Paste the extracted data into the 'existing-mappings'
+sheet of 'copier.xlsx'
+
+Repo Location for this script:
+https://github.com/neoversionsix/custom-ccl-jobs/blob/57eaf7dfa68692eb34f0671eaf95346b5a5a5638/PBS/PBS%20-%20For%20Copying%20Existing%20Mappings%20-%20All%20Mappings.ccl
+Repo Location for the associated tool:
+https://github.com/neoversionsix/pbs-existing-mapping-copier-tool/blob/148ff6917d0998f49f06d96392eb36a3632fbd19/pbs-mapping-copier.py
+
+*/
 	MAPPING_KEY = CONCAT (TRIM(P_I.DRUG_NAME), " - ", TRIM(P_D.BRAND_NAME), " - ", TRIM(P_D.FORM_STRENGTH))
 	, MAPPED_SYNONYM_ID = O_C_S.SYNONYM_ID
 	, SYNONYM_TYPE = UAR_GET_CODE_DISPLAY(O_C_S.MNEMONIC_TYPE_CD)
