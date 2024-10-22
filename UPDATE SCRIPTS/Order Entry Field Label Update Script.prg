@@ -25,12 +25,16 @@ SELECT DISTINCT
     You will need to delete rows and columns from excel to just focus on the
     stuff you want to edit
      */
-    _NEW_LABEL_TEXT_ = "Known pregnant" ; Put in the new label text in here
+    _NEW_LABEL_TEXT_ = "Discussed with (if applicable)" ; EDIT!!!! Put in the new label text in here
     , _OE_FORMAT_ID_ = O_F_F.OE_FORMAT_ID
     , _ACTION_TYPE_CD_ = O_F_F.ACTION_TYPE_CD
     , _OE_FIELD_ID_ = O_F_F.OE_FIELD_ID
     , _OLD_LABEL_TEXT_ = O_F_F.LABEL_TEXT
-    ; DELETE THE FOLLOWING FROM EXCEL, ABOVE IS NEEDED TO GENERATE UPDATE SCRIPT
+	/*
+    Delete the following columns from excel after using them to filter for what you want to
+	update. The columns above are required to generate the update scripts using the code
+	generator tool
+	 */
 	; BELOW IS USED FOR FILTERING IN EXCEL
     , CATALOG = UAR_GET_CODE_DISPLAY(O_E_FO.CATALOG_TYPE_CD)
 	, FORMAT_NAME = O_E_FO.OE_FORMAT_NAME
