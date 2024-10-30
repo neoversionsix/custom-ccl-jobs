@@ -17,12 +17,10 @@ WHERE
 
 
 ; SELECT SCRIPT BELOW ---------------------------------------------------------
-
-
 SELECT DISTINCT
     /*
     Use this for generating update scripts.
-    You will need to delete rows and columns from excel to just focus on the
+    You will need to filter/delete rows and columns from excel to just focus on the
     stuff you want to edit
      */
     _NEW_LABEL_TEXT_ = "Discussed with (if applicable)" ; EDIT!!!! Put in the new label text in here

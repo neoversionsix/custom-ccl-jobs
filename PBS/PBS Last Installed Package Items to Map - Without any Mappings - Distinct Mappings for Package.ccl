@@ -1,0 +1,84 @@
+SELECT DISTINCT
+; This will give you all the PBS items that:
+; 1) are from the most recent package
+; 2) do not have any mappings
+; 3) are of presciber types that should be mapped
+; 4) are of hospital types that should be mapped
+; 5) This will not include Codes from the same package that should
+;    have the exact same mappings. It is designed with the intention that the
+;    user uses the auto mapping tool after mapping what this code brings back.
+    MAP_PBS_DRUG_ID_ = P_D.PBS_DRUG_ID
+	; , DOMAIN = CURDOMAIN
+	, PBS_CODE = P_L.PBS_ITEM_CODE
+	; , PRIMARY_DRUG_NAME = P_I.DRUG_NAME
+    , PRIMARY = REPLACE(P_I.DRUG_NAME," + ","-",0)
+	, BRAND = P_D.BRAND_NAME
+    , TRADE = CONCAT
+        (
+            TRIM(P_D.BRAND_NAME)
+            , " "
+            , TRIM(REPLACE(P_D.FORM_STRENGTH, TRIM(P_I.DRUG_NAME), "", 0))
+        )
+	, GENERIC = P_D.FORM_STRENGTH
+	, PRODUCT_PACKAGE_SIZE = P_D.PACK_SIZE
+;	, PRODUCT_MANUFACTURER_CODE = P_M.MANUFACTURER_CODE
+;	, SCHEDULE = P_L.DRUG_TYPE_MEAN
+	, ITEM_BEG_DATE = FORMAT(P_I.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+	, PRODUCT_BEG_DATE = FORMAT(P_D.BEG_EFFECTIVE_DT_TM, "DD/MMM/YYYY")
+
+FROM
+	 PBS_LISTING    P_L
+	, PBS_ITEM      P_I
+	, PBS_DRUG      P_D
+
+PLAN P_D
+    WHERE	P_D.END_EFFECTIVE_DT_TM > (SYSDATE)	; CURRENT PRODUCTS ONLY
+    ;ONLY SHOW CODES FROM THE MOST RECENT PACKAGE
+    AND	P_D.BEG_EFFECTIVE_DT_TM = (SELECT MAX(BEG_EFFECTIVE_DT_TM) FROM PBS_DRUG)
+    ;EXCLUDE BRAND ALTERATIONS
+    AND	P_D.PBS_ITEM_ID NOT IN
+    (
+        SELECT P_D2.PBS_ITEM_ID FROM PBS_DRUG P_D2
+        WHERE  P_D.PBS_ITEM_ID = P_D2.PBS_ITEM_ID
+        AND P_D2.END_EFFECTIVE_DT_TM != CNVTDATETIME("31-DEC-2100")
+    )
+    /*  UNMAPPED in the PBS_OCS_MAPPING Table */
+    AND P_D.PBS_DRUG_ID NOT IN (SELECT PBS_DRUG_ID FROM PBS_OCS_MAPPING)
+
+JOIN	P_I
+    WHERE	P_I.PBS_ITEM_ID = P_D.PBS_ITEM_ID
+    AND	P_I.END_EFFECTIVE_DT_TM > OUTERJOIN(SYSDATE)
+    ;EXCLUDE ITEM ALTERATIONS
+    AND	P_I.PBS_ITEM_ID NOT IN
+        (
+            SELECT P_I2.PBS_ITEM_ID FROM PBS_ITEM P_I2
+            WHERE  P_I.PBS_ITEM_ID = P_I2.PBS_ITEM_ID
+            AND P_I2.END_EFFECTIVE_DT_TM != CNVTDATETIME("31-DEC-2100")
+        )
+
+JOIN	P_L
+    WHERE	P_L.PBS_LISTING_ID = P_I.PBS_LISTING_ID
+    ; DON'T MAP THE PRIVATE HOSPITAL CODES ETC
+    AND	P_L.DRUG_TYPE_MEAN NOT IN ("DB", "HS", "IN", "PQ", "TY")
+    ; Only map these "MEDICALPRACTITIONER", "NURSEPRACTITIONER", "MIDWIFE"
+    AND P_L.PBS_ITEM_CODE  IN
+        (
+            SELECT PBS_ITEM_CODE FROM PBS_PRESCRIBER
+            WHERE PRESCRIBER_TYPE_CD IN
+            (
+                SELECT CV.CODE_VALUE FROM CODE_VALUE CV
+                WHERE CV.CODE_SET = 4386008
+                ;DON'T MAP DENTAL AND OPTOMETRIST CODES
+                AND CV.DISPLAY_KEY IN ("MEDICALPRACTITIONER", "NURSEPRACTITIONER", "MIDWIFE")
+            )
+            AND	END_EFFECTIVE_DT_TM = CNVTDATETIME("31-DEC-2100")
+        )
+
+ORDER BY
+    P_I.DRUG_NAME
+    , P_D.BRAND_NAME
+    , P_D.FORM_STRENGTH
+    , 0
+
+
+WITH	TIME = 10
