@@ -1,0 +1,33 @@
+SELECT
+/*
+This will extract the recent changes the current user has made in the system
+and also changes that were currently made but the system did not record who
+made the change in the change log table. Note: may not bring back changes
+made for not standard cerner tables such as PBS tables
+ */
+	UPDT_ID =
+		IF (D.UPDT_ID < 1) "NONE RECORDED"
+		ELSE TRIM(CNVTSTRING(D.UPDT_ID))
+		ENDIF
+	, P.NAME_FULL_FORMATTED
+	, UTC_CHG_DT_TM = FORMAT (D.CHG_DT_TM, "DD/MM/YYYY HH:MM:SS")
+	, D.TABLE_NAME
+	, D.DELETE_IND
+	, D.COL_STRING
+	, D.PK_WHERE
+	, D.PTAM_MATCH_RESULT_STR
+
+FROM
+	DM_CHG_LOG D
+	, PRSNL P
+
+PLAN	D
+WHERE
+        D.CHG_DT_TM > CNVTLOOKBEHIND("1,H")
+    AND D.UPDT_ID IN (REQINFO->UPDT_ID, 0) ; Current User Id of person running script
+
+JOIN P WHERE P.PERSON_ID = D.UPDT_ID
+
+ORDER BY D.CHG_DT_TM DESC
+
+WITH TIME = 30
