@@ -25,17 +25,21 @@ This is filtered for task type of 'Medication' only.
 	, TDR.VIEW_ONLY_IND
 	, LAST_UPDATE = FORMAT(TDR.UPDT_DT_TM, "YYYY-MM-DD HH:MM:SS")
     , LAST_UPDATER = PR.NAME_FULL_FORMATTED
+	, THERAPEUTIC_CLASS = ASC.LONG_DESCRIPTION
+	;, THERAPEUTIC_CLASS = SUBSTRING(1, 100, ASC.LONG_DESCRIPTION)
 
 FROM
-	TASK_DISCRETE_R   TDR
-	, ORDER_TASK   OT
-    , PRSNL     PR
-
+	TASK_DISCRETE_R   			TDR
+	, ORDER_TASK   				OT
+    , PRSNL     				PR
+	, ALT_SEL_CAT 				ASC
+	, ALT_SEL_LIST				ASL
+	, ORDER_CATALOG_SYNONYM 	OCS
 
 PLAN TDR
     ; WHERE
-	;     TDR.UPDT_ID = REQINFO->UPDT_ID ; CURRENT USER CHANGES ONLY
-	; TDR.UPDT_DT_TM > CNVTLOOKBEHIND("1,M") ; CHANGES IN THE LAST MONTH ONLY
+		; TDR.UPDT_ID = REQINFO->UPDT_ID ; CURRENT USER CHANGES ONLY
+		; TDR.UPDT_DT_TM > CNVTLOOKBEHIND("1,M") ; CHANGES IN THE LAST MONTH ONLY
 
 JOIN OT ; ORDER_TASK
     WHERE
@@ -45,6 +49,27 @@ JOIN OT ; ORDER_TASK
 
 JOIN PR;PRSNL
     WHERE PR.PERSON_ID = OUTERJOIN(TDR.UPDT_ID);X.UPDT_ID
+
+JOIN OCS ; ORDER_CATALOG_SYNONYM
+	WHERE
+		    OCS.MNEMONIC = OT.TASK_DESCRIPTION
+		AND OCS.CATALOG_TYPE_CD = 2516 ; Filter for Pharmacy Catalog Only
+		AND OCS.MNEMONIC_TYPE_CD = 2583 ; Filter for Primary Synonyms only
+
+JOIN ASL ; ALT_SEL_LIST
+	WHERE
+		ASL.SYNONYM_ID = OCS.SYNONYM_ID
+
+JOIN ASC ; ALT_SEL_CAT
+	WHERE
+		ASC.ALT_SEL_CATEGORY_ID = ASL.ALT_SEL_CATEGORY_ID
+
+/*
+, (left join alt_sel_list list on list.synonym_id = ocs_rx_mnem.synonym_id)
+, (left join alt_sel_cat  acat on acat.alt_sel_category_id = list.alt_sel_category_id)
+, (left join order_catalog_synonym ocs_rx_mnem on ocs_rx_mnem.item_id = med_def.item_id)
+, (left join order_catalog oc on oc.catalog_cd = ocs_rx_mnem.catalog_cd)
+*/
 
 ORDER BY
     OT.TASK_TYPE_CD
