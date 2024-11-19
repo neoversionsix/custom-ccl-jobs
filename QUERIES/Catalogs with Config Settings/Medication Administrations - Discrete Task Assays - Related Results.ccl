@@ -1,4 +1,4 @@
-SELECT
+SELECT DISTINCT
 /*
 
 Programmer: Jason Whittle
@@ -9,15 +9,17 @@ Description:
 This give you the Discrete Task Assays. It is made to look like the tool
 found here -
 DCP Tools > Document Management > Order Task Tools > Discrete Task
-This is filtered for task type of 'Medication' only.
-- to do - add in theraputic class as a column
+
+- This is filtered for pharmacy catalog only
+
 
  */
 	DOMAIN = CONCAT( TRIM(CURDOMAIN) ,' (', FORMAT(SYSDATE,"YYYYMMDD HHMM;3;Q"), ")" )
 	, TASK_ACTIVITY = UAR_GET_CODE_DISPLAY(OT.TASK_ACTIVITY_CD)
-	, ORDER_TASK = OT.TASK_DESCRIPTION
+	, ORDER_TASK_AND_PRIMARY_MNEMONIC = OT.TASK_DESCRIPTION
+	, THERAPEUTIC_CLASS = ASCAT.LONG_DESCRIPTION
 	, TASK_TYPE = UAR_GET_CODE_DISPLAY(OT.TASK_TYPE_CD)
-	, TDR_TASK_ASSAY_DISP = UAR_GET_CODE_DISPLAY(TDR.TASK_ASSAY_CD)
+	, TASK_ASSAY = UAR_GET_CODE_DISPLAY(TDR.TASK_ASSAY_CD)
 	, TDR.ACTIVE_IND
 	, TDR.REQUIRED_IND
 	, TDR.DOCUMENT_IND
@@ -25,16 +27,14 @@ This is filtered for task type of 'Medication' only.
 	, TDR.VIEW_ONLY_IND
 	, LAST_UPDATE = FORMAT(TDR.UPDT_DT_TM, "YYYY-MM-DD HH:MM:SS")
     , LAST_UPDATER = PR.NAME_FULL_FORMATTED
-	, THERAPEUTIC_CLASS = ASC.LONG_DESCRIPTION
-	;, THERAPEUTIC_CLASS = SUBSTRING(1, 100, ASC.LONG_DESCRIPTION)
 
 FROM
 	TASK_DISCRETE_R   			TDR
 	, ORDER_TASK   				OT
     , PRSNL     				PR
-	, ALT_SEL_CAT 				ASC
-	, ALT_SEL_LIST				ASL
 	, ORDER_CATALOG_SYNONYM 	OCS
+	, ALT_SEL_LIST				ASL
+	, ALT_SEL_CAT 				ASCAT
 
 PLAN TDR
     ; WHERE
@@ -48,7 +48,9 @@ JOIN OT ; ORDER_TASK
         ; AND OT.TASK_DESCRIPTION = "ibuprofen-codeine" ; Filter for specific task
 
 JOIN PR;PRSNL
-    WHERE PR.PERSON_ID = OUTERJOIN(TDR.UPDT_ID);X.UPDT_ID
+    WHERE
+		    PR.PERSON_ID = OUTERJOIN(TDR.UPDT_ID);X.UPDT_ID
+		AND PR.ACTIVE_IND = OUTERJOIN(1)
 
 JOIN OCS ; ORDER_CATALOG_SYNONYM
 	WHERE
@@ -58,11 +60,13 @@ JOIN OCS ; ORDER_CATALOG_SYNONYM
 
 JOIN ASL ; ALT_SEL_LIST
 	WHERE
-		ASL.SYNONYM_ID = OCS.SYNONYM_ID
+		    ASL.SYNONYM_ID = OCS.SYNONYM_ID
 
-JOIN ASC ; ALT_SEL_CAT
+JOIN ASCAT ; ALT_SEL_CAT
 	WHERE
-		ASC.ALT_SEL_CATEGORY_ID = ASL.ALT_SEL_CATEGORY_ID
+		    ASCAT.ALT_SEL_CATEGORY_ID = ASL.ALT_SEL_CATEGORY_ID
+			; AHFS_IND is Used to mark a category or item as a therapeutic class or category.
+		AND ASCAT.AHFS_IND = 1 ; Therapuetuic Class Only
 
 /*
 , (left join alt_sel_list list on list.synonym_id = ocs_rx_mnem.synonym_id)
@@ -75,4 +79,4 @@ ORDER BY
     OT.TASK_TYPE_CD
     , OT.TASK_DESCRIPTION
 
-WITH MAXREC = 5000, TIME =10
+WITH TIME = 10
