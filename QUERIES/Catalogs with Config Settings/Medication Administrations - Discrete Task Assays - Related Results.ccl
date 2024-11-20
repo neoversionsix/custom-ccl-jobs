@@ -16,10 +16,10 @@ DCP Tools > Document Management > Order Task Tools > Discrete Task
  */
 	DOMAIN = CONCAT( TRIM(CURDOMAIN) ,' (', FORMAT(SYSDATE,"YYYYMMDD HHMM;3;Q"), ")" )
 	, TASK_ACTIVITY = UAR_GET_CODE_DISPLAY(OT.TASK_ACTIVITY_CD)
-	, ORDER_TASK_AND_PRIMARY_MNEMONIC = OT.TASK_DESCRIPTION
-	, THERAPEUTIC_CLASS = ASCAT.LONG_DESCRIPTION
 	, TASK_TYPE = UAR_GET_CODE_DISPLAY(OT.TASK_TYPE_CD)
+	, ORDER_TASK_AND_PRIMARY_MNEMONIC = OT.TASK_DESCRIPTION
 	, TASK_ASSAY = UAR_GET_CODE_DISPLAY(TDR.TASK_ASSAY_CD)
+	, THERAPEUTIC_CLASS = ASCAT.LONG_DESCRIPTION
 	, TDR.ACTIVE_IND
 	, TDR.REQUIRED_IND
 	, TDR.DOCUMENT_IND
@@ -68,15 +68,8 @@ JOIN ASCAT ; ALT_SEL_CAT
 			; AHFS_IND is Used to mark a category or item as a therapeutic class or category.
 		AND ASCAT.AHFS_IND = 1 ; Therapuetuic Class Only
 
-/*
-, (left join alt_sel_list list on list.synonym_id = ocs_rx_mnem.synonym_id)
-, (left join alt_sel_cat  acat on acat.alt_sel_category_id = list.alt_sel_category_id)
-, (left join order_catalog_synonym ocs_rx_mnem on ocs_rx_mnem.item_id = med_def.item_id)
-, (left join order_catalog oc on oc.catalog_cd = ocs_rx_mnem.catalog_cd)
-*/
-
 ORDER BY
-    OT.TASK_TYPE_CD
-    , OT.TASK_DESCRIPTION
+	  OT.TASK_DESCRIPTION
+	, TDR.TASK_ASSAY_CD
 
 WITH TIME = 10
