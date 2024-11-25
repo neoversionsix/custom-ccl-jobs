@@ -1,0 +1,25 @@
+SELECT
+/*
+This is for SR867924
+Customer: Stephanie Tran
+Data Nov 26 2024
+Programmer: Jason Whittle
+
+
+Request:
+Good morning Digital Health Medication Team,
+
+On behalf of Stephanie Than (Geriatrician), can we please request for an EMR report with the following:
+·Patients aged 65 years and over
+·Admitted/discharged June 2023 – June 2024
+·Patients with order of any psychotropic listed (would you also be able to separate the data by psychotropic class as below):
+·Antidepressants: Tranylcypromine, Citalopram, Escitalopram, Fluoxetine, Fluvoxamine, Paroxetine, Sertraline, Amitriptyline, Clomipramine, Dosulepin, Doxepin, Imipramine, Nortriptyline, Desvenlafaxine, Duloxetine, Venlafaxine, Agomelatine, Mianserin, Mirtazapine, Moclobemide, Reboxetine, Vortioxetine
+·Drugs for sleep and anxiety: Alprazolam, Bromazepam, Clobazam, Diazepam, Flunitrazepam, Lorazepam, Nitrazepam, Oxazepam, Temazepam, Armodafinil, Modafinil, Lemborexant, Suvorexant, Melatonin, Zolpidem, Zopiclone
+·Drugs for Bipolar: Lithium
+·Drugs for ADHD: Dexamphetamine, Lisdexamphetamine, Methylphenidate, Atomoxetine, Guanfacine
+·Drugs for alcohol, nicotine, opioid dependence: Acamprosate, Disulfiram, Naltrexone, Bupropion, Nicotine, Varenicline, Buprenorphine, Naloxone, Methadone
+·Other: Phentermine
+
+Please let me know if you require any additional information. Much appreciated!
+
+ */
