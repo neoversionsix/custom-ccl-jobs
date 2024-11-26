@@ -1,46 +1,47 @@
 SELECT
 	PATIENT = P.NAME_FULL_FORMATTED
-    , FAKE_TEST_PATIENT =
-        IF (P.NAME_LAST_KEY="TESTWHS") "Y"
-        ELSE "N"
-        ENDIF
 	, PATIENT_URN = P_A.ALIAS
 	, ENCOUNTER_ = E_A.ALIAS
-
 	, ITEM = O.ORDER_MNEMONIC
-	, INTERFACE = "POWERCHART ONLY NOT SURGINET"
 	, ORDERED_TIME = O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
 	, SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
-    , ENCOUNTER_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
-    , ORDERED_BY = PR.NAME_FULL_FORMATTED
+	, ENCOUNTER_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
+	, ORDERED_BY = PR.NAME_FULL_FORMATTED
+	, E_LOC_FACILITY_DISP = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+	, E_LOC_NURSE_UNIT_DISP = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
 
 FROM
-    ORDER_ACTION          	O_A
-	, ORDERS                O
-	, ENCOUNTER             E
-    , PRSNL                 PR
-    , PERSON				P
-    , PERSON_ALIAS          P_A
-    , ENCNTR_ALIAS          E_A
+	  ORDER_ACTION  O_A
+	, ORDERS        O
+	, ENCOUNTER     E
+	, PRSNL         PR
+	, PERSON        P
+	, PERSON_ALIAS  P_A
+	, ENCNTR_ALIAS  E_A
 
 PLAN O ; ORDERS
 	WHERE
     O.CATALOG_CD IN /* Given Orderables below */
         (
-                 93339229.00 ; Pain Service Referral
-               , 90228280.00 ; Consult to Medical Specialty (MO Use Onl
+            SELECT
+                O.CATALOG_CD
+            FROM
+                ORDER_CATALOG   O
+            WHERE
+                O.CATALOG_TYPE_CD =2517; radiology
+
         )
     /* Time filter */
-    AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME("01-SEP-2023")
+    ;AND O.ORIG_ORDER_DT_TM >= CNVTLOOKBEHIND("16,H")
 
 
 JOIN O_A ; ORDER_ACTION
     WHERE O.ORDER_ID = O_A.ORDER_ID
     /* We want to find out who placed the New Order */
     AND O_A.ACTION_TYPE_CD IN(2534); New Order
-    AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+    ;AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table; not sure don't use
     /* Time filter */
-    AND O_A.ACTION_DT_TM >= CNVTDATETIME("01-SEP-2023")
+    AND O_A.ACTION_DT_TM >= CNVTLOOKBEHIND("16,H")
 
 /* Joining PRSNL for New order from order action */
 JOIN PR;PRSNL
@@ -76,10 +77,10 @@ JOIN P;PERSON
     AND P.ACTIVE_IND = 1
     /* Remove Fake 'Test' Patients */
     ;AND P.NAME_LAST_KEY != "*TESTWHS*"
-    /* Remove Ineffective Patients */      
+    /* Remove Ineffective Patients */
     AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
-/* Encounter Identifiers such as the Financial Number */
+;Encounter Alias
 JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
     WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
     /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
@@ -90,7 +91,7 @@ JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
 	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
 
 ORDER BY
-    O.PERSON_ID
+	O.PERSON_ID
 	, O.ORDER_ID
 
 WITH TIME = 200,
