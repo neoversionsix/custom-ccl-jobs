@@ -24,13 +24,8 @@ Please let me know if you require any additional information. Much appreciated!
 
  */
 	PATIENT = P.NAME_FULL_FORMATTED
-    , FAKE_TEST_PATIENT =
-        IF (P.NAME_LAST_KEY="TESTWHS") "Y"
-        ELSE "N"
-        ENDIF
 	, PATIENT_URN = P_A.ALIAS
 	, ENCOUNTER_ = E_A.ALIAS
-
 	, ITEM = O.ORDER_MNEMONIC
 	, INTERFACE = "POWERCHART ONLY NOT SURGINET"
 	, ORDERED_TIME = O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
