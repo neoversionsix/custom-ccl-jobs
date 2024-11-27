@@ -11,17 +11,11 @@ FROM
 	OEN_TXLOG   O_T
 
 WHERE
-	/* TIME FROM NOW FILTER */
-	O_T.CREATE_DT_TM > cnvtlookbehind("5,H")
-	/*
-		O_T.CREATE_DT_TM BETWEEN
-           CNVTDATETIME("10-JAN-2024 23:00")
-           AND
-           CNVTDATETIME("11-JAN-2024 10:00")
-	 */
-	/* Order ID */
-	;AND O_T.MSG_TEXT = "*2538079889*"
-    /* Pathology Messages */
+	;TIME FROM NOW FILTER LINE BELOW
+	O_T.CREATE_DT_TM > cnvtlookbehind("1,H")
+	;Filter for special text eg Order ID Line Below
+	;AND O_T.MSG_TEXT = "*123456789*"
+    ;'AND' Block below filters for Pathology Messages only
 	AND
         (
             O_T.MSG_TEXT = "MSH|^~\&|CERNERLAB|*"
@@ -32,14 +26,11 @@ WHERE
 
         )
 
-	/* INBOUND OR OUTBOUND? MESSAGES ONLY
-	"2001" => OUTBOUND
-	"1001" => INBOUND
-	*/
-	AND O_T.EVENTID = "1001"
+	;FILTER FOR INBOUND OR OUTBOUND MESSAGES ONLY? "2001" => OUTBOUND "1001" => INBOUND
+	;AND O_T.EVENTID = "1001"
 
 ORDER BY
  O_T.CREATE_DT_TM DESC
 
-
+; Exit after 20 seconds, Don't show more than 1000 messages
 WITH FORMAT, SEPERATOR = " ", TIME = 20, MAXREC = 1000
