@@ -1,6 +1,12 @@
 drop program WH_AU_REQGEN07_LYT go
 create program WH_AU_REQGEN07_LYT
 
+/*
+Use: Pathology Requisition Layout Program
+Copied from prod at 1pm on 30 nov 2024 - Jason Whittle
+
+ */
+
 prompt
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
 	, "break_seq" = 1
