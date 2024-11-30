@@ -1,9 +1,6 @@
 drop program WH_AU_REQGEN07_LYT go
 create program WH_AU_REQGEN07_LYT
 
-/* Pathology Requisition Layout Program
- */
-
 prompt
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
 	, "break_seq" = 1
@@ -636,7 +633,7 @@ set RptSD->m_width = 1.500
 set RptSD->m_height = 0.073
 set _oldFont = uar_rptSetFont(_hReport, _Times416777215)
 ; DRAW LABEL --- Bing_hosp_address
-set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Department: Women's & Childrens Specialist Clinics",char(0)))
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Department: Women's & Children's Specialist Clinics",char(0)))
 set RptSD->m_borders = RPT_SDNOBORDERS
 set RptSD->m_padding = RPT_SDNOBORDERS
 set RptSD->m_paddingWidth = 0.000
@@ -699,15 +696,6 @@ set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Sunbury Hospital -
 set RptSD->m_borders = RPT_SDNOBORDERS
 set RptSD->m_padding = RPT_SDNOBORDERS
 set RptSD->m_paddingWidth = 0.000
-set RptSD->m_y = OffsetY + 0.813
-set RptSD->m_x = OffsetX + 1.688
-set RptSD->m_width = 2.688
-set RptSD->m_height = 0.167
-; DRAW LABEL --- Switchboard
-set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Western Health Switchboard: (03) 8345 6666",char(0)))
-set RptSD->m_borders = RPT_SDNOBORDERS
-set RptSD->m_padding = RPT_SDNOBORDERS
-set RptSD->m_paddingWidth = 0.000
 set RptSD->m_y = OffsetY + 0.376
 set RptSD->m_x = OffsetX + 4.500
 set RptSD->m_width = 2.688
@@ -732,6 +720,15 @@ set RptSD->m_width = 2.938
 set RptSD->m_height = 0.167
 ; DRAW LABEL --- Williamstown
 set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Williamstown Hospital - Railway Crescent, Williamstown",char(0)))
+set RptSD->m_borders = RPT_SDNOBORDERS
+set RptSD->m_padding = RPT_SDNOBORDERS
+set RptSD->m_paddingWidth = 0.000
+set RptSD->m_y = OffsetY + 0.813
+set RptSD->m_x = OffsetX + 1.688
+set RptSD->m_width = 2.688
+set RptSD->m_height = 0.167
+; DRAW LABEL --- Switchboard
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Western Health Switchboard: (03) 8345 6666",char(0)))
 	set _YOffset = OffsetY + sectionHeight
 endif
 return(sectionHeight)
@@ -872,7 +869,7 @@ return (a1)
 end ;subroutine PatientHeader(nCalc)
 
 subroutine PatientHeaderABS(nCalc,OffsetX,OffsetY)
-declare sectionHeight = f8 with noconstant(1.570000), private
+declare sectionHeight = f8 with noconstant(1.290000), private
 declare __PTFIN = vc with NoConstant(build2(ORDERS->FNBR,char(0))),protect
 declare __PTMRN = vc with NoConstant(build2(ORDERS->MRN,char(0))),protect
 declare __PTNAME = vc with NoConstant(build2(ORDERS->NAME,char(0))),protect
@@ -892,8 +889,6 @@ endif
 declare __PAT_ADDR = vc with NoConstant(build2(orders->pat_addr,char(0))),protect
 declare __ESIGN = vc with NoConstant(build2(orders->qual[1].order_dr,char(0))),protect
 declare __FINCLASS = vc with NoConstant(build2(orders->fin_class,char(0))),protect
-declare __ADMIT_DOC_NAME = vc with NoConstant(build2(bing->admit_provider,char(0))),protect
-declare __ADMIT_DOC_PN = vc with NoConstant(build2(bing->admit_provider_PN,char(0))),protect
 if (nCalc = RPT_RENDER)
 set RptSD->m_flags = 0
 set RptSD->m_borders = RPT_SDNOBORDERS
@@ -1138,16 +1133,16 @@ set RptSD->m_padding = RPT_SDNOBORDERS
 set RptSD->m_paddingWidth = 0.000
 set RptSD->m_y = OffsetY + 0.875
 set RptSD->m_x = OffsetX + 0.063
-set RptSD->m_width = 1.563
+set RptSD->m_width = 0.813
 set RptSD->m_height = 0.188
 ; DRAW LABEL --- providerNoLbl
-set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Requesting Provider No:",char(0)))
+set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Provider No:",char(0)))
 set RptSD->m_flags = 0
 set RptSD->m_borders = RPT_SDNOBORDERS
 set RptSD->m_padding = RPT_SDNOBORDERS
 set RptSD->m_paddingWidth = 0.000
 set RptSD->m_y = OffsetY + 0.875
-set RptSD->m_x = OffsetX + 1.563
+set RptSD->m_x = OffsetX + 0.875
 set RptSD->m_width = 2.001
 set RptSD->m_height = 0.188
 set _DummyFont = uar_rptSetFont(_hReport, _Helvetica90)
@@ -1168,7 +1163,7 @@ set RptSD->m_flags = 1028
 set RptSD->m_borders = RPT_SDNOBORDERS
 set RptSD->m_padding = RPT_SDNOBORDERS
 set RptSD->m_paddingWidth = 0.000
-set RptSD->m_y = OffsetY + 1.375
+set RptSD->m_y = OffsetY + 1.125
 set RptSD->m_x = OffsetX + 0.063
 set RptSD->m_width = 1.250
 set RptSD->m_height = 0.157
@@ -1258,7 +1253,7 @@ set RptSD->m_flags = 1028
 set RptSD->m_borders = RPT_SDNOBORDERS
 set RptSD->m_padding = RPT_SDNOBORDERS
 set RptSD->m_paddingWidth = 0.000
-set RptSD->m_y = OffsetY + 1.250
+set RptSD->m_y = OffsetY + 1.000
 set RptSD->m_x = OffsetX + 0.063
 set RptSD->m_width = 1.625
 set RptSD->m_height = 0.157
@@ -1269,7 +1264,7 @@ set RptSD->m_flags = 0
 set RptSD->m_borders = RPT_SDNOBORDERS
 set RptSD->m_padding = RPT_SDNOBORDERS
 set RptSD->m_paddingWidth = 0.000
-set RptSD->m_y = OffsetY + 1.250
+set RptSD->m_y = OffsetY + 1.000
 set RptSD->m_x = OffsetX + 1.563
 set RptSD->m_width = 2.251
 set RptSD->m_height = 0.167
@@ -1298,46 +1293,6 @@ set RptSD->m_height = 0.188
 set _DummyFont = uar_rptSetFont(_hReport, _Helvetica90)
 ; DRAW TEXT --- FinClass
 set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __FINCLASS)
-set RptSD->m_flags = 4
-set RptSD->m_borders = RPT_SDNOBORDERS
-set RptSD->m_padding = RPT_SDNOBORDERS
-set RptSD->m_paddingWidth = 0.000
-set RptSD->m_y = OffsetY + 1.000
-set RptSD->m_x = OffsetX + 0.063
-set RptSD->m_width = 1.813
-set RptSD->m_height = 0.188
-set _DummyFont = uar_rptSetFont(_hReport, _Helvetica9B0)
-; DRAW LABEL --- providerNoLbl0
-set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Admitting Doctor:",char(0)))
-set RptSD->m_borders = RPT_SDNOBORDERS
-set RptSD->m_padding = RPT_SDNOBORDERS
-set RptSD->m_paddingWidth = 0.000
-set RptSD->m_y = OffsetY + 1.125
-set RptSD->m_x = OffsetX + 0.063
-set RptSD->m_width = 1.813
-set RptSD->m_height = 0.188
-; DRAW LABEL --- providerNoLbl2
-set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, build2("Admitting Doctor Provider No:",char(0)))
-set RptSD->m_flags = 0
-set RptSD->m_borders = RPT_SDNOBORDERS
-set RptSD->m_padding = RPT_SDNOBORDERS
-set RptSD->m_paddingWidth = 0.000
-set RptSD->m_y = OffsetY + 1.000
-set RptSD->m_x = OffsetX + 1.188
-set RptSD->m_width = 2.001
-set RptSD->m_height = 0.188
-set _DummyFont = uar_rptSetFont(_hReport, _Helvetica90)
-; DRAW TEXT --- Admit_Doc_Name
-set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __ADMIT_DOC_NAME)
-set RptSD->m_borders = RPT_SDNOBORDERS
-set RptSD->m_padding = RPT_SDNOBORDERS
-set RptSD->m_paddingWidth = 0.000
-set RptSD->m_y = OffsetY + 1.125
-set RptSD->m_x = OffsetX + 1.876
-set RptSD->m_width = 2.001
-set RptSD->m_height = 0.188
-; DRAW TEXT --- Admit_Doc_PN
-set _fDrawHeight = uar_rptStringDraw(_hReport, RptSD, __ADMIT_DOC_PN)
 	set _YOffset = OffsetY + sectionHeight
 endif
 return(sectionHeight)
