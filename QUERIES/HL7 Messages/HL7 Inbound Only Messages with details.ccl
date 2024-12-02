@@ -31,7 +31,9 @@ FROM
     , OEN_TXLOG   O_T
 
 PLAN E
-    WHERE E.UPDT_DT_TM > CNVTLOOKBEHIND("1,H")
+    WHERE
+		; Filter for messages in the last hour only
+		E.UPDT_DT_TM > CNVTLOOKBEHIND("1,H")
         ; and E.CONTRIBUTOR_SYSTEM_CD = (select code_value from code_value where description = "Western Health Radiology")
 
 JOIN O_T
