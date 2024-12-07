@@ -32,8 +32,9 @@ FROM
 PLAN E
     WHERE
 		; Filter for messages in the last hour only
-		E.CREATE_DT_TM > cnvtdatetime("26-NOV-2024 00:00") ; Messages created after
-		AND E.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before change
+		E.CREATE_DT_TM > cnvtlookbehind("1,H")
+		; E.CREATE_DT_TM > cnvtdatetime("26-NOV-2024 00:00") ; Messages created after
+		; AND E.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before change
         ; and E.CONTRIBUTOR_SYSTEM_CD = (select code_value from code_value where description = "Western Health Radiology")
 		;  AND E.MSH_SENDING_APP = "BMM_LAB" ; BMM LAB MESSAGES ONLY ; note this is slower than using the system code no below
 
@@ -42,9 +43,10 @@ PLAN E
 
 JOIN O
     WHERE O.MSGID = OUTERJOIN(E.MSGID)
-    AND O.CREATE_DT_TM > OUTERJOIN(cnvtdatetime("26-NOV-2024 00:00")) ; Messages created after
-	AND O.CREATE_DT_TM < OUTERJOIN(cnvtdatetime("03-DEC-2024 17:00")) ; Messages created before
-    AND (O.MSG_TEXT = ("*|HH|*") OR O.MSG_TEXT = ("*|LL|*")) ; Critical High and low results only
+	AND O.CREATE_DT_TM > cnvtlookbehind("1,H")
+    ; AND O.CREATE_DT_TM > OUTERJOIN(cnvtdatetime("26-NOV-2024 00:00")) ; Messages created after
+	; AND O.CREATE_DT_TM < OUTERJOIN(cnvtdatetime("03-DEC-2024 17:00")) ; Messages created before
+    ; AND (O.MSG_TEXT = ("*|HH|*") OR O.MSG_TEXT = ("*|LL|*")) ; Critical High and low results only
 
 JOIN P
 	WHERE P.PERSON_ID = OUTERJOIN(E.PERSON_ID)
