@@ -1,8 +1,8 @@
 SELECT DISTINCT
-; This will give you the mappings we have added in the last 7 days.
+; This will give you the mappings we have added in the last hour by the current user.
 ; It is designed so you can 'eyeball' the mappings to see if they are correct.
 	DOMAIN = CURDOMAIN
-	, ITEM_TYPE = EVALUATE
+	, OUR_ITEM_TYPE = EVALUATE
         (
             O_C_S.MNEMONIC_TYPE_CD
             , 2583.00,          "PRIMARY"
@@ -13,7 +13,7 @@ SELECT DISTINCT
             , 614545.00,        "TRADE"
 		)
 	, OUR_NAME = O_C_S.MNEMONIC
-	, PBS_NAME =
+	, PBS_NAME_CONCATENATED =
 		IF (O_C_S.MNEMONIC_TYPE_CD = 2580) P_D.BRAND_NAME ; BRAND
 		ELSEIF (O_C_S.MNEMONIC_TYPE_CD = 2583) P_I.DRUG_NAME ; PRIMARY
 		ELSEIF (O_C_S.MNEMONIC_TYPE_CD IN (614548, 614544)) P_D.FORM_STRENGTH ; GENERIC
@@ -51,12 +51,13 @@ JOIN P_D    WHERE P_D.PBS_ITEM_ID = P_I.PBS_ITEM_ID
 JOIN P_O_M  WHERE P_O_M.PBS_DRUG_ID = P_D.PBS_DRUG_ID
             AND P_O_M.PBS_DRUG_ID != 11111111.00
             AND P_O_M.END_EFFECTIVE_DT_TM > SYSDATE
-			AND P_O_M.UPDT_DT_TM > CNVTLOOKBEHIND("7,D")
+			AND P_O_M.UPDT_DT_TM > CNVTLOOKBEHIND("1,H")
 			AND P_O_M.UPDT_ID = REQINFO->UPDT_ID
 JOIN O_C_S  WHERE O_C_S.SYNONYM_ID = OUTERJOIN(P_O_M.SYNONYM_ID)
 
 ORDER BY
-	O_C_S.MNEMONIC_TYPE_CD
+	  P_L.PBS_ITEM_CODE
+	, O_C_S.MNEMONIC_TYPE_CD
 
 WITH TIME = 20,
 	NOCOUNTER,
