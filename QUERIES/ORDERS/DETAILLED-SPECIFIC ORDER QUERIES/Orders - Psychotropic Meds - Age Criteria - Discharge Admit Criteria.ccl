@@ -1,4 +1,4 @@
-SELECT
+SELECT DISTINCT
 /*
 This is for SR867924
 Customer: Stephanie Tran
@@ -31,104 +31,125 @@ Drugs for alcohol, nicotine, opioid dependence: 9751907, 9751036, 9754991, 97587
 Other: 9756535
 
  */
-	PATIENT = P.NAME_FULL_FORMATTED
+	PATIENT_NAME = "HIDDEN";P.NAME_FULL_FORMATTED
 	, PATIENT_URN = P_A.ALIAS
-	, ENCOUNTER_ = E_A.ALIAS
-	, ITEM = O.ORDER_MNEMONIC
-	, INTERFACE = "POWERCHART ONLY NOT SURGINET"
+    , PATIENT_DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM, P.BIRTH_TZ, P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
+	, AGE_AT_ORDER = CNVTAGE(P.BIRTH_DT_TM, O.ORIG_ORDER_DT_TM,0)
+    , ENCOUNTER_ = E_A.ALIAS
+	, ITEM_ORDERED = O.ORDER_MNEMONIC
+	, CLASS = IF (OCS.SYNONYM_ID IN (82335361, 9748536, 9743906, 10410096, 9744810, 9743088, 9753675, 9752828, 9751281, 9749515, 9756441, 9758811, 9755441, 9761288, 9756552, 9765477, 9758753, 9762324, 9764249, 9764052, 15133808)) "Antidepressants"
+		ELSEIF (OCS.SYNONYM_ID IN (64305260, 9746903, 9749396, 9754696, 9750257, 9751629, 9754324, 9755108, 9752384, 9759362, 9761903, 9765314, 9767960, 12906896, 86492772, 87777529)) "For Sleep and Anxiety"
+		ELSEIF (OCS.SYNONYM_ID IN (9748269)) "For Bipolar"
+        ELSEIF (OCS.SYNONYM_ID IN (9748016, 9754916, 85749762)) "For ADHD"
+        ELSEIF (OCS.SYNONYM_ID IN (9751907, 9751036, 9754991, 9758705, 9753379, 9756289, 9758445, 9763304, 9763801)) "For Alcohol, Nicotine, Opioid Dependence"
+        ELSEIF (OCS.SYNONYM_ID IN (9756535)) "Other"
+        ELSE "NOT FOUND"
+        ENDIF
 	, ORDERED_TIME = O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
 	, SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
     , ENCOUNTER_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
-    , ORDERED_BY = PR.NAME_FULL_FORMATTED
+    ;, ORDERED_BY = PR.NAME_FULL_FORMATTED
 
 FROM
-    ORDER_ACTION          	O_A
-	, ORDERS                O
+
+	  ORDERS                O
+	, ORDER_CATALOG_SYNONYM	OCS
 	, ENCOUNTER             E
-    , PRSNL                 PR
+    ;, PRSNL                 PR
     , PERSON				P
     , PERSON_ALIAS          P_A
     , ENCNTR_ALIAS          E_A
+    ;, ORDER_ACTION          	O_A
 
 
 PLAN E ; ENCOUNTER
 	WHERE
-    AND E.ACTIVE_IND = 1
-    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
-    AND E.LOC_FACILITY_CD != 4038465.00
-    AND E.·Admitted =
+        E.ACTIVE_IND = 1
+        /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+        AND E.LOC_FACILITY_CD != 4038465.00
+        AND E.ARRIVE_DT_TM > CNVTDATETIME("01-JUN-2023 00:00")
+        AND E.DISCH_DT_TM < CNVTDATETIME("01-JUN-2024 00:00")
+        ; PEOPLE BORN AFTER
+        AND E.PERSON_ID = (SELECT I.PERSON_ID FROM PERSON I WHERE I.BIRTH_DT_TM < CNVTDATETIME("01-JUN-1958"))
 
 JOIN O ; ORDERS
 	WHERE O.ENCNTR_ID = E.ENCNTR_ID
-    O.CATALOG_CD IN /* Given Orderables below */
-        (
-            SELECT I.CATALOG_CD FROM ORDER_CATALOG_SYNONYM I WHERE I.SYNONYM_ID IN
-             (
-                  82335361, 9748536, 9743906, 10410096, 9744810, 9743088, 9753675, 9752828, 9751281, 9749515, 9756441, 9758811, 9755441, 9761288, 9756552, 9765477, 9758753, 9762324, 9764249, 9764052, 15133808
-                , 64305260, 9746903, 9749396, 9754696, 9750257, 9751629, 9754324, 9755108, 9752384, 9759362, 9761903, 9765314, 9767960, 12906896, 86492772, 87777529
-                , 9748269
-                , 9748016, 9754916, 85749762
-                , 9751907, 9751036, 9754991, 9758705, 9753379, 9756289, 9758445, 9763304, 9763801
-                , 9756535
-             )
-        )
     /* Time filter */
-    AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME("01-MAY-2023")
+    	AND O.ORIG_ORDER_DT_TM >=  CNVTDATETIME("01-JUN-2023 00:00")
+    	AND O.ORIG_ORDER_DT_TM <= CNVTDATETIME("01-JUN-2024 00:00")
+        AND O.ORDER_STATUS_CD =        2543.00; Completed orders only
 
-JOIN O_A ; ORDER_ACTION
-    WHERE O.ORDER_ID = O_A.ORDER_ID
-    /* We want to find out who placed the New Order */
-    AND O_A.ACTION_TYPE_CD IN(2534); New Order
-    AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
-    /* Time filter */
-    AND O_A.ACTION_DT_TM >= CNVTDATETIME("01-MAY-2023")
+JOIN OCS ;ORDER_CATALOG_SYNONYM
+	WHERE OCS.CATALOG_CD = O.CATALOG_CD
+		AND OCS.SYNONYM_ID IN
+		(
+              82335361, 9748536, 9743906, 10410096, 9744810, 9743088, 9753675, 9752828, 9751281, 9749515, 9756441, 9758811, 9755441, 9761288, 9756552, 9765477, 9758753, 9762324, 9764249, 9764052, 15133808
+            , 64305260, 9746903, 9749396, 9754696, 9750257, 9751629, 9754324, 9755108, 9752384, 9759362, 9761903, 9765314, 9767960, 12906896, 86492772, 87777529
+            , 9748269
+            , 9748016, 9754916, 85749762
+            , 9751907, 9751036, 9754991, 9758705, 9753379, 9756289, 9758445, 9763304, 9763801
+            , 9756535
+       )
+
+
+; JOIN O_A ; ORDER_ACTION
+;     WHERE O.ORDER_ID = O_A.ORDER_ID
+;         /* We want to find out who placed the New Order */
+;         AND O_A.ACTION_TYPE_CD IN(2534); New Order
+;         AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+;         /* Time filter */
+;         AND O_A.ACTION_DT_TM >= CNVTDATETIME("01-JUN-2023 00:00")
+;         AND O_A.ACTION_DT_TM <= CNVTDATETIME("01-JUN-2024 00:00")
 
 /* Joining PRSNL for New order from order action */
-JOIN PR;PRSNL
-    WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID);X.UPDT_ID
-    AND PR.ACTIVE_IND = OUTERJOIN(1)
+; JOIN PR;PRSNL
+;     WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID);X.UPDT_ID
+;         AND PR.ACTIVE_IND = OUTERJOIN(1)
 
 /* Patient Identifiers such as URN Medicare no etc */
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
     WHERE P_A.PERSON_ID = E.PERSON_ID
-    AND
-    /* this filters for the UR Number Alias' only */
-   	P_A.ALIAS_POOL_CD = 9569589.00
-	AND
-    /* Effective Only */
-	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
-    AND
-    /* Active Only */
-    P_A.ACTIVE_IND = 1
-    /* Patient URN */
-    ; AND
-    ; P_A.ALIAS = "ENTERURN#" ; ENTER URN!
+        AND
+        /* this filters for the UR Number Alias' only */
+        P_A.ALIAS_POOL_CD = 9569589.00
+        AND
+        /* Effective Only */
+        P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+        AND
+        /* Active Only */
+        P_A.ACTIVE_IND = 1
+        /* Patient URN */
+        ; AND
+        ; P_A.ALIAS = "ENTERURN#" ; ENTER URN!
 
 /* Patients */
 JOIN P;PERSON
 	WHERE P.PERSON_ID = E.PERSON_ID
-    /* Remove Inactive Patients */
-    AND P.ACTIVE_IND = 1
-    /* Remove Fake 'Test' Patients */
-    ;AND P.NAME_LAST_KEY != "*TESTWHS*"
-    /* Remove Ineffective Patients */
-    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+        /* Remove Inactive Patients */
+        AND P.ACTIVE_IND = 1
+        /* Remove Fake 'Test' Patients */
+        ;AND P.NAME_LAST_KEY != "*TESTWHS*"
+        /* Remove Ineffective Patients */
+        AND P.END_EFFECTIVE_DT_TM > SYSDATE
+        ; Over >=65 on the 1st of june 2023
+        AND P.BIRTH_DT_TM < CNVTDATETIME("02-JUN-1958")
 
 /* Encounter Identifiers such as the Financial Number */
 JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
     WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
-    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
-	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
-	/* active FIN NBRs only */
-    AND E_A.ACTIVE_IND = 1
-    /* effective FIN NBRs only */
-	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+        /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+        AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+        /* active FIN NBRs only */
+        AND E_A.ACTIVE_IND = 1
+        /* effective FIN NBRs only */
+        AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
 
 ORDER BY
     O.PERSON_ID
 	, O.ORDER_ID
+    , 0
 
-WITH TIME = 200,
+WITH TIME = 600,
 	NOCOUNTER,
 	SEPARATOR=" ",
 	FORMAT
