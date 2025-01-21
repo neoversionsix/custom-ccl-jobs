@@ -28,9 +28,15 @@ PLAN ELH
 		ELH.ACTIVE_IND = 1 ; ACTIVE DATA ONLY
         ;AND ELH.MED_SERVICE_CD = 4043645.00 ; Emergency Services Only
         AND ELH.LOC_NURSE_UNIT_CD IN (
-        151884579	;W ED Williamstown Emergency Department
+          151884579	;W ED Williamstown Emergency Department
         , 151884581	;F ED Footscray Emergency Department
         , 151884577	;S ED Sunshine Emergency Department
+		, 150026724 ;S Emerg BAU
+		, 150026756 ;S Emerg Hub
+		, 151974403 ;Sunshine Short Stay Unit
+		, 151974405 ;Footscray Observation Unit
+		, 261962797 ;BM Urgent Care
+		, 262041569 ;M Urgent Care
         )
 		AND ELH.ARRIVE_DT_TM > CNVTDATETIME("09-JAN-2025 22:35:00.00"); FILTER FOR IN THIS TIME RANGE
         AND ELH.ARRIVE_DT_TM < CNVTDATETIME("14-JAN-2025 00::00.00"); FILTER FOR IN THIS TIME RANGE
