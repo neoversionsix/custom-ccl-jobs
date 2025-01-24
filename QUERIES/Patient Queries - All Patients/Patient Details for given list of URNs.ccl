@@ -1,0 +1,29 @@
+SELECT
+	P.PERSON_ID
+	, PATIENT_URN = PA.ALIAS
+	, P.NAME_LAST
+	, P.NAME_FIRST
+	, P.BIRTH_DT_TM "YYYY-MM-DD HH:SS"
+	, PA_PERSON_ALIAS_TYPE_DISP = UAR_GET_CODE_DISPLAY(PA.PERSON_ALIAS_TYPE_CD)
+
+FROM
+	PERSON   P
+	, PERSON_ALIAS   PA
+
+PLAN
+    P    ; PERSON table
+JOIN
+    PA   ; PERSON_ALIAS table
+        WHERE PA.PERSON_ID = P.PERSON_ID
+            AND PA.ALIAS IN (
+                '12345',
+                '67891',
+                '9999999'
+            )
+		and pa.PERSON_ALIAS_TYPE_CD = 10 ; uRN
+
+ORDER BY
+	P.PERSON_ID
+
+WITH TIME = 20, FORMAT
+  , SEPARATOR = ","
