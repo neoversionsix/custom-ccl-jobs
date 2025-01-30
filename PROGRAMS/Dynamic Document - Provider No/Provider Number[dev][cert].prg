@@ -8,7 +8,9 @@ correct provider number for the patients encounter/hospital
 
 CONTROL LOG
 (1) 4th of July 2024 - Jason Whittle - Complete rebuild of old HTS CODE
-old hts code can still be found here: https://github.com/neoversionsix/custom-ccl-jobs/blob/ef77bff2f7eef1532f6bca4ac64ac33886102a6d/PROGRAMS/Dynamic%20Document%20-%20Provider%20No/Provider%20Number%20original.prg
+old hts code can still be found here: https://github.com/neoversionsix/custom-ccl-jobs/
+blob/ef77bff2f7eef1532f6bca4ac64ac33886102a6d/PROGRAMS/
+Dynamic%20Document%20-%20Provider%20No/Provider%20Number%20original.prg
  30th Jan 2025 continuing developing and testing in cert
 */
 
@@ -57,7 +59,7 @@ with nocounter
 ; Get the encounters hospital location name
 SELECT INTO "nl:"
   HOSPITAL_NAME_NOSPACE = REPLACE (UAR_GET_CODE_DISPLAY(e.LOC_FACILITY_CD), " ", "", 0)
-  HOSPITAL_NAME = UAR_GET_CODE_DISPLAY(e.LOC_FACILITY_CD)
+  , HOSPITAL_NAME = UAR_GET_CODE_DISPLAY(e.LOC_FACILITY_CD)
 FROM
 	ENCOUNTER E
 WHERE E.ENCNTR_ID = ENCNTR_ID_VAR
