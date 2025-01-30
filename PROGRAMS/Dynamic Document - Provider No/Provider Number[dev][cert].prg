@@ -1,6 +1,6 @@
 /*
 PROGRAM NOTES
-Completly rebuild of old HTS CODE to make it simple and pull back the
+Complete rebuild of old HTS CODE to make it simple and pull back the
 correct provider number for the patients encounter/hospital
 
 CONTROL LOG
@@ -26,7 +26,6 @@ declare ENCOUNTER_HOSP_NAME_UPPER_VAR = vc with noconstant("X"), protect
 declare ALIAS_POOL_CD_VAR = f8 with noconstant(0.00), protect
 declare DEBUG_IND_VAR = i1 with noconstant(0), protect
 declare HOSPITAL_DISPLAY_VAR = vc with noconstant("X"), protect
-
 
 ; Declare reply struct
 record reply(
