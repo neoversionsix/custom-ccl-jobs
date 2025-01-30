@@ -9,7 +9,7 @@ correct provider number for the patients encounter/hospital
 CONTROL LOG
 (1) 4th of July 2024 - Jason Whittle - Complete rebuild of old HTS CODE
 old hts code can still be found here: https://github.com/neoversionsix/custom-ccl-jobs/blob/ef77bff2f7eef1532f6bca4ac64ac33886102a6d/PROGRAMS/Dynamic%20Document%20-%20Provider%20No/Provider%20Number%20original.prg
- 30th Jan 2025 still develping and testing in cert
+ 30th Jan 2025 continuing developing and testing in cert
 */
 
 drop program vic_signedby_prsnl:dba go
