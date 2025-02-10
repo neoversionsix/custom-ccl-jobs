@@ -29,7 +29,7 @@ PLAN O ; ORDERS
     ; Time filter ;
     O.ORIG_ORDER_DT_TM >= CNVTDATETIME("01-JAN-2024")
     ; Catalog type;
-    AND O.CATALOG_TYPE_CD= 2516
+    AND O.CATALOG_TYPE_CD = 2516
     ;2513.00;	Laboratory
     ;2516; Pharmacy
 
@@ -39,8 +39,8 @@ PLAN O ; ORDERS
         (
             SELECT P_A_URN.PERSON_ID
             FROM PERSON_ALIAS P_A_URN
-            WHERE P_A_URN.ALIAS = "682417" ; URN
-            AND P_A_URN.PERSON_ALIAS_TYPE_CD = 10 ; URN TYPE
+            WHERE P_A_URN.ALIAS = "682417" ; ENTER A URN HERE!
+            AND P_A_URN.PERSON_ALIAS_TYPE_CD = 10 ; FILTERS FOR 'URN' TYPE
             AND P_A_URN.ACTIVE_IND = 1  ; ACTIVE URNS ONLY
             AND P_A_URN.END_EFFECTIVE_DT_TM > SYSDATE ; EFFECTIVE URNS ONLY
         )
