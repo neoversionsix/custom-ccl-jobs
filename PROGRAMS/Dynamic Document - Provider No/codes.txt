@@ -9,3 +9,7 @@ ENCOUNTER_FACILITY_CD	ENCOUNTER_FACILITY
           86163538.00	Sunbury Day
           85758822.00	Footscray
           86163477.00	Williamstown
+          Bacchus Marsh	   261886027.00
+          Melton Health	   261889053.00
+
+

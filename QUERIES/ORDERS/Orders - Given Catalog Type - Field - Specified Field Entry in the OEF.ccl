@@ -8,15 +8,18 @@ SELECT
     , ENCOUNTER_N = E_A.ALIAS
     , ORDERED_DATE = O.ORIG_ORDER_DT_TM  "DD-MMM-YYYY"
     , ORDERED_TIME = O.ORIG_ORDER_DT_TM  "HH:MM:SS;;D"
-    , O_D.OE_FIELD_MEANING
-    , O_D.OE_FIELD_VALUE
+    ; , O_D.OE_FIELD_MEANING
+    ; , O_D.OE_FIELD_VALUE
     , O_D.OE_FIELD_DISPLAY_VALUE
     , LOCATION_UNIT_AT_TIME_OF_ORDER = UAR_GET_CODE_DISPLAY(ELH.LOC_NURSE_UNIT_CD)
     , LOCATION_FACILITY_AT_TIME_OF_ORDER = UAR_GET_CODE_DISPLAY(ELH.LOC_FACILITY_CD)
+    , LOCATION_LAST_FOR_ENCOUNTER = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+    , E.LOC_FACILITY_CD
 
 FROM
     ORDER_DETAIL    O_D
     , ORDERS    O
+    , ENCOUNTER    E
     , ENCNTR_ALIAS  E_A
     , ENCNTR_LOC_HIST   ELH
     , PERSON    P
@@ -37,6 +40,11 @@ PLAN O_D ; ORDER_DETAIL
 JOIN O; ORDERS
 	WHERE O.ORDER_ID = O_D.ORDER_ID
 
+JOIN E;ENCOUNTER
+    WHERE E.ENCNTR_ID = O.ENCNTR_ID
+    AND E.ACTIVE_IND = 1
+    AND E.END_EFFECTIVE_DT_TM > SYSDATE
+
 JOIN E_A;ENCNTR_ALIAS
     WHERE E_A.ENCNTR_ID = O.ENCNTR_ID
     /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
@@ -53,6 +61,20 @@ JOIN ELH
     AND ELH.PM_HIST_TRACKING_ID > OUTERJOIN(0)  ; to remove duplicate row that seems to occur at discharge
     AND ELH.BEG_EFFECTIVE_DT_TM < OUTERJOIN(O.ORIG_ORDER_DT_TM) ; encounter location began before order was placed
     AND ELH.END_EFFECTIVE_DT_TM >  OUTERJOIN(O.ORIG_ORDER_DT_TM)    ; encounter location ended after order was placed
+    /*
+    86163400.00	Sunshine
+          86163538.00	Sunbury Day
+          85758822.00	Footscray
+          86163477.00	Williamstown
+          Bacchus Marsh	   261886027.00
+          Melton Health	   261889053.00
+     */
+    and ELH.LOC_FACILITY_CD NOT IN ( ; Exclude non BMM Locations
+        86163400.00     ;Sunshine
+        , 86163538.00	;Sunbury Day
+        , 85758822.00	;Footscray
+        , 86163477.00	;Williamstown
+    )
 
 JOIN P;PERSON
     WHERE P.PERSON_ID = O.PERSON_ID
