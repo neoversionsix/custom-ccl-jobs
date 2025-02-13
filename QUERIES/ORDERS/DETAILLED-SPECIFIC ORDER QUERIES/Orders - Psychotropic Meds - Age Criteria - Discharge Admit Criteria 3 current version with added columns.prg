@@ -2,18 +2,20 @@ drop program wh_bigfile_out go
 create program wh_bigfile_out
 
 prompt
-	"Output to File/Printer/MINE" = "SR867924_output.csv"   ;* Enter or select the printer or file name to send this report to.
+	"Output to File/Printer/MINE" = "SR867924_output_v2.csv"   ;* Enter or select the printer or file name to send this report to.
 
 with OUTDEV
 
-SELECT DISTINCT INTO "CUST_SCRIPT:SR867924_output.csv"
+SELECT DISTINCT INTO "CUST_SCRIPT:SR867924_output_v2.csv"
 
 	PATIENT_NAME = "REQUEST TO UNHIDE";P.NAME_FULL_FORMATTED
 	, PATIENT_URN = P_A.ALIAS
     , SEX = UAR_GET_CODE_DISPLAY(P.SEX_CD)
+    , LANGUAGE = UAR_GET_CODE_DISPLAY(P.LANGUAGE_CD)
+    , FIRST_4AT_RISK_SCORE = C.SCORE; 4AT Risk Score in adult risk assessments (fluid interactive view)
     , PATIENT_DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM, P.BIRTH_TZ, P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
 	, AGE_AT_ORDER = CNVTAGE(P.BIRTH_DT_TM, O.ORIG_ORDER_DT_TM,0)
-    , ENCOUNTER_ = E_A.ALIAS
+    , ENCOUNTER_FIN = E_A.ALIAS
     , E.ARRIVE_DT_TM "YYYY-MM-DD HH:MM:SS" ; THIS ENCOUNTER TIME IS SHOWN IN POWERCHART
     , E.DISCH_DT_TM "YYYY-MM-DD HH:MM:SS" ; THIS ENCOUNTER TIME IS SHOWN IN POWERCHART
 	, ITEM_ORDERED = O.ORDER_MNEMONIC
@@ -339,7 +341,6 @@ SELECT DISTINCT INTO "CUST_SCRIPT:SR867924_output.csv"
     ;, ORDERED_BY = PR.NAME_FULL_FORMATTED
 
 FROM
-
 	  ORDERS                O
 	, ORDER_CATALOG_SYNONYM	OCS
 	, ENCOUNTER             E
@@ -348,6 +349,31 @@ FROM
     , PERSON_ALIAS          P_A
     , ENCNTR_ALIAS          E_A
     ;, ORDER_ACTION          	O_A
+    /*
+    Below is the inline clinical event table with ranked 4at scores
+    that were updated after the 1st of June 2023. They are ranked
+    by the event end date time in ascending order.
+     */
+
+	, (
+		(
+			SELECT
+				TIME_RANK = RANK() OVER(PARTITION BY C_TEMP.ENCNTR_ID ORDER BY C_TEMP.EVENT_END_DT_TM ASC)
+				, ENCOUNTER_ID = C_TEMP.ENCNTR_ID
+				, SCORE = C_TEMP.RESULT_VAL
+			FROM
+				CLINICAL_EVENT C_TEMP
+            WHERE
+                C_TEMP.EVENT_CD = 109971106.00	;4AT Risk Score
+                AND C_TEMP.VIEW_LEVEL = 1
+                AND C_TEMP.UPDT_DT_TM > CNVTDATETIME("01-JUN-2023 00:00")
+            ORDER BY
+				C_TEMP.ENCNTR_ID
+				, C_TEMP.EVENT_END_DT_TM
+			WITH SQLTYPE("F8","F8","VC")
+		)
+											C
+	)
 
 PLAN E ; ENCOUNTER
 	WHERE
@@ -358,6 +384,10 @@ PLAN E ; ENCOUNTER
         AND E.DISCH_DT_TM < CNVTDATETIME("01-JUN-2024 00:00")
         ; PEOPLE BORN AFTER
         AND E.PERSON_ID = (SELECT I.PERSON_ID FROM PERSON I WHERE I.BIRTH_DT_TM < CNVTDATETIME("01-JUN-1958"))
+
+JOIN C ; CLINICAL_EVENT ; outer joining the inline clinical event table with the 4at score
+    WHERE C.ENCOUNTER_ID = OUTERJOIN(E.ENCNTR_ID)
+        AND C.TIME_RANK = OUTERJOIN(1)
 
 JOIN O ; ORDERS
 	WHERE O.ENCNTR_ID = E.ENCNTR_ID
