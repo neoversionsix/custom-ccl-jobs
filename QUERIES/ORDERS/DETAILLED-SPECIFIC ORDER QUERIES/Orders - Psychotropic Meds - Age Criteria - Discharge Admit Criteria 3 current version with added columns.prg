@@ -754,6 +754,7 @@ Customer: Stephanie Tran
 Data Nov 26 2024
 Programmer: Jason Whittle
 
+changes; 13/02/2025 10:03 AM - Whittle, Jason: changes requested: Retrieving patient sex/gender, admission date, discharge date, and language spoken + first 4AT, would be of great help to our research team.
 
 Request:
 Good morning Digital Health Medication Team,
