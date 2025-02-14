@@ -36,12 +36,14 @@ FROM
 
 PLAN E ; Note: ESI_LOG only stores inbound messages, outbound messages are stored in OEN_TXLOG
     WHERE
-		; Filter for messages in the last hour only
+		; Filter for messages in the last X hours only
 		E.CREATE_DT_TM > cnvtlookbehind("1,H")
+
 		;SPECIFIC TIME FILTERS BELOW
 		; E.CREATE_DT_TM > cnvtdatetime("26-NOV-2024 00:00") ; Messages created after
 		; AND E.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before change
-        ; and E.CONTRIBUTOR_SYSTEM_CD = (select code_value from code_value where description = "Western Health Radiology")
+
+		; and E.CONTRIBUTOR_SYSTEM_CD = (select code_value from code_value where description = "Western Health Radiology")
 		;  AND E.MSH_SENDING_APP = "BMM_LAB" ; BMM LAB MESSAGES ONLY ; note this is slower than using the system code no below
         AND E.CONTRIBUTOR_SYSTEM_CD = 308613675.00; BMM_RAD Messages Only
 
@@ -61,4 +63,4 @@ ORDER BY
 	, E.MSGID DESC
 
 ; Exit after 20 seconds, Don't show more than 1000 messages
-WITH FORMAT, SEPERATOR = " ", TIME = 20, MAXREC = 5000
+WITH FORMAT, SEPERATOR = " ", TIME = 10, MAXREC = 5000
