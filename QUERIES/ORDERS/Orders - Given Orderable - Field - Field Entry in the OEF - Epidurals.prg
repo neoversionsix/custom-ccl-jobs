@@ -9,7 +9,7 @@ Programmer: Jason Whittle
 DATE: Febuary 2025
 
 DESCRIPTION:
-This aims to show Epidurals, Identified by orders for "Consult to Medical Specialty (MO Use Only)"
+This aims to show Epidural Requests, Identified by orders for "Consult to Medical Specialty (MO Use Only)"
 "Epidural Service" in the "Service Selection in OEF" field with "Reason for Consult freetext pulled in as a column
 
 SETTINGS
@@ -50,8 +50,8 @@ SELECT INTO $OUTDEV
     , PATIENT_SEX = UAR_GET_CODE_DISPLAY(P.SEX_CD)
     , ENCOUNTER_FIN = E_A.ALIAS
     , REASON_FOR_CONSULT_FREETEXT = O_D.OE_FIELD_DISPLAY_VALUE
-    , ORDERED_DATE = O.ORIG_ORDER_DT_TM  "DD-MMM-YYYY"
-    , ORDERED_TIME = O.ORIG_ORDER_DT_TM  "HH:MM:SS;;D"
+    , ORDERED_DATE = FORMAT(O.ORIG_ORDER_DT_TM,  "DD-MMM-YYYY")
+    , ORDERED_TIME = FORMAT(O.ORIG_ORDER_DT_TM,  "HH:MM:SS;;D")
     , FACILITY = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
     , NURSE_UNIT =
         IF(ELH.LOC_NURSE_UNIT_CD > 0) UAR_GET_CODE_DISPLAY(ELH.LOC_NURSE_UNIT_CD)
@@ -153,7 +153,7 @@ ORDER BY
       O_D.ORDER_ID
     , O_D.DETAIL_SEQUENCE
 
-WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 30
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 60
 
 END
 GO
