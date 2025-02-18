@@ -2,10 +2,34 @@ drop program wh_epidural_requests go
 create program wh_epidural_requests
 
 /*
-SR930296
-using code from SR92306
+Ticket No: SR930296 using code from SR92306
+
+Programmer: Jason Whittle
+
+DATE: Febuary 2025
+
+DESCRIPTION:
 This aims to show Epidurals, Identified by orders for "Consult to Medical Specialty (MO Use Only)"
 "Epidural Service" in the "Service Selection in OEF" field with "Reason for Consult freetext pulled in as a column
+
+SETTINGS
+Prompts:
+    OUTDEV (checkboxes to turn on)
+        GENERAL
+            HIDE LABEL
+            PROMPT ONLY
+        OUTPUT
+            Hide Browser Button
+            Disallow Freetext Devices
+
+    ORDER_AFTER_DT AND ORDER_BEFORE_DT
+        GENERAL
+            COTROL TYPE = DATE/TIME
+        DATE/TIME
+            DATE & TIME
+        CALCULATE DEFAULT
+            CURRENT DATE/TIME 'CHECKED'
+            DAY: -30
 */
 
 prompt
@@ -15,7 +39,7 @@ prompt
 
 with OUTDEV, ORDER_AFTER_DT, ORDER_BEFORE_DT
 
-SELECT INTO OUTDEV
+SELECT INTO $OUTDEV
       O.ORDER_ID
     , ORDERED = UAR_GET_CODE_DISPLAY (O.CATALOG_CD)
     , SERVICE_SELECTION_IN_OEF = "EPIDURAL SERVICE" ; This is filtered in the code
