@@ -1,22 +1,17 @@
 SELECT
-	CREATED = E.CREATE_DT_TM "DD-MMM-YYYY HH:MM:SS"
-	, E.ERROR_TEXT
-	, PATIENT_URN = REPLACE(E.PERSON_ALIAS, ",", "")
+	CREATED = FORMAT(E.CREATE_DT_TM, "YYYY-MM-DD HH:MM:SS")
+	, E.ERROR_STAT ; Did it load?
+	, PATIENT_URN = E.PERSON_ALIAS
 	, C.ACCESSION_NBR
 	, ALIAS = E.HL7_ENTITY_CODE
-	, E.ERROR_STAT
 	, PATIENT = E.NAME_FULL_FORMATTED
 	, PATIENT_DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
 	, E.ENCNTR_ID
 	, E.PERSON_ID
 	, E.ENCNTR_ALIAS
-	, E.MSH_SENDING_APP
-	, E.MSH_MSG_TYPE
-	; , E.ACTIVE_IND
 	, E.ENTITY_NAME
-	; , E.EVENT_ID
 	, E.ORDER_ID
-	;, E.HL7_ACCESSION_NBR
+	, E.ERROR_TEXT ; load errors eg no order id
 	, HL7 = O.MSG_TEXT
 
 FROM
@@ -27,20 +22,20 @@ FROM
 
 PLAN E
     WHERE
+		E.CONTRIBUTOR_SYSTEM_CD = 308608009.00; BMM_LAB Messages Only
 		; Filter for messages in the last hour only
-		E.CREATE_DT_TM > cnvtlookbehind("1,H")
-		AND E.PERSON_ALIAS = "123455" ; ENTER URN HERE!
-		; E.CREATE_DT_TM > cnvtdatetime("26-NOV-2024 00:00") ; Messages created after
+		AND E.CREATE_DT_TM > cnvtlookbehind("1,H")
+		; AND E.PERSON_ALIAS = "*12345*" ; ENTER URN HERE!
+		; AND E.CREATE_DT_TM > cnvtdatetime("26-NOV-2024 00:00") ; Messages created after
 		; AND E.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before change
-        ; and E.CONTRIBUTOR_SYSTEM_CD = (select code_value from code_value where description = "Western Health Radiology")
-		;  AND E.MSH_SENDING_APP = "BMM_LAB" ; BMM LAB MESSAGES ONLY ; note this is slower than using the system code no below
+		; AND E.ERROR_STAT = "*FAILURE*" ; Only failed messages
+		; AND E.HL7_ENTITY_CODE = "*HISTO*" ; Only Histology tests
 
-        AND E.CONTRIBUTOR_SYSTEM_CD = 308608009.00; BMM_LAB Messages Only
 
 
 JOIN O
     WHERE O.MSGID = OUTERJOIN(E.MSGID)
-	AND O.CREATE_DT_TM > cnvtlookbehind("1,H")
+	; AND O.CREATE_DT_TM > cnvtlookbehind("1,H")
     ; AND O.CREATE_DT_TM > OUTERJOIN(cnvtdatetime("26-NOV-2024 00:00")) ; Messages created after
 	; AND O.CREATE_DT_TM < OUTERJOIN(cnvtdatetime("03-DEC-2024 17:00")) ; Messages created before
     ; AND (O.MSG_TEXT = ("*|HH|*") OR O.MSG_TEXT = ("*|LL|*")) ; Critical High and low results only

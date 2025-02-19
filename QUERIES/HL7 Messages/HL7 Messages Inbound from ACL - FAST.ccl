@@ -13,14 +13,15 @@ SELECT
 FROM
 	ESI_LOG   E
 
-PLAN E
-    WHERE
-		; Filter for messages in the last hour only
-		;E.CREATE_DT_TM > cnvtlookbehind("1,H")
-		E.PERSON_ALIAS = "*12345689*" ; ENTER URN HERE in asterisk
-		AND E.CREATE_DT_TM > cnvtdatetime("02-JAN-2025 00:00") ; Messages created after
-		; AND E.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before
-        AND E.CONTRIBUTOR_SYSTEM_CD = 308608009.00; BMM_LAB Messages Only
+WHERE
+	E.CONTRIBUTOR_SYSTEM_CD = 308608009.00; BMM_LAB Messages Only
+	; Filter for messages in the last hour only
+	AND E.CREATE_DT_TM > cnvtlookbehind("1,H")
+	; AND E.PERSON_ALIAS = "*12345*" ; ENTER URN HERE!
+	; AND E.CREATE_DT_TM > cnvtdatetime("26-NOV-2024 00:00") ; Messages created after
+	; AND E.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before change
+	; AND E.ERROR_STAT = "*FAILURE*" ; Only failed messages
+	; AND E.HL7_ENTITY_CODE = "*HISTO*" ; Only Histology tests
 
 ORDER BY
 	E.CREATE_DT_TM   DESC
