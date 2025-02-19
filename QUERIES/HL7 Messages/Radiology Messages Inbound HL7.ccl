@@ -18,7 +18,7 @@ FROM
 PLAN E
 	WHERE E.UPDT_DT_TM > CNVTLOOKBEHIND("3,H")
 		and E.CONTRIBUTOR_SYSTEM_CD = (select code_value from code_value where description = "Western Health Radiology")
-		and E.PERSON_ALIAS = "*1913048*"
+		and E.PERSON_ALIAS = "*12345*"
 		; ENCOUNTER ID FILTER
 		; and E.ENCNTR_ID IN
 		; (
