@@ -1,0 +1,29 @@
+SELECT
+	CREATED = E.CREATE_DT_TM "DD-MMM-YYYY HH:MM:SS"
+	, E.ERROR_STAT
+	, PATIENT_URN = E.PERSON_ALIAS
+	, ALIAS = E.HL7_ENTITY_CODE ; Name of the path test
+	, PATIENT = E.NAME_FULL_FORMATTED
+	, E.ENCNTR_ID
+	, E.PERSON_ID
+	, E.ENCNTR_ALIAS
+	, E.ENTITY_NAME
+	, E.ERROR_TEXT
+
+FROM
+	ESI_LOG   E
+
+PLAN E
+    WHERE
+		; Filter for messages in the last hour only
+		;E.CREATE_DT_TM > cnvtlookbehind("1,H")
+		E.PERSON_ALIAS = "*12345689*" ; ENTER URN HERE in asterisk
+		AND E.CREATE_DT_TM > cnvtdatetime("02-JAN-2025 00:00") ; Messages created after
+		; AND E.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before
+        AND E.CONTRIBUTOR_SYSTEM_CD = 308608009.00; BMM_LAB Messages Only
+
+ORDER BY
+	E.CREATE_DT_TM   DESC
+	, E.MSGID  DESC
+
+WITH FORMAT, SEPERATOR = " ", TIME = 10
