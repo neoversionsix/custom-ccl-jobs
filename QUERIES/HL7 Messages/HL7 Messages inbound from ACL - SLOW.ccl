@@ -15,10 +15,10 @@ SELECT
 	, HL7 = O.MSG_TEXT
 
 FROM
-	ESI_LOG   E
-	, OEN_TXLOG   O
-	, PERSON   P
-	, CLINICAL_EVENT C
+	ESI_LOG				E
+	, OEN_TXLOG			O
+	, PERSON			P
+	, CLINICAL_EVENT	C
 
 PLAN E
     WHERE
@@ -30,8 +30,6 @@ PLAN E
 		; AND E.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before change
 		; AND E.ERROR_STAT = "*FAILURE*" ; Only failed messages
 		; AND E.HL7_ENTITY_CODE = "*HISTO*" ; Only Histology tests
-
-
 
 JOIN O
     WHERE O.MSGID = OUTERJOIN(E.MSGID)
@@ -45,6 +43,7 @@ JOIN P
 
 JOIN C
 	WHERE C.EVENT_ID = OUTERJOIN(E.EVENT_ID)
+
 ORDER BY
 	E.CREATE_DT_TM   DESC
 	, E.MSGID  DESC
