@@ -12,6 +12,11 @@ DESCRIPTION:
 This aims to show Epidural Requests, Identified by orders for "Consult to Medical Specialty (MO Use Only)"
 "Epidural Service" in the "Service Selection in OEF" field with "Reason for Consult freetext pulled in as a column
 
+Description in DA2:
+SR923063 This report returns orders for "Consult to Medical Specialty (MO Use Only)" where the user selected
+"EPIDURAL SERVICE" in the dropdown of the order entry form. The time filter is for when the order was placed.
+Consult Priya Rao when making edits to this report.
+
 SETTINGS
 Prompts:
     OUTDEV (checkboxes to turn on)
