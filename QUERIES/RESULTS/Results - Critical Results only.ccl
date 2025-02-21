@@ -25,8 +25,9 @@ FROM
 	CLINICAL_EVENT   C
 
 where c.PERSON_ID = (SELECT X.PERSON_ID FROM PERSON_ALIAS X WHERE X.ALIAS = "12345" AND ACTIVE_IND = 1) ; enter URN!
-and c.CONTRIBUTOR_SYSTEM_CD > 0 ; From a contributory system; =          308608009.00; BMM_LAB
+and c.CONTRIBUTOR_SYSTEM_CD > 0 ; From a contributory system; =
 and c.CONTRIBUTOR_SYSTEM_CD != 469.00 ; powerchart
+and c.CONTRIBUTOR_SYSTEM_CD != 308608009.00; BMM_LAB
 and c.NORMALCY_CD = 203.00 ; 'Critical' results only
 
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10

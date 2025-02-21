@@ -21,21 +21,29 @@ SELECT
 	, C.UPDT_DT_TM
 	, C.VIEW_LEVEL
 	, E.ERROR_STAT
-    , HL7 = O_T.MSG_TEXT
+    , E.ERROR_TEXT
+    , HL7 = OT.MSG_TEXT
 
 FROM
-	CLINICAL_EVENT   C,
-	ESI_LOG E,
+	CLINICAL_EVENT   C
+	, ESI_LOG E
     , OEN_TXLOG   OT
 
 plan c
-where ;c.PERSON_ID = (SELECT X.PERSON_ID FROM PERSON_ALIAS X WHERE X.ALIAS = "12345" AND ACTIVE_IND = 1) ; enter URN!
- c.NORMALCY_CD = 203.00 ; 'Critical' results only
-and c.UPDT_DT_TM > cnvtlookbehind("1,h")
+    where
+        c.UPDT_DT_TM > cnvtlookbehind("1,h")
+        ; and c.PERSON_ID = (SELECT X.PERSON_ID FROM PERSON_ALIAS X WHERE X.ALIAS = "12345" AND ACTIVE_IND = 1) ; enter URN!
+        and c.NORMALCY_CD = 203.00 ; 'Critical' results only
+        and c.CONTRIBUTOR_SYSTEM_CD > 0 ; From a contributory system; =
+        and c.CONTRIBUTOR_SYSTEM_CD != 469.00 ; powerchart
+        and c.CONTRIBUTOR_SYSTEM_CD != 308608009.00; BMM_LAB
 
-join e where  e.EVENT_ID = OUTERJOIN(c.PARENT_EVENT_ID)
+join e
+    where
+        e.EVENT_ID = OUTERJOIN(c.PARENT_EVENT_ID)
 
-JOIN O_T
-    WHERE O_T.MSGID = OUTERJOIN(E.MSGID)
+JOIN OT
+    WHERE
+        OT.MSGID = OUTERJOIN(E.MSGID)
 
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 30
