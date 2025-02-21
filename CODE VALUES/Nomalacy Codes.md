@@ -1,5 +1,8 @@
 # Code Set 52 - Nomalacy Codes
 
+## Description:
+This indicates if the result was critical, high, low, normal, or if it changed up or down.
+
 ##Tables this code set is in:
 
 | Table Name      | Column Name     |
