@@ -39,8 +39,6 @@ PLAN E ; Note: ESI_LOG only stores inbound messages, outbound messages are store
 
 		; AND E.PERSON_ALIAS = "*12345689*" ; ENTER URN HERE!
 
-
-
 ORDER BY
 	E.CREATE_DT_TM DESC
 	, E.MSGID DESC
