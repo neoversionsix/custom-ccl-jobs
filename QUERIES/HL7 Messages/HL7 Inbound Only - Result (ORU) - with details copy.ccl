@@ -1,0 +1,43 @@
+SELECT
+/*
+This Will Only Bring Back Inbound Messages that are Result Messages (ORU)
+*/
+    CREATED = E.CREATE_DT_TM "DD-MMM-YYYY HH:MM:SS"
+	, GOING =
+		IF (OT.EVENTID = "1001") "INBOUND"
+		ELSEIF (OT.EVENTID = "2001") "OUTBOUND"
+		ELSE OT.EVENTID
+		ENDIF
+	, E.MSH_MSG_TYPE
+	, E.MSH_SENDING_APP
+	, ALIAS = E.HL7_ENTITY_CODE
+	, E.ACTIVE_IND
+	, E_CONTRIBUTOR_SYSTEM_DISP = UAR_GET_CODE_DISPLAY(E.CONTRIBUTOR_SYSTEM_CD)
+	, E.ENCNTR_ALIAS
+	, E.ENCNTR_ID
+	, E.ENTITY_NAME
+	, E.ERROR_STAT
+	, E.ERROR_TEXT
+	, E.ESI_LOG_ORIG_ID
+	, E.ESI_TX_KEY
+	, E.EVENT_ID
+	, PATIENT = E.NAME_FULL_FORMATTED
+	, E.ORDER_ID
+	, URN = E.PERSON_ALIAS
+    , HL7 = OT.MSG_TEXT
+
+FROM
+	ESI_LOG   E
+    , OEN_TXLOG   OT
+
+PLAN E
+    WHERE
+		; Filter for messages in the last hour only
+		E.UPDT_DT_TM > CNVTLOOKBEHIND("1,H")
+		AND E.MSH_MSG_TYPE = "*ORU*" ; result message types only
+        ; and E.CONTRIBUTOR_SYSTEM_CD = (select code_value from code_value where description = "Western Health Radiology")
+
+JOIN OT
+    WHERE OT.MSGID = OUTERJOIN(E.MSGID)
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 60
