@@ -1,0 +1,20 @@
+SELECT
+/*
+find a clinician by name, useful to get person id
+*/
+	  PR.USERNAME
+	, PR.PERSON_ID
+	, PR.NAME_FIRST
+	, PR.NAME_LAST
+	, PR.NAME_FULL_FORMATTED
+	, PR.ACTIVE_IND
+	, PR.END_EFFECTIVE_DT_TM
+
+FROM
+	PRSNL PR
+
+WHERE
+    PR.NAME_FIRST_KEY = "*TEST*" ; EDIT!
+    AND PR.NAME_LAST_KEY = "*TEST*" ; EDIT!
+
+WITH TIME = 5, FORMAT, SEPERATOR = " ", MAXREC = 100
