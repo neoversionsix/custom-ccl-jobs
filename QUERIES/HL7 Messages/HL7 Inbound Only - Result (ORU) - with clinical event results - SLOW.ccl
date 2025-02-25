@@ -49,6 +49,8 @@ PLAN E
 		; 	AND X.display = "WH_LAB"
 		; 	)
 		;AND E.CONTRIBUTOR_SYSTEM_CD =    86524974.00 ; "WH_LAB" ; Dorevitch only
+		;AND E.CONTRIBUTOR_SYSTEM_CD =    86524980.00 ; "WH_RAD" ; WH Rad only
+
 ; Join the OT table to get the HL7 Message
 ; JOIN OT
 ;     WHERE OT.MSGID = OUTERJOIN(E.MSGID)
