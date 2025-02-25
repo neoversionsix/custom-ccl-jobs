@@ -29,6 +29,7 @@ This Will Only Bring Back Inbound Messages that are Result Messages (ORU)
 FROM
 	ESI_LOG   E
     , OEN_TXLOG   OT
+	, CLINICAL_EVENT   C
 
 PLAN E
     WHERE
