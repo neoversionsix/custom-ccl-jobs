@@ -1,4 +1,4 @@
-SELECT DISTINCT
+SELECT
 /* Links Results in the EMR to inbound ORU (result) HL7 messages
 Can unhide the OT table to see the full HL7 message but it's slower if you do
  */
