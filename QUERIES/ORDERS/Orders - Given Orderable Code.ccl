@@ -76,7 +76,7 @@ JOIN P;PERSON
     AND P.ACTIVE_IND = 1
     /* Remove Fake 'Test' Patients */
     ;AND P.NAME_LAST_KEY != "*TESTWHS*"
-    /* Remove Ineffective Patients */      
+    /* Remove Ineffective Patients */
     AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
 /* Encounter Identifiers such as the Financial Number */

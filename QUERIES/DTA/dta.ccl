@@ -1,0 +1,242 @@
+select	; Discrete Task Assays (DTAs)	; three part script, with swtiches for '<E', 'E->L', and '>= M'
+	domain = concat( trim(curdomain) ,' (', format(sysdate,"yyyymmdd hhmm;3;q"), ")" )
+	, dta_mnemonic = dta.mnemonic
+	, dta_description = dta.description
+	, dta_activity_type = uar_get_code_display(dta.activity_type_cd)
+	, dta_result_type = uar_get_code_display(dta.default_result_type_cd)
+	, DTA_concept_cki = dta.concept_cki
+	, DTA_default_type = evaluate(dta.default_type_flag
+	, 0, "No Defaults"
+	, 1, "Default from the Reference Range"
+	, 2, "Default the last charted value"
+	, 3, "Default from Template Script"
+	)
+	, DTA_default_template = uar_get_code_display(dta.template_script_cd)
+	, DTA_Intake_and_Output = evaluate(dta.io_flag
+	, 0, "Do not include in I&O"
+	, 1,  "Include in Intake"
+	, 2, "Include in Output"
+	, -1, "Do not include in I&O (Error)"
+	)
+	, DTA_use_modifier = dta.modifier_ind
+	, DTA_1st_alpha_single_select_ind = dta.single_select_ind
+	, DTA_witness_req = "not yet CCL coded"	; unknown database location for this detail. MB 20221028.
+	, DTA_code_set = dta.code_set
+	, DTA_active_ind = dta.active_ind
+	, DTA_last_update = format(dta.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, DTA_last_updater = if(p_dta.name_full_formatted = null) cnvtstring(dta.updt_id)
+	else p_dta.name_full_formatted
+	endif
+	, DTA.task_assay_cd
+	, alpha_response_sex = uar_get_code_display (rrf.sex_cd)
+	, alpha_response_age_range = if(rrf.reference_range_factor_id > 0)
+	concat(if (mod(rrf.age_from_minutes, 525600) = 0) trim(cnvtstring(rrf.age_from_minutes/525600))	; minutes/year (Note: 1 year = 365 days = 525600 minutes. If they update 1 year to be 365.25 days, then = 525960 minutes)
+	elseif (mod(rrf.age_from_minutes, 43200) = 0) trim(cnvtstring(rrf.age_from_minutes/43200))	; minutes/month
+	elseif (mod(rrf.age_from_minutes, 10080) = 0) trim(cnvtstring(rrf.age_from_minutes/10080))	; minutes/week
+	elseif (mod(rrf.age_from_minutes, 1440) = 0) trim(cnvtstring(rrf.age_from_minutes/1440))	; minutes/day
+	elseif (mod(rrf.age_from_minutes, 60)= 0 ) trim(cnvtstring(rrf.age_from_minutes/60))	; minutes/hour
+	else trim(cnvtstring(rrf.age_from_minutes))
+	endif
+	,  if (rrf.age_from_minutes = 0) null
+	elseif (mod(rrf.age_from_minutes, 525600) = 0) " Years"	; minutes/year (Note: 1 year = 365 days = 525600 minutes. If they update 1 year to be 365.25 days, then = 525960 minutes)
+	elseif (mod(rrf.age_from_minutes, 43200) = 0) " Months"	; minutes/month
+	elseif (mod(rrf.age_from_minutes, 10080) = 0) " Weeks"	; minutes/week
+	elseif (mod(rrf.age_from_minutes, 1440) = 0) " Days"	; minutes/day
+	elseif (mod(rrf.age_from_minutes, 60) = 0) " Hours"	; minutes/hour
+	else " Minutes"
+	endif
+	,  " - "
+	, if (mod(rrf.age_to_minutes, 525600) = 0) trim(cnvtstring(rrf.age_to_minutes/525600))	; minutes/year (Note: 1 year = 365 days = 525600 minutes. If they update 1 year to be 365.25 days, then = 525960 minutes)
+	elseif (mod(rrf.age_to_minutes, 43200) = 0) trim(cnvtstring(rrf.age_to_minutes/43200))	; minutes/month
+	elseif (mod(rrf.age_to_minutes, 10080) = 0) trim(cnvtstring(rrf.age_to_minutes/10080))	; minutes/week
+	elseif (mod(rrf.age_to_minutes, 1440) = 0) trim(cnvtstring(rrf.age_to_minutes/1440))	; minutes/day
+	elseif (mod(rrf.age_to_minutes, 60)= 0 ) trim(cnvtstring(rrf.age_to_minutes/60))	; minutes/hour
+	else trim(cnvtstring(rrf.age_to_minutes))
+	endif
+	,  if (rrf.age_to_minutes = 0) null
+	elseif (mod(rrf.age_to_minutes, 525600) = 0) " Years"	; minutes/year (Note: 1 year = 365 days = 525600 minutes. If they update 1 year to be 365.25 days, then = 525960 minutes)
+	elseif (mod(rrf.age_to_minutes, 43200) = 0) " Months"	; minutes/month
+	elseif (mod(rrf.age_to_minutes, 10080) = 0) " Weeks"	; minutes/week
+	elseif (mod(rrf.age_to_minutes, 1440) = 0) " Days"	; minutes/day
+	elseif (mod(rrf.age_to_minutes, 60) = 0) " Hours"	; minutes/hour
+	else " Minutes"
+	endif
+	)
+	else ""
+	endif
+	, unit_of_measure = uar_get_code_display(rrf.units_cd)
+;	, ref_range_norm_low = if (rrf.task_assay_cd > 0 ) cnvtstring(rrf.normal_low)
+;	else ""
+;	endif
+;	, ref_range_norm_high = if (rrf.task_assay_cd > 0 ) cnvtstring(rrf.normal_high)
+;	else ""
+;	endif
+;	, ref_range_crit_low = if (rrf.task_assay_cd > 0 ) cnvtstring(rrf.critical_low)
+;	else ""
+;	endif
+;	, ref_range_crit_high = if (rrf.task_assay_cd > 0 ) cnvtstring(rrf.critical_high)
+;	else ""
+;	endif
+	, alpha_response_sex_or_age_filters = count(rrf.reference_range_factor_id) over (partition by dta.task_assay_cd)
+	, alpha_response_options = substring(1,1500,a_r.alpha_response_options)	; audit 'volumes out' if field length is not restricted, as some are more than 2,000 characters long…
+	, alpha_response_nomenclature_ids = a_r.alpha_response_nomenclature_IDs
+	, alpha_response_count = if(rrf.reference_range_factor_id > 0 ) cnvtstring(a_r.alpha_response_count)
+	else ""
+	endif
+	, rrf_last_update = format(rrf.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, rrf_last_updater = if(rrf.reference_range_factor_id > 0 and p_rrf.name_full_formatted = null) cnvtstring(rrf.updt_id)
+	else p_rrf.name_full_formatted
+	endif
+	, reference_range_factor_id = if(rrf.reference_range_factor_id > 0) cnvtstring(rrf.reference_range_factor_id)
+	else ""
+	endif
+	, mapped_event_code_display = nullval(ec.event_cd_disp, nullval(uar_get_code_display(dta.event_cd), uar_get_code_display(cv_e_r.event_cd)))
+	, event_code_results = if(dta.event_cd > 0 and ce_count.result_count > "0") ce_count.result_count
+	elseif(dta.event_cd > 0) "0"
+	endif
+	, mapped_event_code = if(nullval(dta.event_cd, cv_e_r.event_cd) > 0) cnvtstring(nullval(dta.event_cd, cv_e_r.event_cd))
+	else ""
+	endif
+	, mapped_event_set = if(nullval(dta.event_cd, cv_e_r.event_cd) > 0) nullval(es_es_ec.event_set_name, es_es_dta.event_set_name)
+	else ""
+	endif
+	, mapped_active_powerforms = active_PF.powerforms
+	, mapped_active_powerform_count = if(active_PF.count > 0) active_PF.count
+	else  0
+	endif
+	, mapped_tasks = mapped_tasks.mapped_tasks
+	, mapped_task_IDs = mapped_tasks.mapped_task_ids
+	, mapped_task_count = mapped_tasks.mapped_task_count
+	, domain_alignment_comparison_text = if (dta.active_ind = 1)
+	build(
+	dta.mnemonic
+	, "|", dta.description
+	, "|", uar_get_code_display(dta.activity_type_cd)
+	, "|", uar_get_code_display(dta.default_result_type_cd)
+	, "|", dta.modifier_ind
+	, "|", dta.single_select_ind
+	, "|", dta.code_set
+	, "|", nullval(ec.event_cd_disp, nullval(uar_get_code_display(dta.event_cd), uar_get_code_display(cv_e_r.event_cd)))
+	, "|", dta.concept_cki
+	, "|", dta.default_type_flag
+	, "|", uar_get_code_display(dta.template_script_cd)
+	, "|", dta.io_flag
+	)
+	else ""
+	endif
+	, DTA_rank = dense_rank() over (partition by 0
+	order by
+	cnvtupper(dta.mnemonic)
+	, dta.task_assay_cd
+	)
+
+from	discrete_task_assay dta
+	, (left join prsnl p_dta on p_dta.person_id = dta.updt_id)
+	, (left join reference_range_factor rrf on rrf.task_assay_cd = dta.task_assay_cd
+	and rrf.active_ind = 1
+	)
+	, (left join prsnl p_rrf on p_rrf.person_id = rrf.updt_id)
+	, (left join (select a_r.reference_range_factor_id
+	, alpha_response_options = listagg (n.source_string, "; ", "") within group (order by a_r.sequence)
+	, alpha_response_nomenclature_IDs = listagg (a_r.nomenclature_id, "; ", "") within group (order by a_r.sequence)
+	, alpha_response_count = count(n.nomenclature_id)
+	from alpha_responses a_r
+	, nomenclature n
+	where a_r.nomenclature_id > 0
+	and  n.nomenclature_id = a_r.nomenclature_id
+	group by a_r.reference_range_factor_id
+	with sqltype("f8", "vc2000", "vc1000", "i2")) a_r on a_r.reference_range_factor_id = rrf.reference_range_factor_id
+	)
+	, (left join v500_event_code ec on ec.event_cd = dta.event_cd)	; for event codes mapped using the DTA Wizard tool
+	, (left join v500_event_set_explode ese_es_ec on ese_es_ec.event_cd = dta.event_cd	; primitive event set explode
+	and ese_es_ec.event_set_level = 0
+	and ese_es_ec.dm2_mig_seq_id = (select min (dm2_mig_seq_id)	; to exclude ghosted event sets
+	from v500_event_set_explode
+	where event_cd = dta.event_cd
+	and event_set_level = 0
+	)
+	)
+	, (left join v500_event_set_code es_es_ec on es_es_ec.event_set_cd = ese_es_ec.event_set_cd)
+	, (left join code_value_event_r cv_e_r on cv_e_r.parent_cd = dta.task_assay_cd	; for event codes mapped using CoreEventManager
+	and cv_e_r.flex1_cd = 0	; prevents duplicate joins where this table it used for flexing
+	)
+	, (left join v500_event_set_explode ese_es_dta on ese_es_dta.event_cd = cv_e_r.event_cd	; primitive event set explode
+	and ese_es_dta.event_set_level = 0
+	and ese_es_dta.dm2_mig_seq_id = (select min (dm2_mig_seq_id)	; to exclude ghosted event sets
+	from v500_event_set_explode
+	where event_cd = cv_e_r.event_cd
+	and event_set_level = 0
+	)
+	)
+	, (left join v500_event_set_code es_es_dta on es_es_dta.event_set_cd = ese_es_dta.event_set_cd)
+	, (left join (select ce.event_cd, result_count = count(*) 	; patient results
+	from clinical_event ce
+	where ce.event_cd > 0
+;	and ce.event_end_dt_tm > cnvtlookbehind("6,m")
+	group by ce.event_cd
+	) ce_count on ce_count.event_cd = dta.event_cd
+	)
+	, (left join (select nvp_dta.merge_id	; powerform section usage
+	, powerforms = listagg(form_ref.description, "; ", "") within group (order by form_ref.description)
+	, count = count(nvp_dta.merge_id) 	; powerform section usage
+	from name_value_prefs nvp_dta
+	, dcp_input_ref form_input
+	, dcp_section_ref form_sec
+	, dcp_forms_def form_def
+	, dcp_forms_ref form_ref
+	where  nvp_dta.merge_id > 0
+	and nvp_dta.active_ind = 1
+	and nvp_dta.parent_entity_name = "DCP_INPUT_REF"
+	and nvp_dta.pvc_name = "discrete_task_assay*"
+	and form_input.dcp_input_ref_id = nvp_dta.parent_entity_id
+	and form_input.active_ind = 1
+	and form_sec.dcp_section_instance_id = form_input.dcp_section_instance_id
+	and form_sec.active_ind = 1
+	and form_def.dcp_section_ref_id = form_sec.dcp_section_ref_id
+	and form_def.active_ind = 1
+	and form_ref.dcp_form_instance_id = form_def.dcp_form_instance_id
+	and form_ref.active_ind = 1
+	group by nvp_dta.merge_id
+	with sqltype("f8", "vc400", "i2")) active_PF on active_PF.merge_id = dta.task_assay_cd
+	)
+	, (left join (select t_d_r.task_assay_cd
+	, mapped_tasks = listagg(o_t.task_description, "; ", "") within group (order by o_t.task_description)
+	, mapped_task_ids = listagg(t_d_r.reference_task_id, "; ",  "") within group (order by o_t.task_description)
+	, mapped_task_count = count(t_d_r.reference_task_id)
+	from task_discrete_r t_d_r
+	, order_task o_t
+	where o_t.reference_task_id = t_d_r.reference_task_id
+	group by t_d_r.task_assay_cd
+	with sqltype("f8", "vc255", "vc100", "i2")) mapped_tasks on mapped_tasks.task_assay_cd = dta.task_assay_cd
+	)
+
+plan	dta
+where	dta.task_assay_cd > 0	; removes '0' row from discrete_task_assay table
+;and	dta.active_ind = 1
+and	cnvtupper(dta.mnemonic) < "E*"
+;and	cnvtupper(dta.mnemonic) between "E*" and "P*"
+;and	cnvtupper(dta.mnemonic) >= "P*"
+join	p_dta
+join	rrf
+join	p_rrf
+join	a_r
+join	ec
+join	ese_es_ec
+join	es_es_ec
+join	cv_e_r
+join	ese_es_dta
+join	es_es_dta
+join	ce_count
+join	active_PF
+join	mapped_tasks
+
+order by
+	cnvtupper(dta.mnemonic)
+	, dta.task_assay_cd
+	, uar_get_code_display(rrf.sex_cd)
+	, rrf.age_from_minutes
+;	, a_r.sequence
+;	, n.nomenclature_id
+	, 0
+
+with	time = 1200	
