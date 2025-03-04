@@ -1,0 +1,28 @@
+SELECT
+/*
+In the following example, ALL_COUNT is the count of all the
+result_value_numeric values returned by the query. CUM_COUNT
+is a count of the rows that were updated each day. RES_COUNT
+is a count of the rows that have the same result_value_numeric
+value that were updated each day. 
+*/
+	DAY = DATETIMETRUNC(P.UPDT_DT_TM,"DD") "@SHORTDATE"
+	,P.RESULT_VALUE_NUMERIC
+	,ALL_COUNT = COUNT(P.RESULT_VALUE_NUMERIC) OVER( )
+	,CUM_COUNT = COUNT(P.RESULT_VALUE_NUMERIC) OVER(
+			PARTITION BY DATETIMETRUNC(P.UPDT_DT_TM,"DD")
+			)
+	,RES_COUNT = COUNT(P.RESULT_VALUE_NUMERIC) OVER(
+			PARTITION BY DATETIMETRUNC(P.UPDT_DT_TM,"DD")
+			ORDER BY P.RESULT_VALUE_NUMERIC
+			)
+FROM
+	PERFORM_RESULT   P
+
+WHERE P.UPDT_DT_TM BETWEEN CNVTLOOKBEHIND("6,M") AND CNVTDATETIME(CURDATE, CURTIME3)
+	AND P.RESULT_VALUE_NUMERIC > 0.0
+
+ORDER BY
+	DAY
+	,P.RESULT_VALUE_NUMERIC
+WITH SEPARATOR=" ", FORMAT

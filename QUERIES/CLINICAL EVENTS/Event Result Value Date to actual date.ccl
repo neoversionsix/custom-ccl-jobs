@@ -1,0 +1,14 @@
+SELECT
+	CE.RESULT_VAL
+	, DATE = FORMAT(CNVTDATE2(SUBSTRING(3, 8, CE.RESULT_VAL), "YYYYMMDD"), "DD/MMM/YYYY ;;D")
+FROM
+		CLINICAL_EVENT CE
+PLAN CE
+		WHERE
+			CE.UPDT_DT_TM > CNVTLOOKBEHIND("10,D")
+			AND CE.EVENT_CD = 152031995 ; EVENT CODE FOR 'MDM DATE' in the powerform
+			AND CE.VIEW_LEVEL = 1 ; Make sure the data should be viewable, eg, not just for grouping data in the background
+
+
+ORDER BY CE.PERSON_ID, CE.UPDT_CNT DESC ; this selects the most recent update from the filtered list
+WITH TIME = 10
