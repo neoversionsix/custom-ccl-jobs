@@ -1,29 +1,18 @@
 ;NOTES
     /* IN DEVELOPMENT
-    Program: wh_mdm_report
-    Date Created: 27th of October 2022, Updated 27/4/2023
-    Description: Report for MDM Care Team Meeting
+    Program: wh_mdm_portal_report
+    Date Created: Mar 2025
+    Description: Report for MDM Care Team Meeting, reporpsing
+	the mdm report from powerchart for the reporting portal. Just need
+	to feed in patients from a query rather than a json from powerchart
     Programmer: Jason Whittle
 
-	PROD CODES
-	CODE_VALUE		DESCRIPTION
-	152031275.00	ONC_MDM_Pre-op/Post-op Discussion
-	152031285.00	Onc_MDM_RelevantBloods
-	152031989.00	Onc_MDM_ClinicAppt/FollowUp
-	152031995.00	Onc_MDM_Date
-	152032001.00	Onc_MDM_Scopes
-	152031405.00	Onc_MDM_Cancer MDM or Surgical Meeting
-	152031413.00	Onc_MDM_Pathology
-	152031535.00	Onc_MDM_Clinical Notes
-	152031543.00	Onc_MDM_Consultant
-	152030797.00	Onc_MDM_Question
-	152031611.00	Onc_MDM_Imaging
 
     */
 
 ;CREATE PROGRAM AND PROMPT
-    drop program wh_mdm_report go
-    create program wh_mdm_report
+    drop program wh_mdm_portal_report go
+    create program wh_mdm_portal_report
     prompt
     	"Output to File/Printer/MINE" = "MINE" ,
     	"JSON Request:" = ""
@@ -117,6 +106,45 @@
 		stat = alterlist(data->list,cnt)
 	with nocounter
 
+
+;ENCOUNTER AND PERSON_IDS ADD MDM PATIENTS TO DATA RECORD
+	SELECT INTO "nl:"
+	FROM
+		PERSON   P
+		, PERSON_ALIAS PA
+		, ENCOUNTER E
+		;, (LEFT JOIN PERSON_ALIAS PA ON (P.PERSON_ID = PA.PERSON_ID))
+		;, (LEFT JOIN ENCOUNTER E ON (E.PERSON_ID = P.PERSON_ID))
+	PLAN P
+		WHERE
+			EXPAND(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
+	JOIN PA
+		WHERE ;EXPAND(idx,1,data->cnt,P.PERSON_ID,data->list[idx].PERSON_ID)
+			PA.PERSON_ID = P.PERSON_ID
+			AND
+			PA.ALIAS_POOL_CD = 9569589.00 ;319_URN_CD ; 9569589.00 ; this filters for the UR Number
+			AND
+			PA.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+			AND
+			P.ACTIVE_IND = 1 ; DONT PULL IF THE PERSON IS INACTIVE IN THE DB
+	JOIN E
+		WHERE
+			E.PERSON_ID = P.PERSON_ID
+			AND
+			E.ACTIVE_IND = 1
+	HEAD E.ENCNTR_ID
+	pos = locateval(idx,1,data->cnt,E.ENCNTR_ID,data->list[idx].ENCNTR_ID)
+	if(pos > 0)
+		data->list[pos].URN = TRIM(PA.ALIAS, 3)
+		data->list[pos].PATIENT_NAME = TRIM(P.NAME_FULL_FORMATTED,3)
+		data->list[pos].GENDER = TRIM(UAR_GET_CODE_DISPLAY(P.SEX_CD),3)
+		data->list[pos].DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
+		data->list[pos].AGE = TRIM(CNVTAGE(P.BIRTH_DT_TM))
+		data->list[pos].DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
+	endif
+	FOOT E.ENCNTR_ID
+		NULL
+	WITH EXPAND = 2
 
 ;URN NAME AGE GENDER DOB
 	SELECT INTO "nl:"
