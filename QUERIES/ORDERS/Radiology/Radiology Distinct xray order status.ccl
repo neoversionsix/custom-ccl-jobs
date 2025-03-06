@@ -1,0 +1,13 @@
+SELECT DISTINCT
+/* Shows distinct xray order status' */
+  STATUS_DISP = UAR_GET_CODE_DISPLAY(O.ORDER_STATUS_CD)
+
+FROM
+	ORDERS O
+
+ WHERE
+        O.CATALOG_TYPE_CD = 2517.00; RAD
+        ;AND CNVTUPPER(O.ORDER_MNEMONIC) = "*XRAY*"
+        AND o.CATALOG_CD = (select x.catalog_cd from order_catalog x where CNVTUPPER(x.PRIMARY_MNEMONIC) = "*XRAY*")
+
+WITH TIME = 60,  FORMAT
