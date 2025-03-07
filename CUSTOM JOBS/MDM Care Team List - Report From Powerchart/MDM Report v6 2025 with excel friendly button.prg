@@ -4,22 +4,9 @@
     Date Created: 27th of October 2022, Updated 27/4/2023
     Description: Report for MDM Care Team Meeting
     Programmer: Jason Whittle
+	// Updated 27/4/2023 - Added a button
+	*/
 
-	PROD CODES
-	CODE_VALUE		DESCRIPTION
-	152031275.00	ONC_MDM_Pre-op/Post-op Discussion
-	152031285.00	Onc_MDM_RelevantBloods
-	152031989.00	Onc_MDM_ClinicAppt/FollowUp
-	152031995.00	Onc_MDM_Date
-	152032001.00	Onc_MDM_Scopes
-	152031405.00	Onc_MDM_Cancer MDM or Surgical Meeting
-	152031413.00	Onc_MDM_Pathology
-	152031535.00	Onc_MDM_Clinical Notes
-	152031543.00	Onc_MDM_Consultant
-	152030797.00	Onc_MDM_Question
-	152031611.00	Onc_MDM_Imaging
-
-    */
 
 ;CREATE PROGRAM AND PROMPT
     drop program wh_mdm_report go
@@ -499,7 +486,7 @@
 		    ,"</style> </head>"
 		; END OF CSS CODE START OF HEADER
 		    ,"<div id = print-container> <div class=print-header> <div class=printed-by-user>"
-		    ,"<span>v2 Printed By:  </span> <span>"
+		    ,"<span> v6 Printed By:  </span> <span>"
 			,printuser_name
 			,"</span>"
 		    ,"<div class=printed-date> <span>"
@@ -526,31 +513,42 @@
 		    ,patienthtml
 		;AFTER PATIENT DATA IS SUBSTITUTED
 			,"</table>"
-			,'<button id="copyButton">Copy Table to Clipboard</button>'
-			,'<script>'
-			,"document.getElementById('copyButton').addEventListener('click', function() {"
-				,"var table = document.querySelector('table');"
-				,'if (!table) {'
-				,'alert("No table found!");'
-				,'return;'
-				,'}'
-				,'var rows = table.rows;'
-				,'var copyText = "";'
-				,'for (var i = 0; i < rows.length; i++) {'
-				,'var cells = rows[i].cells;'
-				,'var rowData = [];'
-				,'for (var j = 0; j < cells.length; j++) {'
-					,'rowData.push(cells[j].innerText.trim());'
-				,'}'
-				,'copyText += rowData.join("\t") + "\n";'
-				,'}'
-				,'navigator.clipboard.writeText(copyText).then(function() {'
-				,'alert("Table copied to clipboard!");'
-				,'}, function(err) {'
-				,'console.error("Error copying text: ", err);'
-				,'});'
-			,'});'
-			,'</script>'
+
+
+,"<button id='generateTab'>Generate Tab-Separated Data</button>"
+,"<div id='tabOutput' style='margin-top:10px;'></div>"
+,""
+,"<script>"
+  ,"document.getElementById('generateTab').addEventListener('click', function() {"
+    ,"var table = document.querySelector('table');"
+    ,"if (!table) {"
+      ,"alert('No table found!');"
+      ,"return;"
+    ,"}"
+    ,"var rows = table.rows;"
+    ,'var output = "";'
+    ,"for (var i = 0; i < rows.length; i++) {"
+      ,"var cells = rows[i].cells;"
+      ,"var rowData = [];"
+      ,"for (var j = 0; j < cells.length; j++) {"
+        ,"// Replace newlines and tab characters with a single space."
+        ,'var cellText = cells[j].innerText.trim().replace(/[\r\n\t]+/g, " ");'
+        ,"rowData.push(cellText);"
+      ,"}"
+      ,'output += rowData.join("\t") + "\n";'
+    ,"}"
+    ,'var textarea = document.createElement("textarea");'
+    ,"textarea.style.width = '100%';"
+    ,"textarea.style.height = '200px';"
+    ,"textarea.value = output;"
+    ,"var outputDiv = document.getElementById('tabOutput');"
+    ,"outputDiv.innerHTML = "";"
+    ,"outputDiv.appendChild(textarea);"
+  ,"});"
+,"</script>"
+
+
+
 			,"</body>"
 			,"</html>"
 
