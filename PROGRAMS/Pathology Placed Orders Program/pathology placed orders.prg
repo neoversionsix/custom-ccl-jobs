@@ -1,6 +1,19 @@
 drop program wh_path_order_placed go
 create program wh_path_order_placed
 
+/*
+PLACED PATHOLOGY ORDERS
+Programmer: Jason Whittle
+Date: March 2025
+
+Description: This program is designed to extract placed pathology orders from the Orders table.
+
+Requestor: Andrew Wang
+
+Ticket: 123456
+
+ */
+
 prompt
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
 	, "Ordered After:" = "SYSDATE"
@@ -12,9 +25,10 @@ with OUTDEV, ORDERED_AFTER_DT, ORDERED_BEFORE_DT, ORDERABLE_CD
 
 DECLARE ORDERABLE_CD_VAR = f8 with protect, noconstant(1.00)
 
-SET ORDERABLE_CD_VAR = CNVTREAL($ORDERABLE_CD)
+SET ORDERABLE_CD_VAR = CNVTINT($ORDERABLE_CD)
+SET ORDERABLE_CD_VAR = CNVTREAL(ORDERABLE_CD_VAR)
 
-select	; placed orders
+SELECT INTO $OUTDEV
 	domain = build(curdomain ,' (', format(sysdate,"yyyymmdd hhmm;3;q"), ")" )
 	, UR_number = ea_URN.alias
 	, patient_name = p.name_full_formatted  ;"xxxx"
@@ -152,7 +166,10 @@ order by
 	, o.order_id
 	, ea_URN.alias
 
-with	time = 30
+with
+    time = 30
+	, FORMAT
+
 
 
 end

@@ -1,0 +1,749 @@
+drop program wh_bigfile_out go
+create program wh_bigfile_out
+
+prompt
+	"Output to File/Printer/MINE" = "SR867924_output_v2.csv"   ;* Enter or select the printer or file name to send this report to.
+
+with OUTDEV
+
+SELECT DISTINCT INTO "CUST_SCRIPT:SR867924_output_v2.csv"
+
+	PATIENT_NAME = "REQUEST TO UNHIDE";P.NAME_FULL_FORMATTED
+	, PATIENT_URN = P_A.ALIAS
+    , SEX = UAR_GET_CODE_DISPLAY(P.SEX_CD)
+    , LANGUAGE = UAR_GET_CODE_DISPLAY(P.LANGUAGE_CD)
+    , FIRST_4AT_RISK_SCORE = C.SCORE; 4AT Risk Score in adult risk assessments (fluid interactive view)
+    , PATIENT_DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM, P.BIRTH_TZ, P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
+	, AGE_AT_ORDER = CNVTAGE(P.BIRTH_DT_TM, O.ORIG_ORDER_DT_TM,0)
+    , ENCOUNTER_FIN = E_A.ALIAS
+    , E.ARRIVE_DT_TM "YYYY-MM-DD HH:MM:SS" ; THIS ENCOUNTER TIME IS SHOWN IN POWERCHART
+    , E.DISCH_DT_TM "YYYY-MM-DD HH:MM:SS" ; THIS ENCOUNTER TIME IS SHOWN IN POWERCHART
+	, ITEM_ORDERED = O.ORDER_MNEMONIC
+
+    , CLASS =
+        IF (OCS.SYNONYM_ID IN (
+            /* ADHD */
+            9748016,    /* atomoxetine */
+            9754916,    /* methYLPHENIDATe */
+            85749762    /* guanfacine */
+        )) "ADHD"
+
+        ELSEIF (OCS.SYNONYM_ID IN (
+            /* Dependence */
+            9751907,    /* naloxone */
+            9751036,    /* bupropion */
+            9754991,    /* methADONe */
+            9758705,    /* acamprosate */
+            9753379,    /* naltrexone */
+            9758445,    /* disulfiram */
+            9763304,    /* nicotine */
+            9763801,    /* varenicline */
+            124216261,  /* naloxone infusion */
+            64305486    /* naltrexone-bupropion */
+        )) "Dependence"
+
+        ELSEIF (OCS.SYNONYM_ID IN (
+            /* Bipolar */
+            9748269     /* lithium */
+        )) "Bipolar"
+
+        ELSEIF (OCS.SYNONYM_ID IN (
+            /* Sleep Anxiety */
+            64305260,   /* lemborexant */
+            9746903,    /* flunitrazepam */
+            9749396,    /* DIAzepam */
+            9754696,    /* LORazepam */
+            9750257,    /* bromazepam */
+            9751629,    /* cloBAZam */
+            9754324,    /* nitrazepam */
+            9755108,    /* OXazepam */
+            9752384,    /* modafinil */
+            9759362,    /* alprazolam */
+            9761903,    /* temazepam */
+            9765314,    /* zolpidem */
+            9767960,    /* zopiclone */
+            12906896,   /* melatonin */
+            86492772,   /* armodafinil */
+            87777529    /* suvorexant */
+        )) "Sleep Anxiety"
+
+        ELSEIF (OCS.SYNONYM_ID IN (
+            /* Antidepressants */
+            82335361,   /* vortioxetine */
+            9748536,    /* escitalopram */
+            9743906,    /* fluVOXAMine */
+            10410096,   /* desvenlafaxine */
+            9744810,    /* imipramine */
+            9743088,    /* fluoxetine */
+            9751079,    /* doSULepin (doTHiepin) */
+            9753675,    /* mirtazapine */
+            9752828,    /* mianserin */
+            9751281,    /* citalopram */
+            9749515,    /* DULoxetine */
+            9756441,    /* nortriptyline */
+            9758811,    /* cLOMIPRAMine */
+            9755441,    /* moclobemide */
+            9761288,    /* PARoxetine */
+            9756552,    /* amiTRIPTYLine */
+            9765477,    /* venlafaxine */
+            9758753,    /* doXepin */
+            9762324,    /* reboxetine */
+            9764249,    /* tranylcypromine */
+            9764052,    /* SERTRALine */
+            15133808    /* agomelatine */
+        )) "Antidepressants"
+
+        ELSEIF (OCS.SYNONYM_ID IN (
+            /* Anticholinergics Opioids (O) */
+            125595401,
+            9768276,
+            9888934,
+            9888981,
+            14814595,
+            124197910,
+            124197977,
+            124210774,
+            124211307,
+            9888902,
+            124211360,
+            124216194,
+            10410018,
+            10410033,
+            10410063,
+            10410081,
+            10410084,
+            10410105,
+            124216229,
+            152317131,
+            152317155,
+            152317435,
+            152317437,
+            152316875,
+            152316887,
+            152317007,
+            152317029,
+            152316877,
+            152316883,
+            152316987,
+            152317071,
+            152317077,
+            152317089,
+            152317109,
+            152317135,
+            152317409,
+            152317413,
+            152317423,
+            152317123,
+            124216210,
+            124204847,
+            9743078,
+            9750783,
+            9754991,
+            9750855,
+            9758897,
+            79419432,
+            9760585,
+            9753358,
+            9759965,
+            9758361,
+            9756289,
+            9757172,
+            9755918,
+            9762367,
+            9762722,
+            9757694,
+            124197734,
+            124197803,
+            124197841,
+            9766432,
+            9764135,
+            9766440,
+            9768458,
+            9888786,
+            124198021,
+            9763793,
+            9766946,
+            9766921,
+            226916807,
+            16869765,
+            226912327,
+            226917367,
+            226917753,
+            20213931,
+            201533059,
+            201528157,
+            64305408,
+            91044838,
+            305004721
+        )) "Anticholinergics Opioids (O)"
+
+        ELSEIF (OCS.SYNONYM_ID IN (
+            /* Anticholinergics Opioids (AC) */
+            124234464,
+            9767559,
+            9768300,
+            9819799,
+            9848336,
+            82821064,
+            80770746,
+            9842152,
+            82139958,
+            9888783,
+            9888880,
+            80808516,
+            9888941,
+            125968268,
+            9888821,
+            9888849,
+            9888975,
+            9745529,
+            9748719,
+            82135837,
+            10410030,
+            10410036,
+            10410072,
+            10410093,
+            10410234,
+            124233909,
+            124198028,
+            140834362,
+            80767685,
+            80765845,
+            124316040,
+            124198001,
+            124316073,
+            9744810,
+            124233923,
+            9746940,
+            9745257,
+            9749572,
+            9750850,
+            9750826,
+            9750824,
+            9750345,
+            9744607,
+            9744533,
+            125969239,
+            9753942,
+            9751079,
+            9754555,
+            9752828,
+            9750496,
+            9752511,
+            9751132,
+            9751371,
+            9749868,
+            138629717,
+            9756464,
+            9756441,
+            9757239,
+            9758811,
+            9757210,
+            9759835,
+            9760770,
+            9754960,
+            9755472,
+            9761239,
+            9761288,
+            9756552,
+            9763143,
+            9756296,
+            9759114,
+            9759000,
+            9757754,
+            9755339,
+            9762209,
+            9761903,
+            9766047,
+            9766220,
+            9763187,
+            9761758,
+            9760232,
+            9758753,
+            9756077,
+            9760179,
+            9762650,
+            9766409,
+            9766008,
+            9764366,
+            9764971,
+            9766132,
+            9764744,
+            9763200,
+            9761418,
+            9763986,
+            9765799,
+            9764922,
+            9761185,
+            9767877,
+            9768167,
+            92678984,
+            64304174,
+            125967782,
+            125969863,
+            124197552,
+            9768966,
+            9768776,
+            9766191,
+            9767164,
+            9768055,
+            163592033,
+            124234323,
+            124234471,
+            124234479,
+            21714436,
+            45226846,
+            64304212,
+            64305489,
+            64305079,
+            64305065,
+            91044844
+        )) "Anticholinergics Opioids (AC)"
+
+        ELSEIF (OCS.SYNONYM_ID IN (
+            /* Anticholinergics Opioids (AC-O) */
+            9888918,
+            82140450,
+            9889010,
+            9888998,
+            9854604,
+            9744390,
+            10410087,
+            149149086,
+            10410231,
+            147920479,
+            148230931,
+            124211486,
+            152935661,
+            9763463,
+            9763322,
+            9766310,
+            9765750,
+            9763060,
+            9767612,
+            9769068,
+            9769224,
+            9889245,
+            9768515,
+            9768133,
+            124211536,
+            9767166,
+            147920402,
+            64305093
+        )) "Anticholinergics Opioids (AC-O)"
+
+        ELSE "NOT FOUND"
+        ENDIF
+
+	, ORDERED_TIME = O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+	, SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+    , ENCOUNTER_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
+    ;, ORDERED_BY = PR.NAME_FULL_FORMATTED
+
+FROM
+	  ORDERS                O
+	, ORDER_CATALOG_SYNONYM	OCS
+	, ENCOUNTER             E
+    ;, PRSNL                 PR
+    , PERSON				P
+    , PERSON_ALIAS          P_A
+    , ENCNTR_ALIAS          E_A
+    ;, ORDER_ACTION          	O_A
+    /*
+    Below is the inline clinical event table with ranked 4at scores
+    that were updated after the 1st of June 2023. They are ranked
+    by the event end date time in ascending order.
+     */
+
+	, (
+		(
+			SELECT
+				TIME_RANK = RANK() OVER(PARTITION BY C_TEMP.ENCNTR_ID ORDER BY C_TEMP.EVENT_END_DT_TM ASC)
+				, ENCOUNTER_ID = C_TEMP.ENCNTR_ID
+				, SCORE = C_TEMP.RESULT_VAL
+			FROM
+				CLINICAL_EVENT C_TEMP
+            WHERE
+                C_TEMP.EVENT_CD = 109971106.00	;4AT Risk Score
+                AND C_TEMP.VIEW_LEVEL = 1
+                AND C_TEMP.UPDT_DT_TM > CNVTDATETIME("01-JUN-2023 00:00")
+            ORDER BY
+				C_TEMP.ENCNTR_ID
+				, C_TEMP.EVENT_END_DT_TM
+			WITH SQLTYPE("F8","F8","VC")
+		)
+											C
+	)
+
+PLAN E ; ENCOUNTER
+	WHERE
+        E.ACTIVE_IND = 1
+        /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+        AND E.LOC_FACILITY_CD != 4038465.00
+        AND E.ARRIVE_DT_TM > CNVTDATETIME("01-JUN-2023 00:00")
+        AND E.DISCH_DT_TM < CNVTDATETIME("01-JUN-2024 00:00")
+        ; PEOPLE BORN AFTER
+        AND E.PERSON_ID = (SELECT I.PERSON_ID FROM PERSON I WHERE I.BIRTH_DT_TM < CNVTDATETIME("01-JUN-1958"))
+
+JOIN C ; CLINICAL_EVENT ; outer joining the inline clinical event table with the 4at score
+    WHERE C.ENCOUNTER_ID = OUTERJOIN(E.ENCNTR_ID)
+        AND C.TIME_RANK = OUTERJOIN(1)
+
+JOIN O ; ORDERS
+	WHERE O.ENCNTR_ID = E.ENCNTR_ID
+    /* Time filter */
+    	AND O.ORIG_ORDER_DT_TM >=  CNVTDATETIME("01-JUN-2023 00:00")
+    	AND O.ORIG_ORDER_DT_TM <= CNVTDATETIME("01-JUN-2024 00:00")
+        AND O.ORDER_STATUS_CD =        2543.00; Completed orders only
+
+JOIN OCS ;ORDER_CATALOG_SYNONYM
+	WHERE OCS.CATALOG_CD = O.CATALOG_CD
+AND OCS.SYNONYM_ID IN
+    (
+        /* ADHD */
+        9748016,
+        9754916,
+        85749762,
+
+        /* Dependence */
+        9751907,
+        9751036,
+        9754991,
+        9758705,
+        9753379,
+        9758445,
+        9763304,
+        9763801,
+        124216261,
+        64305486,
+
+        /* Bipolar */
+        9748269,
+
+        /* Sleep Anxiety */
+        64305260,
+        9746903,
+        9749396,
+        9754696,
+        9750257,
+        9751629,
+        9754324,
+        9755108,
+        9752384,
+        9759362,
+        9761903,
+        9765314,
+        9767960,
+        12906896,
+        86492772,
+        87777529,
+
+        /* Antidepressants */
+        82335361,
+        9748536,
+        9743906,
+        10410096,
+        9744810,
+        9743088,
+        9751079,
+        9753675,
+        9752828,
+        9751281,
+        9749515,
+        9756441,
+        9758811,
+        9755441,
+        9761288,
+        9756552,
+        9765477,
+        9758753,
+        9762324,
+        9764249,
+        9764052,
+        15133808,
+
+        /* Anticholinergics Opioids (O) */
+        125595401,
+        9768276,
+        9888934,
+        9888981,
+        14814595,
+        124197910,
+        124197977,
+        124210774,
+        124211307,
+        9888902,
+        124211360,
+        124216194,
+        10410018,
+        10410033,
+        10410063,
+        10410081,
+        10410084,
+        10410105,
+        124216229,
+        152317131,
+        152317155,
+        152317435,
+        152317437,
+        152316875,
+        152316887,
+        152317007,
+        152317029,
+        152316877,
+        152316883,
+        152316987,
+        152317071,
+        152317077,
+        152317089,
+        152317109,
+        152317135,
+        152317409,
+        152317413,
+        152317423,
+        152317123,
+        124216210,
+        124204847,
+        9743078,
+        9750783,
+        9754991,
+        9750855,
+        9758897,
+        79419432,
+        9760585,
+        9753358,
+        9759965,
+        9758361,
+        9756289,
+        9757172,
+        9755918,
+        9762367,
+        9762722,
+        9757694,
+        124197734,
+        124197803,
+        124197841,
+        9766432,
+        9764135,
+        9766440,
+        9768458,
+        9888786,
+        124198021,
+        9763793,
+        9766946,
+        9766921,
+        226916807,
+        16869765,
+        226912327,
+        226917367,
+        226917753,
+        20213931,
+        201533059,
+        201528157,
+        64305408,
+        91044838,
+        305004721,
+
+        /* Anticholinergics Opioids (AC) */
+        124234464,
+        9767559,
+        9768300,
+        9819799,
+        9848336,
+        82821064,
+        80770746,
+        9842152,
+        82139958,
+        9888783,
+        9888880,
+        80808516,
+        9888941,
+        125968268,
+        9888821,
+        9888849,
+        9888975,
+        9745529,
+        9748719,
+        82135837,
+        10410030,
+        10410036,
+        10410072,
+        10410093,
+        10410234,
+        124233909,
+        124198028,
+        140834362,
+        80767685,
+        80765845,
+        124316040,
+        124198001,
+        124316073,
+        9744810,
+        124233923,
+        9746940,
+        9745257,
+        9749572,
+        9750850,
+        9750826,
+        9750824,
+        9750345,
+        9744607,
+        9744533,
+        125969239,
+        9753942,
+        9751079,
+        9754555,
+        9752828,
+        9750496,
+        9752511,
+        9751132,
+        9751371,
+        9749868,
+        138629717,
+        9756464,
+        9756441,
+        9757239,
+        9758811,
+        9757210,
+        9759835,
+        9760770,
+        9754960,
+        9755472,
+        9761239,
+        9761288,
+        9756552,
+        9763143,
+        9756296,
+        9759114,
+        9759000,
+        9757754,
+        9755339,
+        9762209,
+        9761903,
+        9766047,
+        9766220,
+        9763187,
+        9761758,
+        9760232,
+        9758753,
+        9756077,
+        9760179,
+        9762650,
+        9766409,
+        9766008,
+        9764366,
+        9764971,
+        9766132,
+        9764744,
+        9763200,
+        9761418,
+        9763986,
+        9765799,
+        9764922,
+        9761185,
+        9767877,
+        9768167,
+        92678984,
+        64304174,
+        125967782,
+        125969863,
+        124197552,
+        9768966,
+        9768776,
+        9766191,
+        9767164,
+        9768055,
+        163592033,
+        124234323,
+        124234471,
+        124234479,
+        21714436,
+        45226846,
+        64304212,
+        64305489,
+        64305079,
+        64305065,
+        91044844,
+
+        /* Anticholinergics Opioids (AC-O) */
+        9888918,
+        82140450,
+        9889010,
+        9888998,
+        9854604,
+        9744390,
+        10410087,
+        149149086,
+        10410231,
+        147920479,
+        148230931,
+        124211486,
+        152935661,
+        9763463,
+        9763322,
+        9766310,
+        9765750,
+        9763060,
+        9767612,
+        9769068,
+        9769224,
+        9889245,
+        9768515,
+        9768133,
+        124211536,
+        9767166,
+        147920402,
+        64305093
+    )
+
+/* Patient Identifiers such as URN Medicare no etc */
+JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
+    WHERE P_A.PERSON_ID = E.PERSON_ID
+        AND
+        /* this filters for the UR Number Alias' only */
+        P_A.ALIAS_POOL_CD = 9569589.00
+        AND
+        /* Effective Only */
+        P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+        AND
+        /* Active Only */
+        P_A.ACTIVE_IND = 1
+        /* Patient URN */
+        ; AND
+        ; P_A.ALIAS = "ENTERURN#" ; ENTER URN!
+
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = E.PERSON_ID
+        /* Remove Inactive Patients */
+        AND P.ACTIVE_IND = 1
+        /* Remove Fake 'Test' Patients */
+        AND P.NAME_LAST_KEY != "*TESTWHS*"
+        /* Remove Ineffective Patients */
+        AND P.END_EFFECTIVE_DT_TM > SYSDATE
+        ; Over >=65 on the 1st of june 2023
+        AND P.BIRTH_DT_TM < CNVTDATETIME("02-JUN-1958")
+
+/* Encounter Identifiers such as the Financial Number */
+JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+        /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+        AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+        /* active FIN NBRs only */
+        AND E_A.ACTIVE_IND = 1
+        /* effective FIN NBRs only */
+        AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+
+ORDER BY
+    O.PERSON_ID
+	, O.ORDER_ID
+    , 0
+
+WITH
+    TIME = 3600
+	, PCFORMAT (^"^, ^,^ , 1)
+    , FORMAT = STREAM
+	, FORMAT
+
+end
+go
