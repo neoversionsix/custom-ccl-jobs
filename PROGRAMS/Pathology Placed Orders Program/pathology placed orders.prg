@@ -10,6 +10,10 @@ prompt
 with OUTDEV, ORDERED_AFTER_DT, ORDERED_BEFORE_DT, ORDERABLE_CD
 
 
+DECLARE ORDERABLE_CD_VAR = f8 with protect, noconstant(1.00)
+
+SET ORDERABLE_CD_VAR = CNVTREAL($ORDERABLE_CD)
+
 select	; placed orders
 	domain = build(curdomain ,' (', format(sysdate,"yyyymmdd hhmm;3;q"), ")" )
 	, UR_number = ea_URN.alias
@@ -101,8 +105,9 @@ from
 ;	)
 
 plan	o
-where	o.catalog_cd = 7346865 ; Beta 2 Microglobulin (B2MG) Level Blood
-and	o.orig_order_dt_tm > cnvtdatetime("01-DEC-2024") ; orders placed after this date
+where	o.catalog_cd = ORDERABLE_CD_VAR ; User entered orderable code
+and	o.orig_order_dt_tm > cnvtdatetime($ORDERED_AFTER_DT) ; orders placed after this date
+and o.orig_order_dt_tm < cnvtdatetime($ORDERED_BEFORE_DT) ; orders placed before this date
 ;and	o.order_status_cd in (
 ;	2546	; Future
 ;	, 2547	; Incomplete
@@ -147,7 +152,7 @@ order by
 	, o.order_id
 	, ea_URN.alias
 
-with	time = 1200
+with	time = 30
 
 
 end
