@@ -10,7 +10,7 @@ Description: This program is designed to extract placed pathology orders from th
 
 Requestor: Andrew Wang
 
-Ticket: 123456
+Ticket: SERVICE REQUEST 940958
 
  */
 
@@ -55,15 +55,15 @@ SELECT INTO $OUTDEV
 	5, "Satellite (Super Bill) Meds"
 	)
 ;	, med_order_type = uar_get_code_display(o.med_order_type_cd)
-	, original_order_date = format(o.orig_order_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, order_date = format(o.orig_order_dt_tm, "dd/mm/yyyy hh:mm:ss")
 	, order_placed_by = p_o_a_order.name_full_formatted
-	, order_projected_stop_date = format(o.projected_stop_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, due_stop_dt = format(o.projected_stop_dt_tm, "dd/mm/yyyy hh:mm:ss")
 	, current_order_status = uar_get_code_display(o.order_status_cd)
-	, order_status_last_update = format(o.status_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, status_last_update = format(o.status_dt_tm, "dd/mm/yyyy hh:mm:ss")
 	, order_status_last_updater = if(o.order_id > 0 and o.status_prsnl_id = 0) "0"
 	else p_o_stat.name_full_formatted
 	endif
-	, order_last_update = format(o.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, last_update = format(o.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
 	, order_last_updater = if(o.order_id > 0 and o.updt_id = 0) "0"
 	else p_o.name_full_formatted
 	endif
