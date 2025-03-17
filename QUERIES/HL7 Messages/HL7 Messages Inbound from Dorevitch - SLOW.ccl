@@ -1,0 +1,51 @@
+SELECT
+	CREATED = FORMAT(E.CREATE_DT_TM, "YYYY-MM-DD HH:MM:SS")
+	, E.ERROR_STAT ; Did it load?
+	, PATIENT_URN = E.PERSON_ALIAS
+	, C.ACCESSION_NBR
+	, ALIAS = E.HL7_ENTITY_CODE
+	, PATIENT = E.NAME_FULL_FORMATTED
+	, PATIENT_DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
+	, E.ENCNTR_ID
+	, E.PERSON_ID
+	, E.ENCNTR_ALIAS
+	, E.ENTITY_NAME
+	, E.ORDER_ID
+	, E.ERROR_TEXT ; load errors eg no order id
+	, HL7 = O.MSG_TEXT
+
+FROM
+	ESI_LOG				E
+	, OEN_TXLOG			O
+	, PERSON			P
+	, CLINICAL_EVENT	C
+
+PLAN E
+    WHERE
+		AND E.CONTRIBUTOR_SYSTEM_CD = 86524974.00 ; WH_LAB (Dorevitch)
+		; Filter for messages in the last hour only
+		AND E.CREATE_DT_TM > cnvtlookbehind("1,H")
+		; AND E.PERSON_ALIAS = "*12345*" ; ENTER URN HERE!
+		; AND E.CREATE_DT_TM > cnvtdatetime("26-NOV-2024 00:00") ; Messages created after
+		; AND E.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before change
+		; AND E.ERROR_STAT = "*FAILURE*" ; Only failed messages
+		; AND E.HL7_ENTITY_CODE = "*HISTO*" ; Only Histology tests
+
+JOIN O
+    WHERE O.MSGID = OUTERJOIN(E.MSGID)
+	; AND O.CREATE_DT_TM > cnvtlookbehind("1,H")
+    ; AND O.CREATE_DT_TM > OUTERJOIN(cnvtdatetime("26-NOV-2024 00:00")) ; Messages created after
+	; AND O.CREATE_DT_TM < OUTERJOIN(cnvtdatetime("03-DEC-2024 17:00")) ; Messages created before
+    ; AND (O.MSG_TEXT = ("*|HH|*") OR O.MSG_TEXT = ("*|LL|*")) ; Critical High and low results only
+
+JOIN P
+	WHERE P.PERSON_ID = OUTERJOIN(E.PERSON_ID)
+
+JOIN C
+	WHERE C.EVENT_ID = OUTERJOIN(E.EVENT_ID)
+
+ORDER BY
+	E.CREATE_DT_TM   DESC
+	, E.MSGID  DESC
+
+WITH MAXREC = 5000, FORMAT, SEPERATOR = " ", TIME = 20
