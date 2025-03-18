@@ -31,6 +31,7 @@ PLAN E
 		; AND E.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before change
 		; AND E.ERROR_STAT = "*FAILURE*" ; Only failed messages
 		; AND E.HL7_ENTITY_CODE = "*HISTO*" ; Only Histology tests
+		; AND E.MSH_MSG_TYPE = "*ORU*" ; Only ORU messages
 
 JOIN O
     WHERE O.MSGID = OUTERJOIN(E.MSGID)
