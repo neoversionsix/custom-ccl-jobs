@@ -1,0 +1,41 @@
+SELECT
+;FIN = ea.alias
+;,
+p.description
+, p.type_mean
+, p.pw_group_desc
+, p.order_dt_tm";;Q"
+;, Facility = UAR_GET_CODE_DISPLAY(e.loc_facility_cd)
+;, Med_Service = UAR_GET_CODE_DISPLAY(e.med_service_cd)
+, STATUS = UAR_GET_CODE_DISPLAY(p.pw_status_cd)
+, PERSON_TAKING_ACTION = PR.name_full_formatted
+;, ACTION_STATUS = UAR_GET_CODE_DISPLAY(pwa.action_type_cd)
+;, ACTION_PERSON = PR2.name_full_formatted
+;, ACTION_DT = pwa.action_dt_tm";;Q"
+
+
+FROM
+pathway   p
+;, encounter e
+;, encntr_alias ea
+, prsnl pr
+;, prsnl pr2
+;, pathway_action pwa
+
+
+
+plan p ;where p.updt_dt_tm > CNVTDATETIME(CNVTDATE( 02082019 ), 0)
+where p.order_dt_tm between cnvtdatetime("01-JAN-2022") and cnvtdatetime("31-JAN-2022")
+;join e where p.encntr_id = e.encntr_id
+;join ea where p.encntr_id = ea.encntr_id and ea.encntr_alias_type_cd =        1077.00
+join pr where pr.person_id = p.updt_id
+;join pwa where p.pathway_id = pwa.pathway_id
+;join pr2 where pwa.updt_id = outerjoin(pr2.person_id)
+
+
+
+order by p.pathway_id;, pwA.action_dt_tm
+
+
+with
+time = 1000

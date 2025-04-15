@@ -1,4 +1,8 @@
 SELECT
+/*
+This will retrieve all pathology results that are in error
+for the given timeframe from Dorevitch.
+ */
 	  UR_NUMBER = P.ALIAS
 	, ORDER_NAME = UAR_GET_CODE_DISPLAY(C.CATALOG_CD)
     , EVENT_NAME = UAR_GET_CODE_DISPLAY(C.EVENT_CD)
@@ -9,18 +13,15 @@ SELECT
 	, C.UPDT_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
 
 FROM
-	CLINICAL_EVENT   C
-	, PERSON_ALIAS P
+	CLINICAL_EVENT	C
+	, PERSON_ALIAS	P
 
 PLAN C
 	WHERE
 		C.UPDT_DT_TM > CNVTLOOKBEHIND("90,D")
-		AND
-		C.contributor_system_cd = 86524974 ; Western Health Pathology
-		AND
-		C.RESULT_STATUS_CD = 30.00 ; STATUS CODE: In Error - Delete
-		AND
-		C.VIEW_LEVEL = 1
+		AND	C.contributor_system_cd = 86524974 ; Western Health Pathology ; Dorevitch
+		AND	C.RESULT_STATUS_CD = 30.00 ; STATUS CODE: In Error - Delete
+		AND	C.VIEW_LEVEL = 1
 
 JOIN P
 	WHERE
