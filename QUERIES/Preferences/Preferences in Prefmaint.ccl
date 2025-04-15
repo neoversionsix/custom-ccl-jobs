@@ -29,13 +29,13 @@ JOIN V
 	and v.POSITION_CD NOT IN (SELECT X.CODE_VALUE FROM CODE_VALUE X WHERE X.DISPLAY = "zz*")
 	and v.POSITION_CD NOT IN (SELECT X.CODE_VALUE FROM CODE_VALUE X WHERE X.DISPLAY = "ZZ*")
 	and v.POSITION_CD > 0
-	and v.POSITION_CD = 441 ; 'DBA P1' Positions Only
+	; and v.POSITION_CD = 441 ; 'DBA P1' Positions Only ; Filter for a specific  position code
 
 JOIN N ; Join table of view captions only for tab names on the front end
 	WHERE N.PARENT_ENTITY_ID = V.VIEW_PREFS_ID
 	and N.ACTIVE_IND = 1
 	and N.PVC_NAME = "VIEW_CAPTION"
-	;and n.PVC_VALUE = "Pathology"
+	;and n.PVC_VALUE = "Pathology" ; Filter for a specific tab name
 
 JOIN D ; Join the detail prefs table for view sequence
 	WHERE D.POSITION_CD = V.POSITION_CD
