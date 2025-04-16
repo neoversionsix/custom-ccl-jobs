@@ -19,8 +19,8 @@ WHERE
            AND
            CNVTDATETIME("11-JAN-2024 10:00")
 	 */
-	/* Order ID */
-	AND O_T.MSG_TEXT = "*2538079889*"
+	/* Filter text, order id, urn etc */
+	AND O_T.MSG_TEXT = "*1613161*"
     /* Pathology Messages */
 	AND
         (
@@ -33,7 +33,7 @@ WHERE
 	"2001" => OUTBOUND
 	"1001" => INBOUND
 	*/
-	;AND O_T.EVENTID = "2001"
+	AND O_T.EVENTID = "2001"
 
 
 WITH FORMAT, SEPERATOR = " ", TIME = 20, MAXREC = 1000
