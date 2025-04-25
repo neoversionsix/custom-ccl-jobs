@@ -1,0 +1,129 @@
+drop program wh_bigfile_out go
+create program wh_bigfile_out
+
+prompt
+	"Output to File/Printer/MINE" = "path_orders_2024.csv"   ;* Enter or select the printer or file name to send this report to.
+
+with OUTDEV
+
+SELECT DISTINCT INTO "CUST_SCRIPT:path_orders_2024.csv"
+
+      PATIENT_URN = PA.ALIAS
+    , O.ORDER_ID
+    , ORDERED_DATE_TIME = O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+    , SAMPLE_COLLECTED_DT = OA2.ACTION_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+    , ITEM_ORDERED = O.ORDERED_AS_MNEMONIC
+    , ORDERER = PR.NAME_FULL_FORMATTED
+    , ORDER_STATUS_AT_EXTRACT_DT = UAR_GET_CODE_DISPLAY(O.ORDER_STATUS_CD)
+	, PATIENT = P.NAME_FULL_FORMATTED
+    , PATIENT_DOB = DATEBIRTHFORMAT(P.BIRTH_DT_TM,P.BIRTH_TZ,P.BIRTH_PREC_FLAG,"DD-MMM-YYYY")
+    , PATIENT_AGE = CNVTAGE(P.BIRTH_DT_TM)
+    , PATIENT_SEX = UAR_GET_CODE_DISPLAY(P.SEX_CD)
+	, ENCOUNTER_FIN = EA.ALIAS
+	, ENC_SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+    , ENC_NURSE_UNIT = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+	, ENC_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
+    , ENC_FACILITY = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+    , OA.ORDER_DETAIL_DISPLAY_LINE
+
+FROM
+	ORDER_ACTION        OA ; for orderer
+    , ORDER_ACTION      OA2 ; for collection details
+	, ORDERS            O
+	, ENCOUNTER         E
+	, PRSNL             PR
+	, PERSON            P
+	, PERSON_ALIAS      PA
+	, ENCNTR_ALIAS      EA
+
+PLAN O ; ORDERS
+	WHERE
+    ; Time filter ;
+        ;O.ORIG_ORDER_DT_TM > CNVTLOOKBEHIND("1,D")
+        O.ORIG_ORDER_DT_TM > CNVTDATETIME("01-JAN-2024 00:00:00")
+        AND O.ORIG_ORDER_DT_TM < CNVTDATETIME("01-JAN-2025 00:00:00")
+    ; Catalog type;
+    AND O.CATALOG_TYPE_CD = 2513; Pathology
+
+
+JOIN OA ; ORDER_ACTION
+    WHERE OA.ORDER_ID = O.ORDER_ID
+    ; We want to find out who placed the New Order
+    AND OA.ACTION_TYPE_CD IN(2534); New Order
+    AND OA.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+    ; Action Time filter ;
+    ; AND OA.ACTION_DT_TM > CNVTLOOKBEHIND("1,D")
+     AND OA.ACTION_DT_TM > CNVTDATETIME("01-JAN-2024 00:00:00")
+    ; AND OA.ACTION_DT_TM < CNVTDATETIME("03-JAN-2025 00:00:00")
+
+JOIN OA2 ; ORDER_ACTION
+    WHERE OA2.ORDER_ID = OUTERJOIN(O.ORDER_ID)
+    ; We want to find out who placed the New Order
+    AND OA2.ORDER_CONVS_SEQ = OUTERJOIN(1) ; removes duplicates on this table
+    AND OA2.CONTRIBUTOR_SYSTEM_CD = OUTERJOIN(469) ;POWERCHART
+	AND OA2.ACTION_TYPE_CD = OUTERJOIN(2539) ; STATUS CHANGE
+	AND OA2.DEPT_STATUS_CD = OUTERJOIN(9311.00) ; Collected
+    ; Action Time filter ;
+        ;AND OA2.ACTION_DT_TM > OUTERJOIN(CNVTLOOKBEHIND("1,D"))
+        AND OA2.ACTION_DT_TM > OUTERJOIN(CNVTDATETIME("01-JAN-2024 00:00:00"))
+        ; AND OA2.ACTION_DT_TM < OUTERJOIN(CNVTDATETIME("03-JAN-2025 00:00:00"))
+
+; Joining PRSNL for New order from order action ;
+JOIN PR;PRSNL
+    WHERE PR.PERSON_ID = OUTERJOIN(OA.ACTION_PERSONNEL_ID);X.UPDT_ID
+    AND PR.ACTIVE_IND = OUTERJOIN(1)
+
+JOIN E ; ENCOUNTER
+	WHERE E.ENCNTR_ID = O.ENCNTR_ID
+    AND E.ACTIVE_IND = 1
+    ; Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital ;
+    AND E.LOC_FACILITY_CD != 4038465.00
+
+; Patient Identifiers such as URN Medicare no etc ;
+JOIN PA;PERSON_ALIAS; PATIENT_URN = PA.ALIAS
+    WHERE PA.PERSON_ID = E.PERSON_ID
+    AND
+    ; this filters for the UR Number Alias' only ;
+   	PA.ALIAS_POOL_CD = 9569589.00
+	AND
+    ; Effective Only ;
+	PA.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    ; Active Only ;
+    PA.ACTIVE_IND = 1
+    ; Patient URN ;
+    ; AND
+    ; PA.ALIAS = "ENTERURN#" ; ENTER URN!
+
+; Patients ;
+JOIN P;PERSON
+	WHERE P.PERSON_ID = E.PERSON_ID
+    ; Remove Inactive Patients ;
+    AND P.ACTIVE_IND = 1
+    ; Remove Fake 'Test' Patients ;
+    ;AND P.NAME_LAST_KEY != "*TESTWHS*"
+    ; Remove Ineffective Patients ;
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+; Encounter Identifiers such as the Financial Number ;
+JOIN EA;ENCNTR_ALIAS; ENCOUNTER_NO = EA.ALIAS
+    WHERE EA.ENCNTR_ID = E.ENCNTR_ID
+    ;  'FIN/ENCOUNTER/VISIT NBR' from code set 319 ;
+	AND EA.ENCNTR_ALIAS_TYPE_CD = 1077
+	; active FIN NBRs only ;
+    AND EA.ACTIVE_IND = 1
+    ; effective FIN NBRs only ;
+	AND EA.END_EFFECTIVE_DT_TM > SYSDATE
+
+ORDER BY
+	O.PERSON_ID
+	, O.ORDER_ID
+
+WITH
+    TIME = 3600
+	, PCFORMAT (^"^, ^,^ , 1)
+    , FORMAT = STREAM
+	, FORMAT
+
+end
+go
