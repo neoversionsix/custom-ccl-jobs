@@ -1,12 +1,18 @@
 drop program wh_bigfile_out go
 create program wh_bigfile_out
 
+/*
+SR 960456
+Programmer: Jason Whittle
+April 2025
+ */
+
 prompt
-	"Output to File/Printer/MINE" = "path_orders_2024.csv"   ;* Enter or select the printer or file name to send this report to.
+	"Output to File/Printer/MINE" = "path_orders_2024_prod_2.csv"   ;* Enter or select the printer or file name to send this report to.
 
 with OUTDEV
 
-SELECT DISTINCT INTO "CUST_SCRIPT:path_orders_2024.csv"
+SELECT DISTINCT INTO "CUST_SCRIPT:path_orders_2024_prod_2.csv"
 
       PATIENT_URN = PA.ALIAS
     , O.ORDER_ID
@@ -49,8 +55,7 @@ PLAN O ; ORDERS
 JOIN OA ; ORDER_ACTION
     WHERE OA.ORDER_ID = O.ORDER_ID
     ; We want to find out who placed the New Order
-    AND OA.ACTION_TYPE_CD IN(2534); New Order
-    AND OA.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+    AND OA.ACTION_TYPE_CD = 2534; New Order
     ; Action Time filter ;
     ; AND OA.ACTION_DT_TM > CNVTLOOKBEHIND("1,D")
      AND OA.ACTION_DT_TM > CNVTDATETIME("01-JAN-2024 00:00:00")
@@ -101,7 +106,7 @@ JOIN P;PERSON
     ; Remove Inactive Patients ;
     AND P.ACTIVE_IND = 1
     ; Remove Fake 'Test' Patients ;
-    ;AND P.NAME_LAST_KEY != "*TESTWHS*"
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
     ; Remove Ineffective Patients ;
     AND P.END_EFFECTIVE_DT_TM > SYSDATE
 
@@ -115,9 +120,6 @@ JOIN EA;ENCNTR_ALIAS; ENCOUNTER_NO = EA.ALIAS
     ; effective FIN NBRs only ;
 	AND EA.END_EFFECTIVE_DT_TM > SYSDATE
 
-ORDER BY
-	O.PERSON_ID
-	, O.ORDER_ID
 
 WITH
     TIME = 3600
