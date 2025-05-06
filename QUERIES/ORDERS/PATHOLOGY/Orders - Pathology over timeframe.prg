@@ -58,7 +58,7 @@ JOIN OA ; ORDER_ACTION
     WHERE OA.ORDER_ID = O.ORDER_ID
     ; We want to find out who placed the New Order
     AND OA.ACTION_TYPE_CD IN(2534); New Order
-    AND OA.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+    ;AND OA.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
     ; Action Time filter ;
     ;AND OA.ACTION_DT_TM > CNVTLOOKBEHIND("1,D")
     AND OA.ACTION_DT_TM > CNVTDATETIME($PLACED_AFTER_DT)

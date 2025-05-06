@@ -11,7 +11,7 @@ PLAN OA
 	WHERE
 	OA.ACTION_DT_TM > CNVTLOOKBEHIND("1,D"); last day only
 	;OA.ORDER_ID =   3670833363.00 ; Enter order id here
-	AND OA.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+	;AND OA.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
 	AND OA.SYNONYM_ID =     7347906.00 ; FBE
 	AND OA.CONTRIBUTOR_SYSTEM_CD = 469 ;POWERCHART
 	AND OA.ACTION_TYPE_CD = 2539 ; STATUS CHANGE

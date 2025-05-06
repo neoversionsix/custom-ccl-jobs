@@ -49,7 +49,7 @@ JOIN O_A ; ORDER_ACTION
     WHERE O_A.ORDER_ID = O_D.ORDER_ID
     AND O_A.ACTION_TYPE_CD = 2534.00	;Order
     ;AND O_A.ACTION_SEQUENCE = 1 ; get first action sequence only
-    AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+    ;AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
 
 JOIN O_I ; ORDER_INGREDIENT
 	WHERE O_I.ORDER_ID = O_D.ORDER_ID

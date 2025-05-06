@@ -77,7 +77,7 @@ FROM
 PLAN O_A ; ORDER_ACTION
     WHERE
     O_A.ORDER_STATUS_CD IN(2548, 2543) 	; In process or complete orders only
-    AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+    ;AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
     AND O_A.ACTION_DT_TM >= CNVTDATETIME($START_DATE_TIME)
     AND O_A.ACTION_DT_TM <= CNVTDATETIME($END_DATE_TIME)
 
