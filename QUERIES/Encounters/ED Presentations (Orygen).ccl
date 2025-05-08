@@ -1,8 +1,7 @@
+select
 /* Query to extract ED data for Orygen (contact Hannah Richards).
 ** To replace extract provided from EDIS
 */
-
-select
 	ENC_ID = enc.encntr_id
 	, URNo = ea_URN.alias
 ;	, Active_Status = uar_get_code_display(enc.active_status_cd)
