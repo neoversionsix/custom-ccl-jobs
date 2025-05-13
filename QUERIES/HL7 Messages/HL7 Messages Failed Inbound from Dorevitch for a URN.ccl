@@ -1,0 +1,41 @@
+SELECT
+	CREATED = E.CREATE_DT_TM "DD-MMM-YYYY HH:MM:SS"
+	, PATIENT_URN = REPLACE(E.PERSON_ALIAS, ",", "")
+	, PATIENT = E.NAME_FULL_FORMATTED
+	, E.ERROR_STAT
+	, E.ERROR_TEXT
+	, E.HL7_ENTITY_CODE
+	, HL7 = O.MSG_TEXT
+
+FROM
+	ESI_LOG   E
+	, OEN_TXLOG   O
+	, PERSON   P
+	, CLINICAL_EVENT C
+
+PLAN E
+    WHERE
+		; Filter for messages in the last hour only
+		E.CREATE_DT_TM > cnvtlookbehind("30,D")
+		AND E.ERROR_STAT = "*FAILURE*" ; Only failed messages
+        ; and E.CONTRIBUTOR_SYSTEM_CD = (select code_value from code_value where description = "Western Health Radiology")
+		;  AND E.MSH_SENDING_APP = "BMM_LAB" ; BMM LAB MESSAGES ONLY ; note this is slower than using the system code no below
+		AND E.CONTRIBUTOR_SYSTEM_CD = 86524974.00 ; WH_LAB
+        ;AND E.CONTRIBUTOR_SYSTEM_CD = 308608009.00; BMM_LAB Messages Only
+        AND E.PERSON_ALIAS = "*123456*" ; ENTER A URN HERE!
+
+JOIN O
+    WHERE O.MSGID = OUTERJOIN(E.MSGID)
+    AND O.CREATE_DT_TM > cnvtlookbehind("30,D") ; Last 30 days
+
+JOIN P
+	WHERE P.PERSON_ID = OUTERJOIN(E.PERSON_ID)
+
+JOIN C
+	WHERE C.EVENT_ID = OUTERJOIN(E.EVENT_ID)
+
+ORDER BY
+	E.CREATE_DT_TM   DESC
+	, E.MSGID  DESC
+
+WITH MAXREC = 5000, FORMAT, SEPERATOR = " ", TIME = 20
