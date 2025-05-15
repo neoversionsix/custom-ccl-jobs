@@ -4,7 +4,11 @@ SERVICE REQUEST 927664
 Query 1
 Parameters: Dyndocs/Powernotes/Powerforms completed (active ind= 1; status=  Auth and Modified, remove duplicates)
 Timeframe: Past 24 months
-Additional Information: Event display, Event title text, Performed by User position, nurse unit
+	Additional Information:
+	Event display,
+	Event title text,
+	Performed by User position,
+	nurse unit
 */
 	CE.UPDT_DT_TM "YYYY-MM-DD HH:MM:SS"
 	, CE.PARENT_EVENT_ID
@@ -18,13 +22,15 @@ Additional Information: Event display, Event title text, Performed by User posit
 	, SS.UPDATE_LOCK_DT_TM "YYYY-MM-DD HH:MM:SS"
 
 FROM
-	  CLINICAL_EVENT   CE
-	, SCD_STORY   SS
+	  CLINICAL_EVENT	CE
+	, SCD_STORY			SS
+	, PRSNL				PR
 
 
 PLAN CE
 	WHERE
-		CE.UPDT_DT_TM > CNVTLOOKBEHIND("1,H")
+		CE.UPDT_DT_TM > CNVTLOOKBEHIND("3,H")
+		AND CE.RECORD_STATUS_CD = 188 ; 'Active' records only
 		;AND CE.UPDT_ID = REQINFO->UPDT_ID ; Current user only
 		; FILTER FOR THESE ENTRY MODE CODES FROM CODE SET 29520.00
 		AND CE.ENTRY_MODE_CD IN (
@@ -36,9 +42,13 @@ PLAN CE
 		)
 
 
-JOIN SS
+JOIN SS ; Joining for Powernote details
 	WHERE
 		SS.EVENT_ID = OUTERJOIN(CE.EVENT_ID)
+
+JOIN PR ; Joining for User details
+	WHERE
+		PR.PRSNL_ID =
 
 ORDER BY
 	CE.UPDT_DT_TM DESC
