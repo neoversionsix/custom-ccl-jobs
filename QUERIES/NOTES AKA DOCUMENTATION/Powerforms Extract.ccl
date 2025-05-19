@@ -1,0 +1,33 @@
+SELECT
+    EXTRACT_META = CONCAT( TRIM(CURDOMAIN) ,' (', FORMAT(SYSDATE,"YYYYMMDD HHMM;3;Q"), ")" )
+	, BEG_ACTIVITY_DT_TM = FORMAT(D.BEG_ACTIVITY_DT_TM, "YYYY-MM-DD HH:MM:SS")
+    , D.DESCRIPTION
+    , FORM_DT_TM = FORMAT(D.FORM_DT_TM, "YYYY-MM-DD HH:MM:SS")
+    , UPDT_DT_TM = FORMAT(D.UPDT_DT_TM, "YYYY-MM-DD HH:MM:SS")
+    , VERSION_DT_TM = FORMAT(D.VERSION_DT_TM, "YYYY-MM-DD HH:MM:SS")
+    , LAST_ACTIVITY_DT_TM = FORMAT(D.LAST_ACTIVITY_DT_TM, "YYYY-MM-DD HH:MM:SS")
+    , LOCK_CREATE_DT_TM = FORMAT(D.LOCK_CREATE_DT_TM, "YYYY-MM-DD HH:MM:SS")
+    , LAST_UTC_TS = FORMAT(D.LAST_UTC_TS, "YYYY-MM-DD HH:MM:SS")
+	, D.ENCNTR_ID
+	, D.LOCK_PRSNL_ID
+    , D.UPDT_ID
+	, D.PERSON_ID
+
+FROM
+	;; Maintains record of all charting transactions performed via PowerForms
+	DCP_FORMS_ACTIVITY   D
+
+WHERE
+    D.ACTIVE_IND = 1
+	AND D.UPDT_DT_TM > CNVTLOOKBEHIND("1,D")
+	; Form status is Authenticated
+	AND D.FORM_STATUS_CD = 25 ; Auth (Verified)
+	; Form is Complete
+	; D.FLAGS -> //Completion Status  0 - Unknown  1 - Incomplete  2 - Complete
+	AND D.FLAGS = 2
+
+
+
+
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10
