@@ -1,5 +1,9 @@
  SELECT DISTINCT
-	 OC.PRIMARY_MNEMONIC
+/* Good for displaying a few pathology items filtered by name
+and their associated collection requirements.
+ */
+
+	  OC.PRIMARY_MNEMONIC
 	, RECENT_COUNT = COUNT(O.CATALOG_CD) OVER (PARTITION BY (O.CATALOG_CD))
     , OC.ACTIVE_IND
 	, PST_ACCESSION_CLASS_DISP = UAR_GET_CODE_DISPLAY(PST.ACCESSION_CLASS_CD)
@@ -23,6 +27,7 @@ FROM
 
 PLAN OC
 	WHERE
+        ; Search for these pathology orderables only
     	CNVTUPPER(OC.PRIMARY_MNEMONIC) = "*HIV*"
 JOIN O
 	WHERE
