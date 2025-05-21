@@ -14,13 +14,9 @@ Timeframe: Past 24 months
 Notes:
 SCD_STORY has powernotes
 Powerforms have multiple entries on the Clinical Event table
-
-
-
-
-
 */
-	  CE.UPDT_DT_TM "YYYY-MM-DD HH:MM:SS"
+	  EXTRACT_DT_TM = CONCAT( TRIM(CURDOMAIN) ,' (', FORMAT(SYSDATE,"YYYY-MM-DD HH:MM:SS;3;Q"), ")" )
+	, CE.UPDT_DT_TM "YYYY-MM-DD HH:MM:SS"
 	, CE.PARENT_EVENT_ID
 	, CE.PERSON_ID
 	, CE_ENTRY_MODE_DISP = UAR_GET_CODE_DISPLAY(CE.ENTRY_MODE_CD)

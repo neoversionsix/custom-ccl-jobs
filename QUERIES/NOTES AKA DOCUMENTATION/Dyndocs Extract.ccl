@@ -1,0 +1,67 @@
+SELECT ;DISTINCT
+/*
+SERVICE REQUEST 927664
+Query 1
+Parameters: Dyndocs/Powernotes/Powerforms completed (active ind= 1; status=  Auth and Modified, remove duplicates)
+Timeframe: Past 24 months
+	Additional Information:
+	Event display,
+	Event title text,
+	Performed by User position,
+	nurse unit
+
+	TEST WITH 486367 AND CE.PERSON_ID = 12085584.00
+Notes:
+SCD_STORY has powernotes
+Powerforms have multiple entries on the Clinical Event table
+
+*/
+	  CE.UPDT_DT_TM "YYYY-MM-DD HH:MM:SS"
+	, CE.PARENT_EVENT_ID
+	, CE.PERSON_ID
+	, CE_ENTRY_MODE_DISP = UAR_GET_CODE_DISPLAY(CE.ENTRY_MODE_CD)
+	, CE_EVENT_DISP = UAR_GET_CODE_DISPLAY(CE.EVENT_CD)
+	, CE_RECORD_STATUS_DISP = UAR_GET_CODE_DISPLAY(CE.RECORD_STATUS_CD)
+	, SS_STORY_COMPLETION_STATUS_DISP = UAR_GET_CODE_DISPLAY(SS.STORY_COMPLETION_STATUS_CD)
+	, SS_STORY_TYPE_DISP = UAR_GET_CODE_DISPLAY(SS.STORY_TYPE_CD)
+	, SS.TITLE
+	, SS.UPDT_ID
+	, SS.UPDATE_LOCK_DT_TM "YYYY-MM-DD HH:MM:SS"
+
+FROM
+	  CLINICAL_EVENT	CE
+	, SCD_STORY			SS ; Used for Powernotes
+	;, PRSNL				PR
+
+
+PLAN CE
+	WHERE
+		CE.UPDT_DT_TM > CNVTLOOKBEHIND("1,H")
+		AND CE.RECORD_STATUS_CD = 188 ; 'Active' records only
+		;AND CE.UPDT_ID = REQINFO->UPDT_ID ; Current user only
+		; FILTER FOR THESE ENTRY MODE CODES FROM CODE SET 29520.00
+		AND CE.ENTRY_MODE_CD IN (
+			26090095.00 ; Dynamic Documentation
+			; , 2976515.00 ; PowerNote Modifiers
+			; , 677002.00  ; PowerForms
+			; , 677003.00  ; PowerNote
+			; , 679377.00  ; PowerNote ED
+		)
+
+		AND CE.VIEW_LEVEL = 1
+		AND CE.AUTHENTIC_FLAG = 1
+		AND CE.PUBLISH_FLAG = 1
+
+
+JOIN SS ; Joining for Powernote details
+	WHERE
+		SS.EVENT_ID = OUTERJOIN(CE.EVENT_ID)
+
+; JOIN PR ; Joining for User details
+; 	WHERE
+; 		PR.PRSNL_ID =
+
+ORDER BY
+	CE.UPDT_DT_TM DESC
+
+WITH TIME = 10, SEPERATOR = " ", FORMAT

@@ -1,33 +1,43 @@
 SELECT
-      EXTRACT_DT_TM = CONCAT( TRIM(CURDOMAIN) ,' (', FORMAT(SYSDATE,"YYYY-MM-DD HH:MM:SS;3;Q"), ")" )
-	, BEG_ACTIVITY_DT_TM = FORMAT(D.BEG_ACTIVITY_DT_TM, "YYYY-MM-DD HH:MM:SS")
-    , D.DESCRIPTION
-    , FORM_DT_TM = FORMAT(D.FORM_DT_TM, "YYYY-MM-DD HH:MM:SS")
-    , UPDT_DT_TM = FORMAT(D.UPDT_DT_TM, "YYYY-MM-DD HH:MM:SS")
-    , VERSION_DT_TM = FORMAT(D.VERSION_DT_TM, "YYYY-MM-DD HH:MM:SS")
-    , LAST_ACTIVITY_DT_TM = FORMAT(D.LAST_ACTIVITY_DT_TM, "YYYY-MM-DD HH:MM:SS")
-    , LOCK_CREATE_DT_TM = FORMAT(D.LOCK_CREATE_DT_TM, "YYYY-MM-DD HH:MM:SS")
-    , LAST_UTC_TS = FORMAT(D.LAST_UTC_TS, "YYYY-MM-DD HH:MM:SS")
-	, D.ENCNTR_ID
-	, D.LOCK_PRSNL_ID
-    , D.UPDT_ID
-	, D.PERSON_ID
+/*
+Powerforms Extract
+SERVICE REQUEST 927664
+ */
+	EXTRACT_DT_TM = CONCAT( TRIM(CURDOMAIN) ,' (', FORMAT(SYSDATE,"YYYY-MM-DD HH:MM:SS;3;Q"), ")" )
+	, DFA.DESCRIPTION
+	, VERSION_DT_TM = FORMAT(DFA.VERSION_DT_TM, "YYYY-MM-DD HH:MM:SS")
+	, LAST_ACTIVITY_DT_TM = FORMAT(DFA.LAST_ACTIVITY_DT_TM, "YYYY-MM-DD HH:MM:SS")
+	, DFA.ENCNTR_ID
+	, DFA.UPDT_ID
+	, DFA.PERSON_ID
+	, UPDT_POSITION = UAR_GET_CODE_DISPLAY(PR.POSITION_CD)
 
 FROM
-	;; Maintains record of all charting transactions performed via PowerForms
-	DCP_FORMS_ACTIVITY   D
+	DCP_FORMS_ACTIVITY	DFA
+	, PRSNL				PR
+	, ENCNTR_LOC_HIST   ELH
 
-WHERE
-    D.ACTIVE_IND = 1
-	AND D.UPDT_DT_TM > CNVTLOOKBEHIND("1,D")
-	; Form status is Authenticated
-	AND D.FORM_STATUS_CD = 25 ; Auth (Verified)
-	; Form is Complete
-	; D.FLAGS -> //Completion Status  0 - Unknown  1 - Incomplete  2 - Complete
-	AND D.FLAGS = 2
+PLAN DFA ; DCP_FORMS_ACTIVITY
+	WHERE
+		DFA.ACTIVE_IND = 1
+		AND DFA.UPDT_DT_TM > CNVTLOOKBEHIND("1,D")
+		; Form status is Authenticated
+		AND DFA.FORM_STATUS_CD = 25 ; Auth (Verified)
+		; Form is Complete
+		; DFA.FLAGS -> //Completion Status  0 - Unknown  1 - Incomplete  2 - Complete
+		AND DFA.FLAGS = 2
 
+JOIN PR; PRSNL
+	WHERE PR.PERSON_ID = DFA.UPDT_ID
+		AND PR.ACTIVE_IND = 1
+		AND PR.END_EFFECTIVE_DT_TM > SYSDATE
 
-
-
+JOIN ELH ;ENCNTR_LOC_HIST
+    WHERE ELH.ENCNTR_ID = OUTERJOIN(O.ENCNTR_ID)
+    AND ELH.ACTIVE_IND = OUTERJOIN(1)   ; to remove inactive rows that seem to appear for unknown reason(s)
+	AND ELH.ENCNTR_ID > OUTERJOIN(0) ; to remove encounters without a proper ID
+    AND ELH.PM_HIST_TRACKING_ID > OUTERJOIN(0)  ; to remove duplicate row that seems to occur at discharge
+    AND ELH.BEG_EFFECTIVE_DT_TM < OUTERJOIN(O.ORIG_ORDER_DT_TM) ; encounter location began before order was placed
+    AND ELH.END_EFFECTIVE_DT_TM >  OUTERJOIN(O.ORIG_ORDER_DT_TM)    ; encounter location ended after order was placed
 
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10
