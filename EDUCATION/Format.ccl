@@ -1,0 +1,115 @@
+Syntax
+FORMAT(expression,["display_template;display_qualifier;display_format"])
+
+
+D1 = FORMAT(CURDATE,"MM/DD/YY ;;D" )
+
+
+
+Option:	Description:
+C
+
+Character (strip leading/trailing blanks)
+
+D
+
+Date format
+
+E
+
+Scientific notation
+
+F
+
+Treat as real
+
+I
+
+Treat as integer
+
+M
+
+Maritime format (24-hour clock)
+
+Q
+
+Format date/time field
+
+S
+
+Standard time format (12-hour clock)
+
+T
+
+Text (do not strip leading/trailing blanks)
+
+Z
+
+Formatting of DATETIMEDIFF( ) function
+
+
+
+
+
+
+
+
+The DISPLAY_QUALIFIER allows you to change the position of the column in a column, pad a column with additional characters or numbers (such as zero), or add a floating comma or dollar sign. If you do not use a display qualifier, Discern Explorer left-justifies character data and right-justifies numeric data. When a display qualifier is used in the SELECT command, the display qualifier overrides the default setting. Valid display qualifiers are shown below.
+
+
+
+,
+
+Float commas.
+
+$
+
+Float dollar sign.
+
+1
+
+Time in HHMM format.
+
+2
+
+Time in HHMMSS format.
+
+3
+
+Binary system date and time format.
+
+4
+
+Time is in time3 format and using DATETIMEZONE() function.
+
+C
+
+Center.
+
+I
+
+In international environments, the comma is used as the decimal character and the period is used as the thousands separator for numeric values.
+
+L
+
+Left justify.
+
+P
+
+Padding to be next character following P.
+
+R
+
+Right justify.
+
+T(1)
+
+Remove trailing zeros to the right of the decimal. If all digits to the right of the decimal are zero, the decimal and all trailing zeros are trimmed.
+
+T(2)
+
+Remove trailing zeros to the right of the decimal. If all digits to the right of the decimal are zero, retain the decimal and one trailing zero.
+
+T(3)
+
+Trim leading and trailing blanks for month format which by default is right justified in 9 byte field.

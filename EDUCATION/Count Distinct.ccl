@@ -1,5 +1,5 @@
-/* Shows how to do a distinct coung */
 SELECT
+/* Shows how to do a distinct coung */
 	cnt_distinct = count(distinct o.order_id),
 	cnt_all = count(o.order_id)
 

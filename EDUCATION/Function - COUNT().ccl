@@ -82,7 +82,10 @@ WITH SEPARATOR=" ", FORMAT
 
 
 
-; The following example gets information about a person's three most recent encounters when the reg_dt_tm for the encounter was in the past month. Count() is used to get a count for the encounters for each encounter type. The Keep option is also used with Count() to get the a count of all the first encounters for each encounter type.
+; The following example gets information about a person's three most recent encounters
+;when the reg_dt_tm for the encounter was in the past month. Count() is used to get a
+;count for the encounters for each encounter type. The Keep option is also used with Count()
+;to get the a count of all the first encounters for each encounter type.
 
 select into $outdev
 	e.person_id,
