@@ -69,6 +69,40 @@ PLAN O ; ORDERS
                 AND
                 OD.UPDT_DT_TM >= CNVTDATETIME("28-MAY-2025 11:00")
         )
+        AND O.CATALOG_CD IN
+            (
+                SELECT I.CATALOG_CD
+                FROM ORDER_CATALOG
+                WHERE
+                    I.PRIMARY_MNEMONIC = "*AMOXICILLIN*"
+                    OR I.PRIMARY_MNEMONIC = "*BENZYLPENICILLIN*"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+                    OR I.PRIMARY_MNEMONIC = "**"
+            )
+            O.CATALOG_CD IN
+            /* Filter for orders with the below catalog codes */
+            (SELECT CATALOG_CD FROM ORDE
+
+            )
 
 
 JOIN O_A ; ORDER_ACTION
