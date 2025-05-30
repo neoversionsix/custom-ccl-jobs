@@ -24,8 +24,6 @@ Thank you in advance.
 Regards,
 Derek
  */
-
-SELECT DISTINCT
 	PATIENT_URN = PA.ALIAS
 	, OD.ORDER_ID
 	, OA_CHILD_COUNT =
@@ -69,41 +67,23 @@ PLAN O ; ORDERS
                 AND
                 OD.UPDT_DT_TM >= CNVTDATETIME("28-MAY-2025 11:00")
         )
-        AND O.CATALOG_CD IN
+        AND O.CATALOG_CD IN ; Filter for orders with the below catalog codes
             (
                 SELECT I.CATALOG_CD
                 FROM ORDER_CATALOG
                 WHERE
-                    I.PRIMARY_MNEMONIC = "*AMOXICILLIN*"
-                    OR I.PRIMARY_MNEMONIC = "*BENZYLPENICILLIN*"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
-                    OR I.PRIMARY_MNEMONIC = "**"
+                       I.PRIMARY_MNEMONIC = "AMOXICILLIN"
+                    OR I.PRIMARY_MNEMONIC = "BENZYLPENICILLIN"
+                    OR I.PRIMARY_MNEMONIC = "CEFAZOLIN"
+                    OR I.PRIMARY_MNEMONIC = "CEFTRIAXONE"
+                    OR I.PRIMARY_MNEMONIC = "CLINDAMYCIN"
+                    OR I.PRIMARY_MNEMONIC = "FLUCLOXACILLIN"
+                    OR I.PRIMARY_MNEMONIC = "MAGNESIUM SULFATE"
+                    OR I.PRIMARY_MNEMONIC = "PIPERACILLIN"
+                    OR I.PRIMARY_MNEMONIC = "TAZOBACTAM"
+                    OR I.PRIMARY_MNEMONIC = "THIAMINE"
+                    OR I.PRIMARY_MNEMONIC = "TRAMADOL"
             )
-            O.CATALOG_CD IN
-            /* Filter for orders with the below catalog codes */
-            (SELECT CATALOG_CD FROM ORDE
-
-            )
-
 
 JOIN O_A ; ORDER_ACTION
     WHERE OA.ORDER_ID = OD.ORDER_ID
