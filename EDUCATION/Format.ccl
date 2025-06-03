@@ -5,7 +5,7 @@ FORMAT(expression,["display_template;display_qualifier;display_format"])
 D1 = FORMAT(CURDATE,"MM/DD/YY ;;D" )
 
 
-
+DISPLAY_FORMAT
 Option:	Description:
 C
 
