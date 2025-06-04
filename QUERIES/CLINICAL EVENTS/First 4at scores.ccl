@@ -44,7 +44,7 @@ FROM
 				, C_TEMP.EVENT_END_DT_TM
 			WITH SQLTYPE("F8","F8","VC")
 		)
-											C
+        C
 	)
 
 PLAN E ; ENCOUNTER
