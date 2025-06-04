@@ -2,7 +2,8 @@ Syntax
 FORMAT(expression,["display_template;display_qualifier;display_format"])
 
 
-D1 = FORMAT(CURDATE,"MM/DD/YY ;;D" )
+D1 = FORMAT(CURDATE,"MM/DD/YY ;;D")
+DATE = FORMAT(O.CREATE_DT_TM, "YYYY-MM-DD HH:MM:SS ;L;D")
 
 
 DISPLAY_FORMAT
