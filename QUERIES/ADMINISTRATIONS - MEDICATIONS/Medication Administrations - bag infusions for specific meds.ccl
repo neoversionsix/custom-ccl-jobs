@@ -1,0 +1,136 @@
+SELECT
+/*
+SERVICE REQUEST 935021
+Hi,
+
+Can I get an EMR report of how many completed nursing administered doses via infusion bags for the following 10 medications?
+
+If this can be prioritised as soon as possible - that would be much appreciated. We need to know how many sodium chloride 0.9% bags we can save if we were to change them to alternative syringe pump administration. We have an upcoming IV fluid bag shortage again.
+
+Medications
+amoxicillin
+benzylpenicillin
+cefaZOLin
+cefTRIAxone
+CLINDAmycin
+flucloxacillin
+magnesium sulfate
+piperacillin/tazobactam
+thiamine
+tRAMadol
+
+Thank you in advance.
+
+Regards,
+Derek
+ */
+    MAE.MED_ADMIN_EVENT_ID
+	, PATIENT_URN = PA.ALIAS
+	, O.ORDER_ID
+	, OA_CHILD_COUNT =
+        COUNT(OA.ORDER_ID) OVER (PARTITION BY OA.ORDER_ID)
+	, O.ORIG_ORDER_DT_TM "dd/mmm/yyyy hh:mm"
+	, ADMINISTERED_EVENT_TYPE = UAR_GET_CODE_DISPLAY(MAE.EVENT_TYPE_CD)
+	, ORDER_STATUS = UAR_GET_CODE_DISPLAY(O.ORDER_STATUS_CD)
+	, O.ORDER_MNEMONIC
+	, E_MED_SERVICE_DISP = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+	, M_NURSE_UNIT_DISP = UAR_GET_CODE_DISPLAY(MAE.NURSE_UNIT_CD)
+    , E_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
+    , ENCOUNTER_NO = EA.ALIAS
+    , ORDERER = PR.NAME_FULL_FORMATTED
+	;, FIELD = O_E_FI.DESCRIPTION ; details filled out in the Order Entry Form
+
+FROM
+     ORDER_ACTION           OA
+	, ORDERS                O
+	, ENCOUNTER             E
+	, MED_ADMIN_EVENT       MAE
+    , PRSNL                 PR
+    , PERSON_ALIAS          PA
+    , ENCNTR_ALIAS          EA
+	;, ORDER_ENTRY_FIELDS    O_E_FI
+
+PLAN O ; ORDERS
+	WHERE
+        O.ACTIVE_IND = 1
+        AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME("28-MAY-2025 11:00")
+        AND O.ORIG_ORDER_DT_TM <= CNVTDATETIME(SYSDATE)
+        AND O.ORDER_ID IN ; Infusion orders only
+        (
+            SELECT ORDER_ID
+            FROM ORDER_DETAIL OD
+            WHERE
+                OD.OE_FIELD_VALUE = 318173.00 ;"IV Infusion"
+                AND
+                OD.UPDT_DT_TM >= CNVTDATETIME("28-MAY-2025 11:00")
+        )
+        AND O.CATALOG_CD IN ; Filter for orders with the below catalog codes
+            (
+                SELECT I.CATALOG_CD
+                FROM ORDER_CATALOG I
+                WHERE
+                       CNVTUPPER(I.PRIMARY_MNEMONIC) = "*AMOXICILLIN*"
+                    OR CNVTUPPER(I.PRIMARY_MNEMONIC) = "*BENZYLPENICILLIN*"
+                    OR CNVTUPPER(I.PRIMARY_MNEMONIC) = "*CEFAZOLIN*"
+                    OR CNVTUPPER(I.PRIMARY_MNEMONIC) = "*CEFTRIAXONE*"
+                    OR CNVTUPPER(I.PRIMARY_MNEMONIC) = "*CLINDAMYCIN*"
+                    OR CNVTUPPER(I.PRIMARY_MNEMONIC) = "*FLUCLOXACILLIN*"
+                    OR CNVTUPPER(I.PRIMARY_MNEMONIC) = "*MAGNESIUM SULFATE*"
+                    OR CNVTUPPER(I.PRIMARY_MNEMONIC) = "PIPERACILLIN*"
+                    OR CNVTUPPER(I.PRIMARY_MNEMONIC) = "*TAZOBACTAM*"
+                    OR CNVTUPPER(I.PRIMARY_MNEMONIC) = "*THIAMINE*"
+                    OR CNVTUPPER(I.PRIMARY_MNEMONIC) = "*TRAMADOL*"
+            )
+
+JOIN OA ; ORDER_ACTION
+    WHERE OA.ORDER_ID = O.ORDER_ID
+    AND OA.ACTION_TYPE_CD = 2534.00	;Order
+    ;AND OA.ACTION_SEQUENCE = 1 ; get first action sequence only
+    ;AND OA.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+
+JOIN PR;PRSNL
+    WHERE PR.PERSON_ID = OUTERJOIN(OA.ACTION_PERSONNEL_ID);X.UPDT_ID
+    AND PR.ACTIVE_IND = OUTERJOIN(1)
+
+JOIN E ; ENCOUNTER
+	WHERE E.ENCNTR_ID = O.ENCNTR_ID
+    AND E.ACTIVE_IND = 1
+
+JOIN MAE ; MED_ADMIN_EVENT
+	WHERE MAE.ORDER_ID =OUTERJOIN(O.ORDER_ID)
+    AND MAE.EVENT_TYPE_CD =     4093094.00 ; "Administered"
+
+/* Patient Identifiers such as URN Medicare no etc */
+JOIN PA;PERSON_ALIAS; PATIENT_URN = PA.ALIAS
+    WHERE PA.PERSON_ID = E.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	PA.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	PA.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    PA.ACTIVE_IND = 1
+
+/* Encounter Identifiers such as the Financial Number */
+JOIN EA;ENCNTR_ALIAS; ENCOUNTER_NO = EA.ALIAS
+    WHERE EA.ENCNTR_ID = E.ENCNTR_ID
+    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+	AND EA.ENCNTR_ALIAS_TYPE_CD = 1077
+	/* active FIN NBRs only */
+    AND EA.ACTIVE_IND = 1
+    /* effective FIN NBRs only */
+	AND EA.END_EFFECTIVE_DT_TM > SYSDATE
+
+; JOIN O_E_FI; ORDER_ENTRY_FIELDS
+;     WHERE O_E_FI.OE_FIELD_ID = OD.OE_FIELD_ID
+
+ORDER BY
+	O.PERSON_ID
+	, OA.ORDER_ID
+
+WITH TIME = 30,
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT
