@@ -1,10 +1,10 @@
 SELECT
-/* Shows how to do a distinct coung */
+/* Shows how to do a distinct count */
 	cnt_distinct = count(distinct o.order_id),
 	cnt_all = count(o.order_id)
 
 FROM ORDER_DETAIL O
 WHERE
 
- O.UPDT_DT_TM > CNVTDATETIME("01-NOV-2023")
+ O.UPDT_DT_TM > CNVTLOOKBEHIND("1,H")
 WITH TIME = 10
