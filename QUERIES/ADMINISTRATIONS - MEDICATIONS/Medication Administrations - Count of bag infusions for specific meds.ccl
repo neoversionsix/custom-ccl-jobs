@@ -34,7 +34,8 @@ FROM
 PLAN O ; ORDERS
     WHERE
         O.ACTIVE_IND = 1
-        AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME("10-JUN-2025 00:00.00")
+        AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME("01-MAY-2025 00:00.00")
+        AND O.ORIG_ORDER_DT_TM <= CNVTDATETIME("01-JUN-2025 00:00.00")
         ; Infusion orders only
         AND O.ORDER_ID IN
         (
@@ -42,7 +43,7 @@ PLAN O ; ORDERS
             WHERE
                 OD.OE_FIELD_VALUE = 318173.00 ;"IV Infusion"
                 AND
-                OD.UPDT_DT_TM >= CNVTDATETIME("10-JUN-2025 00:00.00")
+                OD.UPDT_DT_TM >= CNVTDATETIME("01-MAY-2025 00:00.00")
         )
         AND O.CATALOG_CD IN ; Filter for orders with the below catalog codes
             (
@@ -72,7 +73,7 @@ GROUP BY
 ORDER BY
     O.ORDER_MNEMONIC
 
-WITH TIME = 30,
+WITH TIME = 600,
     NOCOUNTER,
     SEPARATOR=" ",
     FORMAT
