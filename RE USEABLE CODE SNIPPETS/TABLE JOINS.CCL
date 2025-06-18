@@ -137,7 +137,7 @@ PLAN O;ORDERS
      /* Order Status */
     AND O.ORDER_STATUS_CD = 2543.00
 
-/* Patients */
+;PatientS (NOT TEST PATIENTS)
 JOIN P;PERSON
 	WHERE P.PERSON_ID = X.PERSON_ID
     /* Remove Inactive Patients */
@@ -146,8 +146,6 @@ JOIN P;PERSON
     AND P.NAME_LAST_KEY != "*TESTWHS*"
     /* Remove Ineffective Patients */
     AND P.END_EFFECTIVE_DT_TM > SYSDATE
-
-
 
 ;For Patient  URN
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS

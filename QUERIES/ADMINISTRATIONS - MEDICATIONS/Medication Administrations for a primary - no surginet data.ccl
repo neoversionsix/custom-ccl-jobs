@@ -1,4 +1,5 @@
 SELECT
+/* Creating for INCIDENT 933836 */
 	  MAE_EVENT_TYPE_DISP = UAR_GET_CODE_DISPLAY(MAE.EVENT_TYPE_CD)
 	, O.ORDER_MNEMONIC
 	, MAE_POSITION_DISP = UAR_GET_CODE_DISPLAY(MAE.POSITION_CD)
@@ -6,15 +7,21 @@ SELECT
 	, MAE.MED_ADMIN_EVENT_ID
 	, MAE.BEG_DT_TM
 
-
 FROM
-	ORDERS   O
+	  ORDERS            O
 	, MED_ADMIN_EVENT   MAE
+    , PERSON            P
+    , PERSON_ALIAS      P_A
+    , ENCNTR_ALIAS      E_A
+    , ENCOUNTER         E
+
 
 PLAN O ; ORDERS
     WHERE
         O.ACTIVE_IND = 1
+        ; Order time filter
         AND O.ORIG_ORDER_DT_TM >= CNVTDATETIME("10-JUN-2025 00:00.00")
+        ; Catalog code filter
         AND O.CATALOG_CD IN ; Filter for orders with the below catalog codes
             (
                 SELECT I.CATALOG_CD
@@ -22,6 +29,40 @@ PLAN O ; ORDERS
                 WHERE
                         CNVTUPPER(I.PRIMARY_MNEMONIC) = "*LIDOCAINE*"
             )
+
+;PatientS (NOT TEST PATIENTS)
+JOIN P;PERSON
+	WHERE P.PERSON_ID = X.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+
+;For Patient  URN
+JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
+    WHERE P_A.PERSON_ID = E.PERSON_ID
+    AND
+    ;this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    ;Effective Only
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    ;Active Only
+    P_A.ACTIVE_IND = 1
+
+/* Encounter Identifiers such as the Financial Number */
+JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+	/* active FIN NBRs only */
+    AND E_A.ACTIVE_IND = 1
+    /* effective FIN NBRs only */
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+
 
 JOIN MAE ; MED_ADMIN_EVENT
     WHERE MAE.ORDER_ID = O.ORDER_ID
