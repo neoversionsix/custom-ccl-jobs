@@ -19,9 +19,7 @@ FROM
     , PERSON            P
     , PERSON_ALIAS      P_A
     , ENCNTR_ALIAS      E_A
-    , ENCOUNTER         E
     , CLINICAL_EVENT      C_E
-
 
 PLAN O ; ORDERS
     WHERE
@@ -37,9 +35,9 @@ PLAN O ; ORDERS
                         CNVTUPPER(I.PRIMARY_MNEMONIC) = "*LIDOCAINE*"
             )
 
-;PatientS (NOT TEST PATIENTS)
+;Patient (REMOVING TEST PATIENTS)
 JOIN P;PERSON
-	WHERE P.PERSON_ID = X.PERSON_ID
+	WHERE P.PERSON_ID = O.PERSON_ID
     /* Remove Inactive Patients */
     AND P.ACTIVE_IND = 1
     /* Remove Fake 'Test' Patients */
@@ -49,7 +47,7 @@ JOIN P;PERSON
 
 ;For Patient  URN
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
-    WHERE P_A.PERSON_ID = E.PERSON_ID
+    WHERE P_A.PERSON_ID = O.PERSON_ID
     AND
     ;this filters for the UR Number Alias' only */
    	P_A.ALIAS_POOL_CD = 9569589.00
@@ -75,13 +73,12 @@ JOIN MAE ; MED_ADMIN_EVENT
     AND MAE.EVENT_TYPE_CD =     4093094.00 ; "Administered" events only
 
 ; Patient Weight in encounter
-PLAN C_E ; WEIGHT_MEASURED = C_E.RESULT_VAL
+JOIN C_E ; WEIGHT_MEASURED = C_E.RESULT_VAL
     WHERE
         C_E.ENCNTR_ID = O.ENCNTR_ID ; JOIN ON ENCOUNTER ID
         AND C_E.EVENT_CD = 7334438 ; FILTERS FOR "WEIGHT MEASURED"
         AND C_E.VALID_UNTIL_DT_TM > SYSDATE ; STILL VALID (NOT INVALID)
         AND C_E.PUBLISH_FLAG = 1 ; PUBLISH
-
 
 WITH TIME = 5,
     NOCOUNTER,
