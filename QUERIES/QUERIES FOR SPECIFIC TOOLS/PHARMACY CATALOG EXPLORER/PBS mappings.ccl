@@ -3,8 +3,8 @@ SELECT DISTINCT
 Programmer: Jason Whittle
 Use: This query is used to retrieve the PBS mappings for the Pharmacy Catalog Explorer tool.
 */
-	SYNONYM_ID = POM.SYNONYM_ID
-    , PBS_CODE = PL.PBS_ITEM_CODE
+	PBS_CODE = PL.PBS_ITEM_CODE
+    , SYNONYM_ID = POM.SYNONYM_ID
 
 FROM
 	PBS_OCS_MAPPING   POM
