@@ -1,7 +1,9 @@
 SELECT
 /*
 Useful for figuring out where data is edited in the database when a change
-is made with a tool.
+is made with a tool or front-end application. This query will show which
+tables and columns were changed, the time of the change, and the person who
+made the change. 
 
 This will extract the recent changes the current user has made in the system
 and also changes that were currently made but the system did not record who
