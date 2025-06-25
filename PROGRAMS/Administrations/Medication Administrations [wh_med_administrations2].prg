@@ -3,25 +3,33 @@ create program wh_med_administrations2
 /*
 Programmer: Jason Whittle
 Created: 16 Nov 2023
-Updated: 18 Sep 2024
+Updated: 25 Jun 2025
 Use: Medication Administrations (including surgery)
  */
 
 prompt
-	"Output to File/Printer/MINE" = "MINE"                                  ;* Enter or select the printer or file name to send th
+	"Output to File/Printer/MINE" = "MINE"               ;* Enter or select the printer or file name to send this report to.
 	, "Administered After..." = "SYSDATE"
 	, "Administered Before..." = "SYSDATE"
-	, "Patient URN (leave blank if you don't want to filter)" = "1613161"
+	, "Primary Name Search (REQUIRED)" = "PARACETAMOL"
 
-with OUTDEV, START_DATE_TIME, END_DATE_TIME, URN
+with OUTDEV, START_DATE_TIME, END_DATE_TIME, PRIMARY
 
-DECLARE URN_VAR = VC WITH NOCONSTANT(" "),PROTECT
+DECLARE PRIMARY_VAR = VC WITH NOCONSTANT(" "),PROTECT
+;DECLARE URN_VAR = VC WITH NOCONSTANT(" "),PROTECT
 
-SET URN_VAR = $URN
-IF (URN_VAR = "")
-	SET URN_VAR = "*"
+; SET URN_VAR = $URN
+; IF (URN_VAR = "")
+; 	SET URN_VAR = "*"
+; 	ELSE
+; 	SET URN_VAR = CONCAT("*", URN_VAR, "*")
+; ENDIF
+
+SET PRIMARY_VAR = $PRIMARY
+IF (PRIMARY_VAR = "")
+	SET PRIMARY_VAR = "*"
 	ELSE
-	SET URN_VAR = CONCAT("*", URN_VAR, "*")
+	SET PRIMARY_VAR = CONCAT("*", PRIMARY_VAR, "*")
 ENDIF
 
 SELECT DISTINCT INTO $OUTDEV
@@ -36,6 +44,7 @@ SELECT DISTINCT INTO $OUTDEV
         IF (M_A_E.MED_ADMIN_EVENT_ID>0) "POWERCHART"
         ELSE "SURGINET"
         ENDIF
+    , PRIMARY = UAR_GET_CODE_DISPLAY(O.CATALOG_CD)
 	, ITEM = O.ORDER_MNEMONIC
     , EVENT_TAG = C.EVENT_TAG
 	, ORDERED_TIME = FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
@@ -99,6 +108,18 @@ JOIN O ; ORDERS
 	WHERE O.ORDER_ID = O_A.ORDER_ID
     /*Pharmacy Catalog only */
     AND O.CATALOG_TYPE_CD = 2516.00;
+    AND O.ACTIVE_IND = 1
+    ; Primary name filter
+    AND O.CATALOG_CD IN /* Given Orderables below */
+        (
+            SELECT
+                O.CATALOG_CD
+            FROM
+                ORDER_CATALOG   O
+            WHERE
+                CNVTUPPER(O.PRIMARY_MNEMONIC) = PATSTRING(PRIMARY_VAR)
+        )
+
 
 JOIN E ; ENCOUNTER
 	WHERE E.ENCNTR_ID = O.ENCNTR_ID
@@ -119,8 +140,8 @@ JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
     /* Active Only */
     P_A.ACTIVE_IND = 1
     /* Patient URN */
-    AND
-    P_A.ALIAS = PATSTRING(URN_VAR) ; ENTER URN!
+    ; AND
+    ; P_A.ALIAS = PATSTRING(URN_VAR) ; ENTER URN!
 
 /* Patients */
 JOIN P;PERSON
