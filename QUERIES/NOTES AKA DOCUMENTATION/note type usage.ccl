@@ -1,0 +1,56 @@
+select distinct
+; found this online on ccl forum
+
+;Patient = p.name_full_formatted
+
+FIN = e.alias
+
+,Author = pr.name_full_formatted
+
+,Position = uar_get_code_display(pr.position_cd)
+
+,Note_Type = ce.event_tag
+
+;,Addendum = ce.event_title_text
+
+,Status = uar_get_code_display(ce.result_status_cd)
+
+,Updated = format(ddc.updt_dt_tm, "MM/DD/YYYY HH:MM;;d")
+
+from
+
+dd_contribution ddc
+
+,prsnl pr
+
+,person p
+
+,encntr_alias e
+
+,clinical_event ce
+
+plan ce
+
+;where ce.event_title_text !="Add*" ;uncomment this line to search for Addendums only
+
+;and ce.event_tag = "Admission*" ;uncomment and modify this line to search by Note Type
+
+where ce.valid_until_dt_tm > cnvtdatetime (curdate,curtime)
+
+join ddc where ddc.doc_event_id = ce.event_id
+
+join e where ddc.encntr_id = outerjoin(e.encntr_id)
+
+and e.encntr_alias_type_cd=1077
+
+and ddc.updt_dt_tm > cnvtdatetime ("13-jun-2018 00:00:00") ;;change the date range to look at the last week, month, year, etc.
+
+and ddc.updt_dt_tm < cnvtdatetime ("14-jun-2018 11:59:59")
+
+join p where p.person_id = ddc.person_id
+
+join pr where pr.person_id = outerjoin(ddc.author_id)
+
+order by p.name_full_formatted, ddc.updt_dt_tm
+
+with maxrec = 5000

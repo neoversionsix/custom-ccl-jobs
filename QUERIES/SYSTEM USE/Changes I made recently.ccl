@@ -1,9 +1,9 @@
 SELECT
 /*
 Useful for figuring out where data is edited in the database when a change
-is made with a tool or front-end application. This query will show which
+is made with a tool. This query will show which
 tables and columns were changed, the time of the change, and the person who
-made the change. 
+made the change.
 
 This will extract the recent changes the current user has made in the system
 and also changes that were currently made but the system did not record who
@@ -30,7 +30,8 @@ FROM
 PLAN	D
 WHERE
         D.CHG_DT_TM > CNVTLOOKBEHIND("1,H") ; changes in the last hour
-    AND D.UPDT_ID IN (REQINFO->UPDT_ID, 0) ; Current User Id of person running script
+		; Current User Id of person running script or when the system did not record the user
+    AND D.UPDT_ID IN (REQINFO->UPDT_ID, 0)
 
 JOIN P WHERE P.PERSON_ID = OUTERJOIN(D.UPDT_ID)
 
