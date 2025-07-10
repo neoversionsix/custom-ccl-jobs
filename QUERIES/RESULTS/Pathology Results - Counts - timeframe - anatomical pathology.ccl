@@ -1,80 +1,308 @@
-select distinct	; Clinical Event details	; 'distinct' used for multiple URNs on one patient
+select distinct	; 'Pathology Results' ESH (original) alignment	; select distinct required due to ghosted event sets ('esc_g2', 'esc_g', 'esc_es' and/or 'ese_ec' tables)
 	domain = concat( trim(curdomain) ,' (', format(sysdate,"yyyymmdd hhmm;3;q"), ")" )
-	, UR_number = ea_URN.alias
-	, patient_name = p.name_full_formatted ; "xxxx"
-	, patient_id = ce.person_id
-	, visit_no = ea_visit.alias
-	, ce.encntr_id
-	, event_valid_dates = if(ce.valid_until_dt_tm > sysdate)
-	concat(format(ce.valid_from_dt_tm, "dd/mm/yy hh:mm"), " - ")
-	else concat(format(ce.valid_from_dt_tm, "dd/mm/yy hh:mm"), " - ", format(ce.valid_until_dt_tm, "dd/mm/yy hh:mm"))
+;	, second_level_grouper = es_g2.event_set_cd_disp
+	, grouper = es_g.event_set_cd_disp
+	, grouper_cd = es_g.event_set_cd
+	, event_set_sequence = if (esc_es.event_set_cd = 0) ""	; if esc_es has no join, return blank
+	else cnvtstring(esc_es.event_set_collating_seq)
 	endif
-	, event_end = format(ce.event_end_dt_tm, "dd/mm/yyyy hh:mm:ss")
-	, result_type = evaluate(ce.event_class_cd
-	, 223, "Date"
-	, 224, "DOC (comment/report)"
-	, 225, "Done"
-	, 226, "GRP"
-	, 228, "Immunization"
-	, 230, "Microbiology"
-	, 231, "mdoc"
-	, 232, "MED"
-	, 233, "NUM"
-	, 234, "Radiology"
-	, 236, "TXT (discrete)"
-	, 237, "Undefined"
-	, 4091465, "IO"
-	, 654645, "Place Holder"
-	, 0, "type not coded in this CCL extract"
+	, sequence_last_update = format (esc_es.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, sequence_last_updater = if(esc_es.dm2_mig_seq_id > 0 and p_esc_es.name_full_formatted = null) cnvtstring(esc_es.updt_id)
+	else p_esc_es.name_full_formatted
+	endif
+	, event_set_name = es_es.event_set_name
+	, event_set_cd = if (esc_es.event_set_cd = 0) ""	; if esc_es has no join, return blank
+	else cnvtstring(esc_es.event_set_cd)
+	endif
+	, event_set_unique_instance_comparison_text = build(
+	es_g.event_set_cd_disp
+	, "|", es_es.event_set_cd_disp
 	)
-	, discrete_result_value = ce.result_val
-	, discrete_result_unit = uar_get_code_display(ce.result_units_cd)
-	, discrete_result_time_unit = uar_get_code_display(ce.result_time_units_cd)
-	, report_title = ce.event_title_text
-;	, report_contents = substring(1,50,ce_b.blob_contents)	; extracts errors out if this field is included…
-	, result_normalcy = uar_get_code_display(ce.normalcy_cd)
-	, ce_contributor_system = uar_get_code_display(ce.contributor_system_cd)
-	, associated_orderable = uar_get_code_display(ce.catalog_cd)
-	, associated_order_ID = ce.order_id
-	, associated_task_assay = uar_get_code_display(ce.task_assay_cd)
-	, associated_event_code_display = uar_get_code_display(ce.event_cd)
-	, associated_event_code = ce.event_cd
-	, clinical_event_last_update = format(ce.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
-	, clinical_event_last_updater = if(ce.clinical_event_id > 0 and ce.updt_id = 0) "0"
-	else  p_ce.name_full_formatted
+	, event_set_unique_instance_id = if (esc_es.dm2_mig_seq_id = 0) ""
+	else cnvtstring(esc_es.dm2_mig_seq_id)
 	endif
-	, ce.reference_nbr
-	, ce.event_id
-	, ce.clinical_event_id
+	, event_set_last_update = format (es_es.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, event_set_last_updater = if(es_es.event_set_cd > 0 and p_es_es.name_full_formatted = null) cnvtstring(es_es.updt_id)
+	else p_es_es.name_full_formatted
+	endif
+	, event_set_event_cd_count = count (distinct ec.event_cd) over (partition by esc_g2.dm2_mig_seq_id
+	, esc_g.dm2_mig_seq_id
+	, esc_es.dm2_mig_seq_id
+;	, ese_es.dm2_mig_seq_id	; Only used for AoFs
+	)
+	, event_code_display = ec.event_cd_disp
+	, event_code_active_ind = if (ec.event_cd = 0) ""	; if ec has no join, return blank
+	else cnvtstring(cv.active_ind)
+	endif
+	, event_code_status = uar_get_code_display(cv.data_status_cd)
+	, event_code_status_last_update = format(cv.data_status_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, event_code_status_last_updater = if(cv.code_value > 0 and p_cv_data_stat.name_full_formatted = null) cnvtstring(cv.data_status_prsnl_id)
+	else p_cv_data_stat.name_full_formatted
+	endif
+	, event_code_class = uar_get_code_display(ec.def_event_class_cd)
+	, event_code_cd = if (ec.event_cd = 0) ""	; if ec has no join, return blank
+	else cnvtstring(ec.event_cd)
+	endif
+	, event_code_last_update = format (ec.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, event_code_last_updater = if(ec.event_cd > 0 and p_ec.name_full_formatted = null) cnvtstring(ec.updt_id)
+	else p_ec.name_full_formatted
+	endif
+;	, PRDD4_event_code_results = "=VLOOKUP(INDIRECT(CHAR(36) & CHAR(84) & CHAR(36) & ROW()),'PRDD4 event codes'!$B:$C,2,FALSE)"	; excel formula
+	, event_code_results = if(ec.event_cd > 0 and ce_count.result_count > "0") ce_count.result_count
+	elseif(ec.event_cd > 0) "0"
+	endif
+;	, event_code_results = "exlcuded from audit"
+	, inbound_alias_contributor_source = uar_get_code_display(cva.contributor_source_cd)
+	, inbound_alias = cva.alias
+	, in_alias_last_update = format (cva.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, in_alias_last_updater = if(cva.code_value > 0 and p_cva.name_full_formatted = null) cnvtstring(cva.updt_id)
+	else p_cva.name_full_formatted
+	endif
+	, WH_LOCAL_alias_count = count (distinct cva.alias) over (partition by esc_g2.dm2_mig_seq_id
+	, esc_g.dm2_mig_seq_id
+	, esc_es.dm2_mig_seq_id
+	, ese_es.dm2_mig_seq_id
+	, ec.event_cd
+	, ot.reference_task_id
+	, dta.task_assay_cd
+	, cv_e_r.parent_cd
+	, cva_acl.alias
+	, cva_path.alias
+	, cvo.contributor_source_cd
+	, cvo.alias
+	, oc.catalog_cd
+	)
+	, inbound_alias_contributor_source = uar_get_code_display(cva_acl.contributor_source_cd)
+	, inbound_alias = cva_acl.alias
+	, in_alias_last_update = format (cva_acl.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, in_alias_last_updater = if(cva_acl.code_value > 0 and p_cva_acl.name_full_formatted = null) cnvtstring(cva_acl.updt_id)
+	else p_cva_acl.name_full_formatted
+	endif
+	, WH_PATH_ACL_alias_count = count (distinct cva_acl.alias) over (partition by esc_g2.dm2_mig_seq_id
+	, esc_g.dm2_mig_seq_id
+	, esc_es.dm2_mig_seq_id
+	, ese_es.dm2_mig_seq_id
+	, ec.event_cd
+	, ot.reference_task_id
+	, dta.task_assay_cd
+	, cv_e_r.parent_cd
+	, cva.alias
+	, cva_path.alias
+	, cvo.contributor_source_cd
+	, cvo.alias
+	, oc.catalog_cd
+	)
+	, inbound_alias_contributor_source = uar_get_code_display(cva_path.contributor_source_cd)
+	, inbound_alias = cva_path.alias
+	, in_alias_last_update = format (cva_path.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, in_alias_last_updater = if(cva_path.code_value > 0 and p_cva_path.name_full_formatted = null) cnvtstring(cva_path.updt_id)
+	else p_cva_path.name_full_formatted
+	endif
+	, WH_PATH_alias_count = count (distinct cva_path.alias) over (partition by esc_g2.dm2_mig_seq_id
+	, esc_g.dm2_mig_seq_id
+	, esc_es.dm2_mig_seq_id
+	, ese_es.dm2_mig_seq_id
+	, ec.event_cd
+	, ot.reference_task_id
+	, dta.task_assay_cd
+	, cv_e_r.parent_cd
+	, cva.alias
+	, cva_acl.alias
+	, cvo.contributor_source_cd
+	, cvo.alias
+	, oc.catalog_cd
+	)
+	, outbound_alias_contributor_source = uar_get_code_display(cvo.contributor_source_cd)
+	, outbound_alias = cvo.alias
+	, out_alias_last_update = format (cvo.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")
+	, out_alias_last_updater = if(cvo.code_value > 0 and p_cvo.name_full_formatted = null) cnvtstring(cvo.updt_id)
+	else p_cvo.name_full_formatted
+	endif
+	, mapped_procedure = build(
+	if (dta.task_assay_cd > 0 and cv_e_r.parent_cd = 0 and ot.reference_task_id = 0) dta.mnemonic	; if DTA mapped, but no mapped procedure nor task mapped using the order_task table
+	elseif (dta.task_assay_cd > 0 and cv_e_r.parent_cd > 0 or ot.reference_task_id > 0) build(dta.mnemonic, ";")	; elseif DTA mapped with a mapped procedure or task mapped using the order_task table
+	endif
+;	, if (ot.reference_task_id = 0 and m_oc.catalog_cd > 0) m_oc.primary_mnemonic	; if no task mapped using the order_task table and mapped procedure is an orderable
+	, if (ot.reference_task_id = 0 and m_oc.catalog_cd > 0) m_cv_procs.mapped_procedures
+	elseif(ot.reference_task_id = 0 and m_oc.catalog_cd = 0 and cv_e_r.parent_cd > 0) uar_get_code_display(cv_e_r.parent_cd)	; elseif no task mapped using the order_task table and mapped procedure is not an orderable
+	elseif (ot.reference_task_id > 0 and m_oc.catalog_cd > 0) build(m_oc.primary_mnemonic, ";")	; elseif task mapped using the order_task table and mapped procedure is an orderable
+	elseif(ot.reference_task_id > 0 and m_oc.catalog_cd = 0 and cv_e_r.parent_cd > 0) build(uar_get_code_display(cv_e_r.parent_cd), ";")	; elseif task mapped using the order_task table and mapped procedure is not an orderable
+	endif
+	, if (ot.reference_task_id > 0) ot.task_description	; if task mapped using the order_task table
+	endif
+	)
+	, mapped_procedure_type = build(
+	if (dta.task_assay_cd > 0 and cv_e_r.parent_cd = 0 and ot.reference_task_id = 0) "Discrete Task Assay"	; if DTA mapped, but no mapped procedure nor task mapped using the order_task table
+	elseif (dta.task_assay_cd > 0 and cv_e_r.parent_cd > 0 or ot.reference_task_id > 0) "Discrete Task Assay;"	; elseif DTA mapped with a mapped procedure or task mapped using the order_task table
+	endif
+	, if (ot.reference_task_id = 0 and m_oc.catalog_cd > 0 or cv_e_r.parent_cd > 0) m_cvs.display	; if no task mapped using the order_task table
+	elseif (ot.reference_task_id > 0 and m_oc.catalog_cd > 0 or cv_e_r.parent_cd > 0) build(m_cvs.display, ";")	; elseif task mapped using the order_task table
+	endif
+	, if (ot.reference_task_id > 0) "Order Task"	; if task mapped using the order_task table
+	endif
+	)
+	, mapped_procedure_cd = build(
+	if (dta.task_assay_cd > 0 and cv_e_r.parent_cd = 0 and ot.reference_task_id = 0) cnvtstring(dta.task_assay_cd)	; if DTA mapped, but no mapped procedure nor task mapped using the order_task table
+	elseif (dta.task_assay_cd > 0 and cv_e_r.parent_cd > 0 or ot.reference_task_id > 0) build(cnvtstring(dta.task_assay_cd), "; ")	; elseif DTA mapped with a mapped procedure or task mapped using the order_task table
+	endif
+;	, if (ot.reference_task_id = 0 and m_oc.catalog_cd > 0 or cv_e_r.parent_cd > 0) cnvtstring(cv_e_r.parent_cd)	; if no task mapped using the order_task table
+	, if (ot.reference_task_id = 0 and m_oc.catalog_cd > 0 or cv_e_r.parent_cd > 0) m_cv_procs.mapped_procedure_codes
+	elseif (ot.reference_task_id > 0 and m_oc.catalog_cd > 0 or cv_e_r.parent_cd > 0) build(cnvtstring(cv_e_r.parent_cd), ";")	; elseif task mapped using the order_task table
+	endif
+	, if (ot.reference_task_id > 0) cnvtstring(ot.reference_task_id)	; if task mapped using the order_task table
+	endif
+	)
+	, mapping_last_update = build(
+	if (dta.task_assay_cd > 0 and cv_e_r.event_cd = 0 and ot.reference_task_id = 0) format (dta.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")	; if DTA mapped, but no mapped procedure nor task mapped using the order_task table
+	elseif (dta.task_assay_cd > 0 and cv_e_r.event_cd > 0 or ot.reference_task_id > 0) build(format (dta.updt_dt_tm, "dd/mm/yyyy hh:mm:ss"), ";")	; elseif DTA mapped with a mapped procedure or task mapped using the order_task table
+	endif
+	, if (ot.reference_task_id = 0 and m_oc.catalog_cd > 0 or cv_e_r.parent_cd > 0) format (cv_e_r.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")	; if no task mapped using the order_task table
+	elseif (ot.reference_task_id > 0 and m_oc.catalog_cd > 0 or cv_e_r.parent_cd > 0) build(format (cv_e_r.updt_dt_tm, "dd/mm/yyyy hh:mm:ss"), ";")	; elseif task mapped using the order_task table
+	endif
+	, if (ot.reference_task_id > 0) format (ot.updt_dt_tm, "dd/mm/yyyy hh:mm:ss")	; if task mapped using the order_task table
+	endif
+	)
+	, mapping_last_updater = build(
+	if (dta.task_assay_cd > 0 and cv_e_r.event_cd = 0 and ot.reference_task_id = 0 and p_dta.name_full_formatted = null) cnvtstring(dta.updt_id)	; if DTA mapped, but no mapped procedure nor task mapped using the order_task table and updt_id = 0
+	elseif (dta.task_assay_cd > 0 and cv_e_r.event_cd = 0 and ot.reference_task_id = 0) p_dta.name_full_formatted	; elseif DTA mapped, but no mapped procedure nor task mapped using the order_task table and updt_id > 0
+	elseif (dta.task_assay_cd > 0 and (cv_e_r.event_cd > 0 or ot.reference_task_id > 0) and p_dta.name_full_formatted = null) build(cnvtstring(dta.updt_id), ";")	; elseif DTA mapped, and with mapped procedure or task mapped using the order_task table and last updater = 0
+	elseif (dta.task_assay_cd > 0 and (cv_e_r.event_cd > 0 or ot.reference_task_id > 0)) build(p_dta.name_full_formatted, ";")	; else DTA mapped, and with mapped procedure or task mapped using the order_task table and last updater > '0'
+	endif
+	, if (cv_e_r.event_cd > 0 and ot.reference_task_id = 0 and p_cv_e_r.name_full_formatted = null) cnvtstring(cv_e_r.updt_id)	; if no task mapped using the order_task table and last updater = '0'
+	elseif (cv_e_r.event_cd > 0 and ot.reference_task_id = 0) p_cv_e_r.name_full_formatted	; elseif no task mapped using the order_task table and last updater > '0'
+	elseif (cv_e_r.event_cd > 0  and ot.reference_task_id > 0 and p_cv_e_r.name_full_formatted = null) build(cnvtstring(cv_e_r.updt_id), ";")	; elseif task mapped using the order_task table and last updater = '0'
+	elseif (cv_e_r.event_cd > 0  and ot.reference_task_id > 0 ) build(p_cv_e_r.name_full_formatted, ";")	; elseif task mapped using the order_task table and last updater > '0'
+	endif
+	, if (ot.reference_task_id > 0 and p_ot.name_full_formatted = null) cnvtstring(ot.updt_id)	; if task mapped using the order_task table and last updater = 0
+	elseif (ot.reference_task_id > 0)  p_ot.name_full_formatted	; elseif task mapped using the order_task table and last updater > 0
+	endif
+	)
+	, domain_alignment_comparison_text = build(
+	es_g.event_set_cd_disp
+	, "|", "x" ;esc_es.event_set_collating_seq
+	, "|", es_es.event_set_name
+	, "|", ec.event_cd_disp
+	, "|", uar_get_code_display(ec.def_event_class_cd)
+	, "|", uar_get_code_display(cva_path.contributor_source_cd)
+	, "|", cva_path.alias
+	, "|", uar_get_code_display(cvo.contributor_source_cd)
+	, "|", cvo.alias
+	, "|", dta.mnemonic
+	, "|", ot.task_description
+	, "|", if (m_oc.catalog_cd > 0) m_oc.primary_mnemonic
+	else uar_get_code_display(cv_e_r.parent_cd)
+	endif
+	)
+	, ec_rank = dense_rank() over (partition by 0	; no logical database field partition
+	order by
+	esc_g.event_set_collating_seq
+	, es_g.event_set_cd_disp
+	, nullval(esc_es.event_set_collating_seq,0)	; 'nullval' used as dense_rank fails when event set is not present
+	, nullval(esc_es.event_set_cd,0)	; sorts event sets that have the same sequence. This is common in 'OTHER RESULTS' folder
+	, nullval(cv.active_ind,0) desc	; ensures active event codes appear on top of inactive event codes
+	, nullval(ec.event_cd,0)	; 'nullval' used as dense_rank fails when event code is not present
+	, nullval(ec.event_cd_disp,0)	; 'nullval' used as dense_rank fails when event code is not present
+	)
+	, corresponding_orderables = listagg(oc.primary_mnemonic, "; ", "…") over (partition by
+	esc_g2.dm2_mig_seq_id
+	, esc_g.dm2_mig_seq_id
+	, esc_es.dm2_mig_seq_id
+	, ese_es.dm2_mig_seq_id	; Only used for AoFs prior to TCO, but then required after TCO for some unknown reason…
+	, ec.event_cd
+	, cva.contributor_source_cd
+	, cva.alias
+	, cvo.contributor_source_cd
+	, cvo.alias
+	order by
+	cnvtupper(oc.primary_mnemonic)
+	)
 
 from
-	clinical_event   ce
-	, (left join prsnl p_ce on p_ce.person_id = ce.updt_id)
-	, (left join person p on ce.person_id = p.person_id)
-	, (left join encntr_alias ea_URN on ea_URN.encntr_id = ce.encntr_id
-	and ea_URN.encntr_alias_type_cd = 1079	; URN
-	and ea_URN.active_ind = 1	; active URNs only
-	and ea_URN.end_effective_dt_tm > sysdate	; effective URNs only
+	v500_event_set_canon esc_g2	; second level grouper canon
+	, (inner join v500_event_set_code es_g2 on es_g2.event_set_cd = esc_g2.event_set_cd)	; second level grouper
+	, (inner join v500_event_set_canon esc_g on esc_g.parent_event_set_cd = es_g2.event_set_cd)	; grouper canon
+	, (inner join v500_event_set_code es_g on es_g.event_set_cd = esc_g.event_set_cd)	; grouper
+	, (left join v500_event_set_canon esc_es on esc_es.parent_event_set_cd = es_g.event_set_cd)	; primitive event set canon
+	, (left join prsnl p_esc_es on p_esc_es.person_id = esc_es.updt_id)	; primitive event set canon last updater (for event set sequence)
+	, (left join v500_event_set_code es_es on es_es.event_set_cd = esc_es.event_set_cd)	; primitive event set
+	, (left join prsnl p_es_es on p_es_es.person_id = es_es.updt_id)	; primitive event set last updater
+	, (left join v500_event_set_explode ese_es on ese_es.event_set_cd = esc_es.event_set_cd	; primitive event set explode
+	and ese_es.event_set_level = 0
 	)
-	, (left join encntr_alias ea_visit on ea_visit.encntr_id = ce.encntr_id
-	and ea_visit.encntr_alias_type_cd = 1077	; 'FIN NBR' from code set 319
-	and ea_visit.active_ind = 1	; active FIN NBRs only
-	and ea_visit.end_effective_dt_tm > sysdate	; effective FIN NBRs only
+	, (left join v500_event_code ec on ec.event_cd = ese_es.event_cd)	; event code
+	, (left join prsnl p_ec on p_ec.person_id = ec.updt_id)	; event code last updater
+	, (left join code_value cv on cv.code_value = ec.event_cd)	; event code's code value
+	, (left join prsnl p_cv_data_stat on p_cv_data_stat.person_id = cv.data_status_prsnl_id)	; event code's code value status last updater
+	, (left join code_value_alias cva on cva.code_value = ec.event_cd	; code value alias
+	and cva.contributor_source_cd = 10630393	; code value for 'WH_LOCAL' contributor source
 	)
-	, (left join ce_blob ce_b on ce_b.event_id = ce.event_id
-	and ce_b.valid_from_dt_tm = ce.valid_from_dt_tm
-	and ce_b.valid_until_dt_tm  = ce.valid_until_dt_tm
+	, (left join prsnl p_cva on p_cva.person_id = cva.updt_id)	; code value alias last updater
+	, (left join code_value_alias cva_acl on cva_acl.code_value = ec.event_cd	; code value alias
+	and cva_acl.contributor_source_cd = 9577737	; code value for 'WH_PATH_ACL' contributor source
 	)
+	, (left join prsnl p_cva_acl on p_cva_acl.person_id = cva_acl.updt_id)	; code value alias last updater
+	, (left join code_value_alias cva_path on cva_path.code_value = ec.event_cd	; code value alias
+	and cva_path.contributor_source_cd = 9577728	; code value for 'WH_PATH' contributor source
+	)
+	, (left join prsnl p_cva_path on p_cva_path.person_id = cva_path.updt_id)	; code value alias last updater
+	, (left join code_value_outbound cvo on cvo.code_value = ec.event_cd	; code value outbound
+	and (cvo.contributor_source_cd = cva.contributor_source_cd	; Match cvo with cva, to minimise duplicated alias rows
+	or
+	cvo.contributor_source_cd = cva_acl.contributor_source_cd
+	or
+	cvo.contributor_source_cd = cva_path.contributor_source_cd
+	or
+	cvo.contributor_source_cd not in (select cva2.contributor_source_cd from code_value_alias cva2 where cva2.code_value = cvo.code_value)	; unless no match with cva exists
+	)
+	)
+	, (left join prsnl p_cvo on p_cvo.person_id = cvo.updt_id)	; code value outbound last updater
+	, (left join order_task ot on ot.event_cd = ec.event_cd)	; for tasks mapped using the order_task table
+	, (left join prsnl p_ot on p_ot.person_id = ot.updt_id)	; task last updater. This may be the mapping update or may be a change to the task without change to the mapping.
+	, (left join discrete_task_assay dta on dta.event_cd = ec.event_cd)	; for DTAs mapped using the discrete_task_assay table
+	, (left join prsnl p_dta on p_dta.person_id = dta.updt_id)	; DTA last updater. This may be the mapping update or may be a change to the DTA without change to the mapping.
+	, (left join code_value_event_r cv_e_r on cv_e_r.event_cd = ec.event_cd)	; for mapped procedures
+	, (left join prsnl p_cv_e_r on p_cv_e_r.person_id = cv_e_r.updt_id)	; mapped procedures last updater
+	, (left join code_value m_cv on m_cv.code_value = cv_e_r.parent_cd)	; mapped code value (DTA or Micro Report)
+	, (left join code_value_set m_cvs on m_cvs.code_set = m_cv.code_set)	; mapped code value's code set
+	, (left join order_catalog m_oc on m_oc.catalog_cd = cv_e_r.parent_cd)	; mapped orderable
+	, (left join (select ce.event_cd, result_count = count(*)	; patient results
+	from clinical_event ce
+	where ce.view_level = 1	; only count results that are visible to clinicians
+    and	ce.updt_dt_tm > cnvtdatetime("01-JAN-2024 00:00")	; enter min date here
+    and	ce.updt_dt_tm < cnvtdatetime("01-JAN-2025 00:00")	; enter max date here
+	group by ce.event_cd
+	) ce_count on ce_count.event_cd = ec.event_cd)
+	, (left join code_value_outbound cvo_oc on cvo_oc.alias = cva.alias	; corresponding orderable outbound alias
+	and cvo_oc.code_set = 200
+	)
+	, (left join order_catalog oc on oc.catalog_cd = cvo_oc.code_value)	; corresponding outbound alias orderable to result inbound alias
+	, (left join (select distinct cv_e_r.event_cd
+	, mapped_procedures = listagg(m_cv.description, "; ") over (partition by cv_e_r.event_cd order by m_cv.description)
+	, mapped_procedure_codes = listagg(cv_e_r.parent_cd, "; ") over (partition by cv_e_r.event_cd order by m_cv.description)
+	from code_value_event_r cv_e_r
+	, code_value m_cv
+	where m_cv.code_value = cv_e_r.parent_cd
+	with sqltype("f8","char1000","char100")
+	)  m_cv_procs on m_cv_procs.event_cd = ec.event_cd)
 
-plan	ce
-where	ce.view_level = 1	; only show events visible to endusers
-and	ce.valid_until_dt_tm > sysdate	; only show events that are still 'valid' (modified results show only the latest value as 'valid')
-;and	ce.event_cd = 12345678	; enter event code here…
-; TIMEFRAME OF RESULTS FILTER
-and	ce.updt_dt_tm > cnvtdatetime("01-JAN-2024 00:00")	; enter min date here
-and	ce.updt_dt_tm < cnvtdatetime("01-JAN-2025 00:00")	; enter max date here
-; ALL ANATOMICAL PATHOLOGY EVENTS
-and	ce.event_cd in (
+plan	esc_g2	; second level grouper canon
+join	es_g2	; second level grouper
+;where	es_g2.event_set_cd_disp = "Medical Imaging*"	; second level grouper name
+;where	es_g2.event_set_cd_disp = "Pathology Documents"	; second level grouper name
+where	es_g2.event_set_cd_disp = "Pathology Results"	; second level grouper name
+;where	es_g2.event_set_cd_disp in ("Intake","Output")	; second level grouper name
+;where	es_g2.event_set_cd_disp = "ClinicalDoc"
+join	esc_g	; grouper canon
+join	es_g	; grouper
+;where	es_g.event_set_cd_disp = "OTHER RESULTS"	; grouper name
+;where	es_g.event_set_cd_disp in ("Medications", "Immunizations", "Obsolete Vaccines", "Diluent")	; grouper name
+join	esc_es	; primitive event set canon
+join	p_esc_es	; primitive event set canon last updater (for event set sequence)
+join	ese_es	; primitive event set explode
+join	es_es	; primitive event set
+join	p_es_es	; primitive event set last updater
+join	ec	; event code
+where	ec.event_cd IN(
     221662617
     , 221661895
     , 221669531
@@ -105,29 +333,81 @@ and	ce.event_cd in (
     , 113649630
     , 89138849
     , 106363433
+
 )
-;	from code_value cv
-;	where cv.code_set = 72	; 'Event Code'
-;	and cv.data_status_cd = 39	; 'Unauth' from code set 8
-;	and cv.data_status_prsnl_id = 11599692	; only show AoFs from 'CONTRIBUTOR_SYSTEM, WH_RAD'
-;	and cv.data_status_prsnl_id = 11599690	; only show AoFs from 'CONTRIBUTOR_SYSTEM, WH_LAB'
+;where	ec.code_status_cd = 188	; Active
+;and	ec.event_set_name in (null, "", " ")	; no parents
+;and	ec.event_set_name not in (null, "", " ") and	; non-existent parents
+;	ec.event_set_name not in (select event_set_name
+;	from v500_event_set_code
 ;	)
-;and	ce.catalog_cd in ()	; enter associated orderables here
-;and	ce.event_end_dt_tm between cnvtdatetime("01-JAN-2024") and cnvtdatetime("15-JUL-2024")	; enter event dates here
-join	p_ce
-join	p
-join	ea_URN
-;where	ea_URN.alias = "123456"	; enter URN here…
-join	ea_visit
-;where	ea_visit.alias = "IPE123456"	; enter visit number here
-join	ce_b
+;and	ec.event_cd in (	; non-primitive parents (this clause is not correct, but is currently not needed)
+;	select ec.event_cd
+;	from v500_event_set_code  es_g
+;	, v500_event_set_canon  esc_es
+;	, v500_event_code  ec
+;	where esc_es.parent_event_set_cd = es_g.event_set_cd
+;	and cnvtupper(ec.event_set_name) = cnvtupper(es_g.event_set_name)
+;	)
+;where	exists (select 1
+;	from v500_event_set_code es, v500_event_set_explode ese
+;	where es.event_set_name = "ALL SPECIALTY SECTIONS"
+;	and ese.event_set_cd = es.event_set_cd
+;	and ese.event_cd = ec.event_cd
+;	)
+;and	not exists (select 1
+;	from v500_event_set_code es, v500_event_set_explode ese
+;	where es.event_set_name = "ALL RESULT SECTIONS"
+;	and ese.event_set_cd = es.event_set_cd
+;	and ese.event_cd = ec.event_cd
+;	)
+join	p_ec	; event code last updater
+join	cv	; event code's code value
+;where	cv.data_status_prsnl_id in (11599692, 15529933)	; only show AoFs from 'CONTRIBUTOR_SYSTEM, WH_RAD & Contributor_system, BMM_RAD
+;where	cv.data_status_prsnl_id in (	; only show AoFs from these contributor_sysetm users
+;	11599690	;CONTRIBUTOR_SYSTEM, WH_LAB
+;	, 15529906	;Contributor_system, BMM_LAB
+;	, 15006980	;CONTRIBUTOR_SYSTEM,  WH_SLIS (B2031)
+;	)
+join	p_cv_data_stat	; event code's code value status last updater
+join	cva	; code value alias
+;where	cva.contributor_source_cd = 10630393	; code value for 'WH_LOCAL' contributor source
+join	p_cva	; code value alias last updater
+join	cva_acl	; code value alias
+join	p_cva_acl	; code value alias last updater
+join	cva_path	; code value alias
+join	p_cva_path	; code value alias last updater
+join	cvo	; code value outbound
+;where	cvo.contributor_source_cd = 10630393	; code value for 'WH_LOCAL' contributor source
+join	p_cvo	; code value outbound last updater
+join	ot	; for tasks mapped using the order_task table
+join	p_ot	; task last updater. This may be the mapping update or may be a change to the task without change to the mapping.
+join	dta	; for DTAs mapped using the discrete_task_assay table
+join	p_dta	; DTA last updater. This may be the mapping update or may be a change to the DTA without change to the mapping.
+join	cv_e_r	; for mapped procedures
+join	p_cv_e_r	; mapped procedures last updater
+join	m_cv	; mapped code value (DTA or Micro Report)
+join	m_cvs	; mapped code value's code set
+join	m_oc	; mapped orderable
+join	ce_count	; patient results
+join	cvo_oc	; corresponding orderable outbound alias
+join	oc	; corresponding orderable
+join	m_cv_procs
 
 order by
-	ce.event_end_dt_tm
-	, ce.event_id
-	, ce.valid_from_dt_tm
-	, uar_get_code_display(ce.event_cd)
-	, ce.clinical_event_id	; returns multiple rows if an event has been updated
+;	esc_g2.event_set_collating_seq
+	esc_g.event_set_collating_seq
+	, es_g.event_set_cd_disp
+	, esc_es.event_set_collating_seq
+;	, esc_es.event_set_cd	; sorts event sets that have the same sequence. This is common in 'OTHER RESULTS' folder
+;	, cv.active_ind desc	; ensures active event codes appear on top of inactive event codes
+	, ec.event_cd
+;	, ec.event_cd_disp
+	, build(cva.contributor_source_cd, substring(1,40,cva.alias))	; substring() required due to 255 character length field.
+	, build(cva_acl.contributor_source_cd, substring(1,40,cva_acl.alias))	; substring() required due to 255 character length field.
+	, build(cva_path.contributor_source_cd, substring(1,60,cva_path.alias))	; substring() required due to 255 character length field. S-LIS have some very long aliases…
+	, build(cvo.contributor_source_cd, substring(1,40,cvo.alias))	; substring() required due to 255 character length field.
+	, mapped_procedure_cd
 	, 0
 
-with	time = 60
+with	time = 420
