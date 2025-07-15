@@ -507,8 +507,11 @@
 		    ,format(cnvtdatetime(curdate,curtime),"dd/mm/yyyy hh:mm;;d")
 		    ,"</span> </div> </div> </div>"
 		    ,"</div> <div class=print-title> <h2> Cancer MDM Worklist</h2> </div>"
+            ; ADD THE COPY BUTTON HERE
+            , "<button id=""copyBtn"">Copy Table for Excel</button>"
+            , "<br><br>"
 		; TABLE OF PATIENT DATA
-			,"<table>"
+			,"<table id=""patientTable"" border=""1"">"
 			,"<tr>"
 			,"<th>URN</th>"
             ,"<th>Patient</th>"
@@ -526,6 +529,35 @@
 		    ,patienthtml
 		;AFTER PATIENT DATA IS SUBSTITUTED
 			,"</table>"
+            ; --- START OF JAVASCRIPT TO EMBED ---
+            , "<script>"
+            , "const copyBtn = document.getElementById('copyBtn');"
+            , "const patientTable = document.getElementById('patientTable');"
+            , "copyBtn.addEventListener('click', () => {"
+            , "    let tableData = '';"
+            , "    const rows = patientTable.querySelectorAll('tr');"
+            , "    rows.forEach(row => {"
+            , "        const cells = row.querySelectorAll('th, td');"
+            , "        const rowData = [];"
+            , "        cells.forEach(cell => {"
+            , "            let cellText = cell.textContent.trim().replace(/\\s\\s+/g, ' ').replace(/\\n/g, ' ');"
+            , "            rowData.push(cellText);"
+            , "        });"
+            , "        tableData += rowData.join('\\t') + '\\n';"
+            , "    });"
+            , "    const textArea = document.createElement('textarea');"
+            , "    textArea.value = tableData;"
+            , "    document.body.appendChild(textArea);"
+            , "    textArea.select();"
+            , "    try {"
+            , "        document.execCommand('copy');"
+            , "    } catch (err) {"
+            , "        console.error('Failed to copy text: ', err);"
+            , "    }"
+            , "    document.body.removeChild(textArea);"
+            , "});"
+            , "</script>"
+            ; --- END OF JAVASCRIPT ---
 			,"</body>"
 			,"</html>"
 	)
