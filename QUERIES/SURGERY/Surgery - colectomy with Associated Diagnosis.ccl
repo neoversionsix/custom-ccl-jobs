@@ -1,30 +1,13 @@
 SELECT DISTINCT
 /*
-I am currently working in the Anaesthetics Department and completing an ethics-approved audit on adult patients awaiting emergency surgery for hip fractures. Previously, this data could be extracted from iPM with help from the Performance Unit. However, with the move towards EMR, this data set can no longer be extracted from iPM.
-I would like to request someone to help me with extracting data from EMR to complete this audit.
-Could I please have someone to help me with the following to include in the data set?
-- A record of adult patients over the age of 18 who underwent emergency hip fracture surgery from 7/8/23 to 7/11/23. I have a set of Hip Fracture Codes to link operation episodes for these patients.
-- From these patients, the anaesthetic start time would need to be recorded. (Usually in the intraop record or anaesthetic record)
-- Fasting food and Fasting fluid start times would need to be recorded also (this can be found in the periop passport to surgery documentation under Interactive View and Fluid Balance tab on EMR).
-Could a member of the EMR staff please assist me with this data extraction? I am happy to be contacted to discuss further.
-Kind regards,
-Paolo
-
-Also, with regards to the number, that’s definitely far less patients that I had anticipated given that I had previously done this audit over the same timeframe earlier in the year.
-I looked through the data surgery catalogue. Could I please ask for this code to be included as part of the surgeries filtered?
-•	Hemiarthroplasty hip
-•	Hemiarthroplasty of hip
-•	Hemiarthroplasty of hip by anterior approach
-•	Prosthetic hemiarthroplasty of hip
-•	Internal fixation using intramedullary nail
-•	Intramedullary nailing of femur
-
+for SR 928303
  */
-	  PATIENT = P.NAME_FULL_FORMATTED
-    , PATIENT_URN = P_A.ALIAS
+
+    PATIENT_URN = P_A.ALIAS
+    ;,PATIENT = P.NAME_FULL_FORMATTED
     , D.DIAGNOSIS_DISPLAY
 	, UAR_GET_CODE_DISPLAY(D.DIAG_TYPE_CD)
-	, GENDER = UAR_GET_CODE_DISPLAY(P.SEX_CD)
+	, SEX = UAR_GET_CODE_DISPLAY(P.SEX_CD)
 	, AGE = CNVTAGE(P.BIRTH_DT_TM)
 	, ENCOUNTER_NO = E_A.ALIAS
     , ENCOUNTER_LOC = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
@@ -126,7 +109,7 @@ JOIN P;PERSON
     ; Remove Ineffective Patients
     AND P.END_EFFECTIVE_DT_TM > SYSDATE
     ; AGE FILTER OVER 18 YEARS OLD
-    AND P.BIRTH_DT_TM < CNVTLOOKBEHIND("18, Y")
+    ;AND P.BIRTH_DT_TM < CNVTLOOKBEHIND("18, Y")
 
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
     WHERE P_A.PERSON_ID = E.PERSON_ID
