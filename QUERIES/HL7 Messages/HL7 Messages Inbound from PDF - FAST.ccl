@@ -1,0 +1,32 @@
+SELECT
+	CREATED = FORMAT(E.CREATE_DT_TM, "YYYY-MM-DD HH:MM:SS")
+	, E.ERROR_STAT
+	, MESSAGE_TYPE = E.MSH_MSG_TYPE
+	, PATIENT_URN = E.PERSON_ALIAS
+	, ALIAS = E.HL7_ENTITY_CODE ; Name of the path test
+	, PATIENT = E.NAME_FULL_FORMATTED
+	, E.ENCNTR_ID
+	, E.PERSON_ID
+	, E.ENCNTR_ALIAS
+	, E.ENTITY_NAME
+	, E.ERROR_TEXT
+
+FROM
+	ESI_LOG   E
+
+WHERE
+	E.CREATE_DT_TM > cnvtlookbehind("24,H")
+	AND E.CONTRIBUTOR_SYSTEM_CD =    87348946.00 ; WH_GEN_PDF
+	; AND E.ERROR_TEXT = "*person*" ; Filter for messages with person errors?
+	; Filter for messages in the last hour only
+	; AND E.PERSON_ALIAS = "*12345*" ; ENTER URN HERE!
+	; AND E.CREATE_DT_TM > cnvtdatetime("26-NOV-2024 00:00") ; Messages created after
+	; AND E.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before change
+	; AND E.ERROR_STAT = "*FAILURE*" ; Only failed messages
+	; AND E.HL7_ENTITY_CODE = "*HISTO*" ; Only Histology tests
+
+ORDER BY
+	E.CREATE_DT_TM   DESC
+	, E.MSGID   DESC
+
+WITH FORMAT, SEPERATOR = " ", TIME = 10
