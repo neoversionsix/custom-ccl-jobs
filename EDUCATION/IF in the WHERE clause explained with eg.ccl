@@ -1,0 +1,40 @@
+Here is an example that uses an IF statement in the where clause:
+
+drop program BGR_TEST_IF_IN_WHERE go
+create program BGR_TEST_IF_IN_WHERE
+
+prompt
+
+"Output to File/Printer/MINE" = "MINE"
+, "Enter date in MMDDYY format" = CURDATE
+
+SELECT INTO $1
+P.UPDT_DT_TM
+FROM
+PERSON P
+WHERE P.UPDT_DT_TM >=
+
+IF($2 = CURDATE) CNVTDATETIME(CURDATE,0)
+ELSE CNVTDATETIME(CNVTDATE($2),0)
+ENDIF
+
+WITH MAXREC = 100 , NOCOUNTER, SEPARATOR=" ", FORMAT
+end
+go
+
+Note you CAN NOT do something like:
+
+SELECT INTO $1
+P.UPDT_DT_TM
+FROM
+PERSON P
+IF($2 = "A")
+WHERE P.UPDT_DT_TM >= CNVTDATETIME(CURDATE,0)
+ELSE
+
+WHERE P.UPDT_DT_TM <= CNVTDATETIME(CURDATE,0)<br/>ENDIF
+
+That type of logic would require using the Select IF functionality.
+
+Bob Ross
+Discern Operations Team Lead
