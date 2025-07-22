@@ -1,0 +1,14 @@
+SELECT
+    CV1.CODE_SET
+    , CV1.DISPLAY
+
+FROM
+    CODE_VALUE   CV1
+
+WHERE CV1.CODE_SET = 220
+    and cv1.CDF_MEANING = "FACILITY"
+    and cv1.ACTIVE_IND = 1
+    and cv1.BEGIN_EFFECTIVE_DT_TM < sysdate
+    and cv1.END_EFFECTIVE_DT_TM > sysdate
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10
