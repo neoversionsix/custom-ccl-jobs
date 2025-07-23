@@ -183,7 +183,12 @@ JOIN C
 
 JOIN	ELH ; ENCNTR_LOC_HIST
     WHERE ELH.ENCNTR_ID = OUTERJOIN(E.ENCNTR_ID) ; join on encounter
-    AND ELH.LOC_FACILITY_CD IN ($FACILITY_SEL)
+    AND ELH.LOC_FACILITY_CD IN
+    (
+        IF ($FACILITY_SEL=0) 5
+        ELSE $FACILITY_SEL
+        ENDIF
+    )
     AND ELH.ACTIVE_IND = OUTERJOIN(1)	; remove inactive rows
     AND ELH.BEG_EFFECTIVE_DT_TM <  OUTERJOIN(CNVTDATETIME($START_DATE_TIME)); location began before administered
     AND ELH.END_EFFECTIVE_DT_TM >  OUTERJOIN(CNVTDATETIME($START_DATE_TIME)); location ended after administered

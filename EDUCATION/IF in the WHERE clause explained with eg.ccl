@@ -8,6 +8,12 @@ prompt
 "Output to File/Printer/MINE" = "MINE"
 , "Enter date in MMDDYY format" = CURDATE
 
+
+
+
+
+
+
 SELECT INTO $1
 P.UPDT_DT_TM
 FROM
@@ -21,6 +27,11 @@ ENDIF
 WITH MAXREC = 100 , NOCOUNTER, SEPARATOR=" ", FORMAT
 end
 go
+
+
+
+
+
 
 Note you CAN NOT do something like:
 
