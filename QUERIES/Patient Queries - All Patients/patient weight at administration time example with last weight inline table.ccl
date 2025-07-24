@@ -1,8 +1,7 @@
 SELECT DISTINCT
 	O_I.ORDER_ID
-	, WEIGHT = ce.RESULT_VAL
-	, WEIGHT_PERFORMED = FORMAT(ce.PERFORMED_DT_TM, "DD-MMM-YYYY HH:MM")
-	, WEIGHT_RANK = DENSE_RANK() OVER(PARTITION BY O_D.order_id ORDER BY ce.PERFORMED_DT_TM desc)
+	, WEIGHT = I.WEIGHT
+	, WEIGHT_PERFORMED = FORMAT(I.WEIGHT_PERFORMED, "DD-MMM-YYYY HH:MM")
 	, O.ORIG_ORDER_DT_TM "dd/mmm/yyyy hh:mm"
 	, M_A_E.BEG_DT_TM "dd/mmm/yyyy hh:mm"
 	, M_A_E.END_DT_TM "dd/mmm/yyyy hh:mm"
@@ -28,7 +27,21 @@ FROM
     , PRSNL                 PR
     , PERSON_ALIAS          P_A
     , ENCNTR_ALIAS          E_A
-    , CLINICAL_EVENT		CE
+	, (
+		(SELECT
+			  X.PERSON_ID
+			, WEIGHT = X.RESULT_VAL
+			;, WEIGHT_PERFORMED = FORMAT(ce.PERFORMED_DT_TM, "DD-MMM-YYYY HH:MM")
+			, WEIGHT_PERFORMED = X.PERFORMED_DT_TM
+			; Below - order by performed date for each person. 1 is most recent
+			, WEIGHT_RANK = DENSE_RANK() OVER(PARTITION BY x.person_id ORDER BY x.PERFORMED_DT_TM desc)
+		FROM
+			CLINICAL_EVENT   X
+		WHERE
+			X.EVENT_CD = OUTERJOIN(7334438) ; patient weight
+			AND X.UPDT_DT_TM >= CNVTDATETIME("10-JUL-2025") ; was measured after the administration date
+		WITH SQLTYPE("F8","VC","DQ8", "F8"))   I
+	)
 
 PLAN O_D ; ORDER_DETAIL
 	 WHERE
@@ -39,6 +52,7 @@ PLAN O_D ; ORDER_DETAIL
 JOIN O_A ; ORDER_ACTION
     WHERE O_A.ORDER_ID = O_D.ORDER_ID
     AND O_A.ACTION_TYPE_CD = 2534.00	;Order
+	AND O_A.ACTION_DT_TM >= CNVTDATETIME("10-JUL-2025")
     ;AND O_A.ACTION_SEQUENCE = 1 ; get first action sequence only
     ;AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
 
@@ -62,6 +76,8 @@ JOIN E ; ENCOUNTER
 
 JOIN M_A_E ; MED_ADMIN_EVENT
 	WHERE M_A_E.ORDER_ID =O_D.ORDER_ID
+	AND M_A_E.BEG_DT_TM >= CNVTDATETIME("10-JUL-2025")
+	;AND M_A_E.PERFORMED_DT_TM >= CNVTDATETIME("10-JUL-2025")
 
 /* Patient Identifiers such as URN Medicare no etc */
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
@@ -90,15 +106,12 @@ JOIN PR;PRSNL
     WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID);X.UPDT_ID
     AND PR.ACTIVE_IND = OUTERJOIN(1)
 
-JOIN CE
-	WHERE CE.ENCNTR_ID = OUTERJOIN(O.ENCNTR_ID)
-	AND CE.EVENT_CD = OUTERJOIN(7334438) ; patient weigt
-	AND CE.PERFORMED_DT_TM < OUTERJOIN(M_A_E.BEG_DT_TM) ; weight measured before the med was administered
-	;AND CE.PERFORMED_DT_TM  > OUTERJOIN(DATETIMEADD(M_A_E.BEG_DT_TM, -1)) ; weight measured at most 1 day less than the med was administered
+JOIN I
+	WHERE I.PERSON_ID = OUTERJOIN(E.PERSON_ID)
+	AND I.WEIGHT_RANK = OUTERJOIN(1) ; get the most recent weight for the patient
 
 ORDER BY
-	O_D.ORDER_ID
-	, ce.PERFORMED_DT_TM desc
+	I.PERSON_ID
 
 WITH TIME = 90,
 	NOCOUNTER,
