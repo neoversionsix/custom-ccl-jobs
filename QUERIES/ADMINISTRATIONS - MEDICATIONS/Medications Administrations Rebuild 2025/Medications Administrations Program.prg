@@ -8,16 +8,29 @@ Use: Medication Administrations (including surgery)
  */
 
 prompt
-	"Output to File/Printer/MINE" = "MINE"               ;* Enter or select the printer or file name to send this report to.
+	"Output to File/Printer/MINE" = "MINE"      ;* Enter or select the printer or file name to send this report to.
 	, "Administered After..." = "SYSDATE"
 	, "Administered Before..." = "SYSDATE"
-	, "Primary Name Search (REQUIRED)" = "PARACETAMOL"
 	, "FACILITY SELECTION" = 0
+	, "Medication Primary Multi Selector" = 0
 
-with OUTDEV, START_DATE_TIME, END_DATE_TIME, PRIMARY, FACILITY_SEL
+with OUTDEV, START_DATE_TIME, END_DATE_TIME, FACILITY_SEL, PRIMARY
 
-DECLARE PRIMARY_VAR = VC WITH NOCONSTANT(" "),PROTECT
+;DECLARE PRIMARY_VAR = VC WITH NOCONSTANT(" "),PROTECT
 ;DECLARE URN_VAR = VC WITH NOCONSTANT(" "),PROTECT
+
+DECLARE MEDS_OPERATOR_VAR = C2 WITH NOCONSTANT(" "),PROTECT
+DECLARE FACS_OPERATOR_VAR = C2 WITH NOCONSTANT(" "),PROTECT
+
+
+; This is to set the operator for the facility depending on the user selection
+IF(SUBSTRING(1,1,REFLECT(PARAMETER(PARAMETER2($FACILITY_SEL),0))) = "L")
+	SET FACS_OPERATOR_VAR = "IN"
+ELSEIF(PARAMETER(PARAMETER2($FACILITY_SEL),1)= 0.0)
+	SET FACS_OPERATOR_VAR = "!="
+ELSE
+	SET FACS_OPERATOR_VAR = "="
+ENDIF
 
 ; SET URN_VAR = $URN
 ; IF (URN_VAR = "")
@@ -26,17 +39,16 @@ DECLARE PRIMARY_VAR = VC WITH NOCONSTANT(" "),PROTECT
 ; 	SET URN_VAR = CONCAT("*", URN_VAR, "*")
 ; ENDIF
 
-SET PRIMARY_VAR = $PRIMARY
-IF (PRIMARY_VAR = "")
-	SET PRIMARY_VAR = "*"
-	ELSE
-	SET PRIMARY_VAR = CONCAT("*", PRIMARY_VAR, "*")
-ENDIF
+;SET PRIMARY_VAR = $PRIMARY
+;IF (PRIMARY_VAR = "")
+;	SET PRIMARY_VAR = "*"
+;	ELSE
+;	SET PRIMARY_VAR = CONCAT("*", PRIMARY_VAR, "*")
+;ENDIF
 
 SELECT DISTINCT INTO $OUTDEV
 	PATIENT = P.NAME_FULL_FORMATTED
-	, FACILITY = $FACILITY_SEL
-
+	, FACILITY_SELECTED = $FACILITY_SEL
 	, PATIENT_URN = P_A.ALIAS
 	, ELH_FACILITY = UAR_GET_CODE_DISPLAY(ELH.LOC_FACILITY_CD)
 	, ENCOUNTER_ = E_A.ALIAS
@@ -114,15 +126,16 @@ JOIN O ; ORDERS
     AND O.CATALOG_TYPE_CD = 2516.00;
     AND O.ACTIVE_IND = 1
     ; Primary name filter
-    AND O.CATALOG_CD IN /* Given Orderables below */
-        (
-            SELECT
-                O.CATALOG_CD
-            FROM
-                ORDER_CATALOG   O
-            WHERE
-                CNVTUPPER(O.PRIMARY_MNEMONIC) = PATSTRING(PRIMARY_VAR)
-        )
+    AND O.CATALOG_CD IN ($PRIMARY)
+    /* Given Orderables below */
+;        (
+;            SELECT
+;                O.CATALOG_CD
+;            FROM
+;                ORDER_CATALOG   O
+;            WHERE
+;                CNVTUPPER(O.PRIMARY_MNEMONIC) = PATSTRING(PRIMARY_VAR)
+;        )
 
 JOIN E ; ENCOUNTER
 	WHERE E.ENCNTR_ID = O.ENCNTR_ID
@@ -183,12 +196,7 @@ JOIN C
 
 JOIN	ELH ; ENCNTR_LOC_HIST
     WHERE ELH.ENCNTR_ID = OUTERJOIN(E.ENCNTR_ID) ; join on encounter
-    AND ELH.LOC_FACILITY_CD IN
-    (
-        IF ($FACILITY_SEL=0) 5
-        ELSE $FACILITY_SEL
-        ENDIF
-    )
+    AND ELH.LOC_FACILITY_CD IN ($FACILITY_SEL)
     AND ELH.ACTIVE_IND = OUTERJOIN(1)	; remove inactive rows
     AND ELH.BEG_EFFECTIVE_DT_TM <  OUTERJOIN(CNVTDATETIME($START_DATE_TIME)); location began before administered
     AND ELH.END_EFFECTIVE_DT_TM >  OUTERJOIN(CNVTDATETIME($START_DATE_TIME)); location ended after administered
