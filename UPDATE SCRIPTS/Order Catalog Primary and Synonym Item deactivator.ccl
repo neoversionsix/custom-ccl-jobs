@@ -1,4 +1,4 @@
-; CATALOG CD DEACTIVATOR SCRIPT---------------------------------------------------------
+; CATALOG CD DEACTIVATOR SCRIPT------------------------------------------
 ; DEACTIVATE PRIMARY IN ORDER_CATALOG TABLE
 UPDATE INTO
     ORDER_CATALOG   OC
@@ -24,7 +24,7 @@ SET
 WHERE
     OCS.CATALOG_CD = _CATALOG_CD_ ; For this catalog code only
     AND OCS.ACTIVE_IND = 1 ; Only change active items
-; END OF UPDATE SCRIPT ------------------------------------------------------------
+; END OF UPDATE SCRIPT SECTION----------------------------------------
 
 
 

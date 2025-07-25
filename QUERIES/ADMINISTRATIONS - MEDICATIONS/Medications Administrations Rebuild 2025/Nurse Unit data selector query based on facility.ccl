@@ -1,0 +1,8 @@
+select n.location_cd, n.loc_Facility_cd
+
+    from nurse_unit n
+    where n.loc_facility_cd = $Facility
+        and n.active_ind = 1
+        and n.end_effective_dt_tm > sysdate
+
+with time = 120, uar_code(d)

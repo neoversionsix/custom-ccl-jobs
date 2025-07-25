@@ -9,11 +9,6 @@ prompt
 , "Enter date in MMDDYY format" = CURDATE
 
 
-
-
-
-
-
 SELECT INTO $1
 P.UPDT_DT_TM
 FROM
