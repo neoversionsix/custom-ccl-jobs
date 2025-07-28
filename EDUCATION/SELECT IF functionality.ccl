@@ -1,0 +1,101 @@
+The SELECT IF command is used to create a SELECT command that flexes based on an external condition at run time. For example, if you want to flex the order in which the information is sorted when the program runs, you can use the SELECT IF command.
+
+Syntax
+SELECT
+	IF	(condition)
+		{select_clause}
+	[{ELSEIF (condition)
+		{select_clause}}
+	ELSE
+		{select_clause}]
+	ENDIF
+[{select_clause}]
+For details on the DISTINCT, INTO, FROM, WHERE, PLAN, ORDER, and WITH clauses, see the description of the basic SELECT command. The metasymbols specific to the SELECT IF are described below.
+
+Metasymbol
+In addition to the metasymbols described for the basic SELECT command, the SELECT IF syntax includes the select_clause and condition metasymbols, described below.
+
+condition
+
+A qualifying statement. Relational operators are used to define the condition. Conditions can be combined using the AND, OR, NOT, and BETWEEN qualifiers. When the condition is true, the select_clauses specified for the condition override the default select_clauses specified after the ENDIF.
+
+select_clause
+
+The portion of the SELECT to be executed if the condition established in the IF/ELSEIF/ELSE clause is met. If none of the conditions are met, the select_clauses following the ENDIF are used unless an ELSE is specified. A select_clause can include the clauses listed below.
+
+DISTINCT
+FROM
+INTO
+ORDER
+PLAN JOIN
+REPORTWRITER (head, detail, foot)
+WHERE
+WITH
+Examples
+In the below program, if the condition ($prompt2 = 1) is true, the SELECT returns rows where the P.NAME_FULL_FORMATTED begins with "A". Those rows are sorted by P.NAME_FULL_FORMATTED. If the condition ($prompt2 = 2) is true, the SELECT returns rows where the P.NAME_FULL_FORMATTED begins with "B". Those rows are sorted by P.PERSON_ID. If $prompt2 is not equal to 1 or 2, the SELECT returns rows where the P.PERSON_ID is greater than 100000. Those rows are not sorted.
+
+DROP PROGRAM TEST GO
+CREATE PROGRAM TEST
+
+PROMPT "ENTER AN OUTPUT DEVICE: " = MINE
+      ,"ENTER OPTION: " = 0
+WITH OUTDEV, PROMPT2
+SELECT
+IF	($prompt2 = 1)
+	WHERE P.NAME_FULL_FORMATTED = "A*"
+	ORDER P.NAME_FULL_FORMATTED
+	WITH COUNTER
+ELSEIF ($prompt2 = 2)
+	WHERE P.NAME_FULL_FORMATTED = "B*"
+	ORDER P.PERSON_ID
+	WITH NOCOUNTER
+ENDIF
+INTO $OUTDEV
+	P.NAME_FULL_FORMATTED, P.PERSON_ID
+FROM	PERSON P
+WHERE	P.PERSON_ID > 100000
+
+HEAD REPORT
+	COL 5, "THIS IS THE HEAD OF THE REPORT", ROW+2
+DETAIL
+	COL 5, "NAME: ", P.NAME_FULL_FORMATTED
+	ROW + 1, COL 5, " PERSON_ID: ", P.PERSON_ID, ROW+1
+FOOT REPORT
+	COL 5, "THIS IS THE FOOT OF THE REPORT"
+WITH NOCOUNTER, MAXREC = 1000
+
+END
+GO
+The following example flexes the fields that are selected, the tables that are read, and the qualifications that are used based on the value entered at a prompt.
+
+drop program select_if_fields_from_plan go
+create program select_if_fields_from_plan
+
+prompt
+      "Output to File/Printer/MINE" = "MINE"
+      , "Enter Encounter or Orders" = "ENCOUNTER"
+
+with OUTDEV, tables
+
+
+select if(cnvtupper($TABLES) = "ENCOUNTER")
+        p.person_id, e_o_id = e.encntr_id, type = uar_get_code_display(e.encntr_type_class_cd)
+        from person p, encounter e
+        plan p where p.updt_dt_tm between cnvtlookbehind("7,d") and cnvtdatetime(curdate,curtime3)
+        join e where p.person_id = e.person_id
+  elseif(cnvtupper($TABLES) = "ORDERS")
+        p.person_id, e_o_id = o.order_id, type = uar_get_code_display(o.catalog_cd)
+        from person  p, orders o
+        plan p where p.updt_dt_tm between cnvtlookbehind("7,d") and cnvtdatetime(curdate,curtime3)
+        join o where o.person_id = p.person_id
+  endif
+
+into $outdev
+      message = "Encounter or Orders not entered at second prompt"
+from dummyt
+
+with maxrec = 100 , nocounter, separator=" ", format
+
+
+end
+go
