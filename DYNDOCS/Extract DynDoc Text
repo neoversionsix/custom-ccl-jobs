@@ -1,0 +1,200 @@
+drop program wh_sandbox_program go
+create program wh_sandbox_program
+
+prompt 
+	"Output to File/Printer/MINE" = "MINE"  
+
+with OUTDEV
+
+; code to extract freetext APMS dyndoc notes and convert the HTML to ascii
+declare cnt = i4
+declare cnt2 = i4
+declare num = i4
+declare i = i4
+DECLARE stripHTML(blobIn=vc) = vc
+
+free record data
+record data (
+	1 referral_cnt = i4
+	1 referrals[*]
+		2 PT_URN = vc
+		2 Facility = vc
+		2 Nurse_unit = vc
+		2 med_service = vc
+		2 reason_for_visit = vc
+		2 display_line = vc
+		2 latest_comm_type = vc
+		2 order_Status = vc
+		2 order_date = vc
+		2 visits[*]
+			3 event_id = f8
+			3 event_title_text = vc
+			3 blob_text = vc
+			3 blob_date = vc
+)
+SELECT into "nl:"
+FROM
+	ORDERS   O
+	, encounter e
+	, person p
+	, person_alias pa
+	, clinical_Event ce
+
+
+plan o where o.catalog_cd = 93339229.0
+	and o.orig_order_Dt_Tm > cnvtlookbehind("1,Y")
+join e where e.encntr_id = o.encntr_id
+	and e.loc_facility_cd != 4038465.00
+join p where p.person_id = e.person_id
+	and p.name_last_key != "TESTWHS"
+join pa where pa.person_id = p.person_id
+	and pa.person_alias_type_cd = 10.0
+	and pa.alias_pool_cd =     9569589.00
+join ce where ce.encntr_id = e.encntr_id
+	and ce.result_status_cd =    25.00
+	and ce.person_id = e.person_id
+	and ce.entry_mode_cd =    26090095.00
+	and ce.event_title_text in ("*APMS*", "*apms*", "*Apms*")
+	and ce.authentic_flag = 1
+	and ce.valid_until_dt_tm > sysdate
+	
+
+head report
+	cnt = 0
+
+head o.order_id
+	cnt = cnt + 1
+	call alterlist(data->referrals, cnt)
+	data->referrals[cnt]->PT_URN = pa.alias
+	data->referrals[cnt]->facility = uar_get_code_display(e.loc_facility_cd)
+	data->referrals[cnt]->nurse_unit = uar_get_code_Display(e.loc_nurse_unit_cd)
+	data->referrals[cnt]->med_service = uar_get_code_Display(e.med_service_cd)
+	data->referrals[cnt]->reason_for_visit = e.reason_For_visit
+	data->referrals[cnt]->DISPLAY_LINE= o.CLINICAL_DISPLAY_LINE
+	data->referrals[cnt]->latest_comm_type =  UAR_GET_CODE_DISPLAY(O.LATEST_COMMUNICATION_TYPE_CD)
+	data->referrals[cnt]->order_status = UAR_GET_CODE_DISPLAY(O.ORDER_STATUS_CD)
+	data->referrals[cnt]->order_Date = format(o.ORIG_ORDER_DT_TM, ";;Q")
+	cnt2 = 0
+	head ce.event_id
+		cnt2 =cnt2 + 1
+		call alterlist(data->referrals[cnt]->visits, cnt2)
+		data->referrals[cnt]->visits[cnt2].event_id = ce.event_id
+		data->referrals[cnt]->visits[cnt2].event_title_text = ce.event_title_text
+foot report
+	call alterlist(data->referrals, cnt)
+	data->referral_cnt = cnt
+with nocounter, time=500, maxrec=10000
+
+declare good_blob = vc
+declare print_blob = vc
+declare outbuf = c32768
+declare blobout = vc
+
+declare retlen = i4
+declare offset = i4
+declare newsize = i4
+declare finlen = i4
+declare xlen=i4
+
+for(i = 1 to size(data->referrals, 5))
+	select into "nl:"
+	from clinical_Event ce
+	, clinical_event ce2
+	, ce_blob_result cbr
+	,ce_blob cb
+	
+	plan ce where expand(num, 1, size(data->referrals[i]->visits, 5), ce.event_id, data->referrals[i]->visits[num].event_id)
+	join ce2 where ce2.parent_Event_id = ce.event_id
+		and ce2.result_Status_cd = 25.0
+		and ce2.valid_until_dt_tm > sysdate
+	join cbr where cbr.event_id =ce2.event_id
+	join cb where cb.event_id = cbr.event_id
+		and cb.VALID_FROM_DT_TM < cnvtdatetime(curdate,curtime3)
+		and cb.VALID_UNTIL_DT_TM > cnvtdatetime(curdate,curtime3)
+	
+	order by
+		cb.event_id,
+		cb.blob_seq_num
+	
+	head cb.event_id
+		data->referrals[i]->visits[num].blob_date = format(cb.valid_From_dt_tm, ";;Q")
+		for (x = 1 to (cb.blob_length/32768) )
+			blobout = notrim(concat(notrim(blobout),notrim(fillstring(32768, " "))))
+		endfor
+		finlen = mod(cb.blob_length,32768)
+		blobout = notrim(concat(notrim(blobout),notrim(substring(1,finlen,fillstring(32768, " ")))))
+		DETAIL
+			retlen = 1
+			offset = 0
+			while (retlen > 0)
+				retlen = blobget(outbuf, offset, cb.blob_contents)
+				offset = offset + retlen
+				if(retlen!=0)
+					xlen = findstring("ocf_blob",outbuf,1)-1
+					if(xlen<1)
+						xlen = retlen
+					endif
+
+					good_blob = notrim(concat(notrim(good_blob), notrim(substring(1,xlen,outbuf))))
+					
+				endif
+			endwhile
+	foot cb.event_id
+		newsize = 0
+		good_blob = concat(notrim(good_blob),"ocf_blob")
+		blob_un = uar_ocf_uncompress(good_blob, size(good_blob), blobout, size(blobout),newsize )
+		loc = locateval(num, 1, size(data->referrals[i]->visits, 5), ce.event_id, data->referrals[i]->visits[num].event_id)
+		data->referrals[i]->visits[num].blob_Text = stripHTML(blobout)
+		good_blob = " "
+		print_blob = " "
+		outbuf=" "
+		blobout=" "
+	WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time=60, expand=2, maxcol=35000
+endfor		
+			
+
+call echojson(data);, "APMS_Results")
+
+
+subroutine StripHTML(blobin)
+	free record 969553_REQUEST
+	record 969553_REQUEST (
+    		1 desired_format_cd    = f8
+    		1 origin_format_cd     = f8
+    		1 origin_text          = vc
+	)
+
+	free record 969553_REPLY
+	record 969553_REPLY (
+     		1 converted_text         =  vc
+     		1 status_data
+    			2 status = c1
+   			2 subeventstatus[1]
+      			3 OperationName = c25
+      			3 OperationStatus = c1
+      			3 TargetObjectName = c25
+      			3 TargetObjectValue = vc
+		)
+
+	declare ASCII_FORMAT_CD = f8 with constant(uar_get_code_by("MEANING", 23, "AH"))
+	declare XHTML_FORMAT_CD = f8 with  constant(uar_get_code_by("MEANING", 23, "XHTML"))
+	declare CONVERT_FORMATTED_TEXT_REQ     = i4 with private, constant(969553)
+	declare AUTO_INSERT_SERVICE_APP     = i4 with private, constant(3202004)
+	declare AUTO_INSERT_SERVICE_TASK     = i4 with private, constant(3202004)
+
+	set 969553_REQUEST->origin_text = blobin 
+	set 969553_REQUEST->origin_format_cd = XHTML_FORMAT_CD 
+	set 969553_REQUEST->desired_format_cd = ASCII_FORMAT_CD 
+
+	set stat = tdbexecute(AUTO_INSERT_SERVICE_APP,AUTO_INSERT_SERVICE_TASK,CONVERT_FORMATTED_TEXT_REQ,"REC",969553_REQUEST,"REC",969553_REPLY)
+
+	if (969553_REPLY->status_data.status = "S")
+  		set strBlob = trim(969553_REPLY->converted_text,3)
+  		return(strBlob)
+	endif
+end
+
+end
+go
+
+execute wh_sandbox_program go
