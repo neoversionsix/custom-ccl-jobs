@@ -1,14 +1,24 @@
 SELECT
-      CV1.CODE_VALUE
-    , CV1.DISPLAY
-
+      CV.CODE_VALUE
+    , CV.DISPLAY
 FROM
-    CODE_VALUE   CV1
-
-WHERE CV1.CODE_SET = 220
-    and cv1.CDF_MEANING = "FACILITY"
-    and cv1.ACTIVE_IND = 1
-    and cv1.BEGIN_EFFECTIVE_DT_TM < sysdate
-    and cv1.END_EFFECTIVE_DT_TM > sysdate
-
+    CODE_VALUE   CV
+WHERE CV.CODE_SET = 220
+    and CV.CDF_MEANING = "FACILITY"
+    and CV.ACTIVE_IND = 1
+    and CV.BEGIN_EFFECTIVE_DT_TM < sysdate
+    and CV.END_EFFECTIVE_DT_TM > sysdate
+    and CV.DISPLAY NOT IN
+    (
+    	 "DEMO 2 HOSPITAL"
+    	,"DEMO 4 WOMENS CLINIC"
+    	,"DEMO 3 MEDICAL CENTER"
+    	,"216704"
+    	,"CHCS"
+    	,"CEPEXCHANGE"
+    	,"1180"
+    	,"CHM"
+        ,"CHBM"
+        ,"CHW"
+    )
 WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10
