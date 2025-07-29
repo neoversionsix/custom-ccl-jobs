@@ -5,6 +5,33 @@ Programmer: Jason Whittle
 Created: 16 Nov 2023
 Updated: 25 Jun 2025
 Use: Medication Administrations (including surgery)
+Config Instructions: Queries for the selection boxes at bottom
+START_DATE_TIME
+    - Control Type: Date Time
+    - Prompt Type: String
+    - Prompt Options: Date and Time
+END_DATE_TIME
+    - Control Type: Date Time
+    - Prompt Type: String
+    - Prompt Options: Date and Time
+FACILITY
+    - Control Type: List Box
+    - Prompt Type: Expression
+    - Data Source->Where will the data come from?: Query (paste in the query)
+    - Data Source-> Check Multiple Selection
+UNITS
+    - Control Type: List Box
+    - Prompt Type: Expression
+    - Data Source->Where will the data come from?: Query
+    - Data Source-> Check Multiple Selection
+    - Data Source-> Check 'Include Any'
+    - Data Source-> Properties -> Okay -> Properties -> 'Define Any': Set default to 0.00
+    - Data Source-> Properties -> Okay -> Properties -> Make the code_value the key, hide all except level 3 display
+PRIMARY
+    - Control Type: List Box
+    - Prompt Type: Expression
+    - Data Source->Where will the data come from?: Query (paste in the query)
+    - Data Source-> Check Multiple Selection
  */
 
 prompt
@@ -247,3 +274,119 @@ WITH TIME = 200,
 
 end
 go
+
+
+/*
+QUERIES FOR
+- FACILTIY SELECTOR
+- UNIT SELECTOR
+- PRIMARY SELECTOR
+
+FACILITY SELECTOR QUERY
+-------------------------------------------------------------------------
+
+SELECT
+      CV.CODE_VALUE
+    , CV.DISPLAY
+
+FROM
+    CODE_VALUE   CV
+
+WHERE CV.CODE_SET = 220
+    and CV.CDF_MEANING = "FACILITY"
+    and CV.ACTIVE_IND = 1
+    and CV.BEGIN_EFFECTIVE_DT_TM < sysdate
+    and CV.END_EFFECTIVE_DT_TM > sysdate
+    and CV.DISPLAY NOT IN
+    (
+         "DEMO 2 HOSPITAL"
+        ,"DEMO 4 WOMENS CLINIC"
+        ,"DEMO 3 MEDICAL CENTER"
+        ,"216704"
+        ,"CHCS"
+        ,"CEPEXCHANGE"
+        ,"1180"
+        ,"CHM"
+        ,"CHBM"
+        ,"CHW"
+    )
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10
+
+
+UNIT SELECTOR QUERY
+-------------------------------------------------------------------------
+SELECT DISTINCT
+    LV1_GROUP_TYPE = UAR_GET_CODE_DISPLAY(LG1.LOCATION_GROUP_TYPE_CD)
+    , LV1_DISP = UAR_GET_CODE_DISPLAY(LG1.PARENT_LOC_CD)
+    , LV2_GROUP_TYPE = UAR_GET_CODE_DISPLAY(LG2.LOCATION_GROUP_TYPE_CD)
+    , LV2_DISP = CV1.DISPLAY
+    , LV3_DISP = CV2.DISPLAY
+    , CV2.CODE_VALUE
+
+FROM
+    LOCATION_GROUP   LG1
+    , CODE_VALUE   CV1
+    , LOCATION_GROUP   LG2
+    , CODE_VALUE   CV2
+
+PLAN LG1 ; 85758822.00  Footscray
+WHERE LG1.PARENT_LOC_CD          IN ($FACILITY)
+  AND LG1.ACTIVE_IND  = 1
+  AND LG1.BEG_EFFECTIVE_DT_TM    <= CNVTDATETIME(CURDATE, CURTIME3)
+  AND LG1.END_EFFECTIVE_DT_TM    >= CNVTDATETIME(CURDATE, CURTIME3)
+  AND LG1.ROOT_LOC_CD            = 0
+
+JOIN CV1
+WHERE LG1.CHILD_LOC_CD           = CV1.CODE_VALUE
+  AND CV1.ACTIVE_IND             = 1
+  AND CV1.BEGIN_EFFECTIVE_DT_TM  <= CNVTDATETIME(CURDATE, CURTIME3)
+  AND CV1.END_EFFECTIVE_DT_TM    >= CNVTDATETIME(CURDATE, CURTIME3)
+
+JOIN LG2
+WHERE LG2.PARENT_LOC_CD          = LG1.CHILD_LOC_CD
+  AND LG2.ACTIVE_IND             = 1
+  AND LG2.BEG_EFFECTIVE_DT_TM    <= CNVTDATETIME(CURDATE, CURTIME3)
+  AND LG2.END_EFFECTIVE_DT_TM    >= CNVTDATETIME(CURDATE, CURTIME3)
+  AND LG2.ROOT_LOC_CD            = 0
+
+JOIN CV2
+WHERE CV2.CODE_VALUE = LG2.CHILD_LOC_CD
+  AND CV2.CDF_MEANING IN ("AMBULATORY","NURSEUNIT")
+  AND CV2.ACTIVE_IND = 1
+  AND CV2.BEGIN_EFFECTIVE_DT_TM <= CNVTDATETIME(CURDATE, CURTIME3)
+  AND CV2.END_EFFECTIVE_DT_TM >= CNVTDATETIME(CURDATE, CURTIME3)
+
+ORDER BY
+    LV1_GROUP_TYPE
+    , LV1_DISP
+    , LV2_GROUP_TYPE
+    , LV2_DISP
+    , LV3_DISP
+
+WITH TIME = 90
+
+PRIMARY SELECTOR QUERY
+---------------
+SELECT
+      OC.CATALOG_CD
+    , OC.PRIMARY_MNEMONIC
+FROM
+      ORDER_CATALOG     OC
+    , CODE_VALUE         CV
+PLAN OC
+    WHERE
+        OC.ACTIVE_IND = 1
+        AND OC.CATALOG_TYPE_CD =        2516.00 ; Pharmacy
+        ; AND OC.DCP_CLIN_CAT_CD =       10577.00 ; Medications
+        AND OC.CKI != "IGNORE"
+        AND CNVTUPPER(OC.PRIMARY_MNEMONIC) = PATSTRING(CNVTUPPER(CONCAT("*",$CURACCEPT,"*")))
+
+JOIN CV
+    WHERE
+        OC.CATALOG_CD = CV.CODE_VALUE
+        AND CV.END_EFFECTIVE_DT_TM > sysdate
+
+ORDER BY OC.DESCRIPTION
+
+ */
