@@ -22,7 +22,7 @@ FACILITY
 UNITS
     - Control Type: List Box
     - Prompt Type: Expression
-    - Data Source->Where will the data come from?: Query
+    - Data Source->Where will the data come from?: Query (paste in the query)
     - Data Source-> Check Multiple Selection
     - Data Source-> Check 'Include Any'
     - Data Source-> Properties -> Okay -> Properties -> 'Define Any': Set default to 0.00
@@ -32,6 +32,7 @@ PRIMARY
     - Prompt Type: Expression
     - Data Source->Where will the data come from?: Query (paste in the query)
     - Data Source-> Check Multiple Selection
+    - Data Source-> Use Dual List
  */
 
 prompt
@@ -102,7 +103,6 @@ ELSE
     ENDIF
 ENDIF
 
-
 ; Put the Primary Catalog Codes into a record structure
 SELECT
 	IF (MEDS_SELECTION_TYPE_VAR = "LIST SELECTION")
@@ -133,7 +133,6 @@ DETAIL
     ; store the catalog code in the record structure
 	RECORD_STRUCTURE_MEDS->LIST_MEDS[COUNTER].A_CATALOG_CD = MED
 WITH TIME = 90
-
 
 SELECT DISTINCT INTO $OUTDEV
 	PATIENT = P.NAME_FULL_FORMATTED
@@ -388,5 +387,6 @@ JOIN CV
         AND CV.END_EFFECTIVE_DT_TM > sysdate
 
 ORDER BY OC.DESCRIPTION
+WITH TIME = 30
 
  */
