@@ -1,6 +1,23 @@
 drop program WH_IMMUNISATIONS go
 create program WH_IMMUNISATIONS
 
+/*
+Western Health Immunisations Report
+PROGRAMMER: Jason Whittle
+DESCRIPTION: This report is used to extract immunisation data from the Western Health system.
+It includes details such as patient information, administered vaccines, and encounter details.
+It can be run from the reports portal (configured in DA2)
+CREATED: 2023
+UPDATE HISTORY:
+    - JUL 31 2025: Jason Whittle
+        - Changed timeout from 300s to 1000s
+        - C_E.EVENT_CD from CE_CATALOG_CD as the data is no longer always in the catalog cd
+        - Added ENTRY_MODE_CD to the report as requested by the client
+        - Switched from using BETWEEN to using >= and <= for date filtering (to avoid issues with time)
+        - Changed some column name (from Hospital to facility) to avoid potential misinterpretation
+        - Added DISTINCT to the SELECT statement to avoid duplicate potential duplicate rows
+ */
+
 prompt
 	"Output to File/Printer/MINE" = "MINE"   ;* Enter or select the printer or file name to send this report to.
 	, "Filter start date time" = "SYSDATE"
@@ -18,8 +35,8 @@ SELECT DISTINCT INTO $OUTDEV
     ,   MANUFACTURER = UAR_GET_CODE_DISPLAY(C_M_R.SUBSTANCE_MANUFACTURER_CD)
     ,   COMPLETED = C_E.PERFORMED_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
     ,   ENCOUNTER_NO = E_A.ALIAS
-    ,   LAST_HOSPITAL_FOR_ENCOUNTER = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
-    ,   LAST_WARD_FOR_ENCOUNTER = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
+    ,   LAST_FACILITY_FOR_ENCOUNTER = UAR_GET_CODE_DISPLAY(E.LOC_FACILITY_CD)
+    ,   LAST_UNIT_FOR_ENCOUNTER = UAR_GET_CODE_DISPLAY(E.LOC_NURSE_UNIT_CD)
 	,   ROUTE = UAR_GET_CODE_DISPLAY(C_M_R.ADMIN_ROUTE_CD)
 	,   SITE = UAR_GET_CODE_DISPLAY(C_M_R.ADMIN_SITE_CD)
     ,   DOSAGE = C_M_R.ADMIN_DOSAGE
