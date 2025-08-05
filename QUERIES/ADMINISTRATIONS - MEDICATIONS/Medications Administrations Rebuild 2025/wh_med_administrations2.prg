@@ -1,6 +1,6 @@
 drop program wh_med_administrations2 go
 create program wh_med_administrations2
-/*
+/* PROGRAM NOTES
 Programmer: Jason Whittle
 Created: 16 Nov 2023
 Updated: 25 Jun 2025
@@ -50,8 +50,11 @@ RECORD RECORD_STRUCTURE_MEDS (
     2 A_CATALOG_CD = f8
 )
 
+/**************************************************************
+; DVDev DECLARED VARIABLES
+**************************************************************/
 DECLARE COUNTER = I4 WITH NOCONSTANT(0),PROTECT
-DECLARE i = I4 WITH PROTECT, NOCONSTANT(0)
+DECLARE i = I4 WITH NOCONSTANT(0),PROTECT
 DECLARE FACILITY_SELECTION_TYPE_VAR = VC WITH NOCONSTANT(" "),PROTECT
 DECLARE FACILITY_PARAMETER_TYPE_VAR = VC WITH NOCONSTANT(" "),PROTECT
 DECLARE FACILITY_OPERATOR_VAR = VC WITH NOCONSTANT(" "),PROTECT
@@ -62,7 +65,8 @@ DECLARE MEDS_SELECTION_TYPE_VAR = VC WITH NOCONSTANT(" "),PROTECT
 DECLARE MEDS_PARAMETER_TYPE_VAR = VC WITH NOCONSTANT(" "),PROTECT
 DECLARE FIRST_PRIMARY_CD = F8 WITH NOCONSTANT(0.00),PROTECT
 
-SET FIRST_PRIMARY_CD = $PRIMARY
+; LOGIC BEGINS
+SET FIRST_PRIMARY_CD = $PRIMARY ;Set the first string primary to f8 variable
 
 ; Set the operator for the facility depending on the user selection
 SET FACILITY_PARAMETER_TYPE_VAR = trim(reflect(parameter(parameter2($FACILITY),0)))
@@ -70,44 +74,34 @@ IF (SUBSTRING(1,1,FACILITY_PARAMETER_TYPE_VAR) = "L")
 	SET FACILITY_SELECTION_TYPE_VAR = "LIST SELECTION"
 	SET FACILITY_OPERATOR_VAR = "IN"
 ELSE
-    IF ($FACILITY = 0.00)
-        SET FACILITY_SELECTION_TYPE_VAR = "ANY SELECTION"
-        SET FACILITY_OPERATOR_VAR = "!="
-    ELSE
-        SET FACILITY_SELECTION_TYPE_VAR = "ONE SELECTION"
-        SET FACILITY_OPERATOR_VAR = "="
-    ENDIF
+    SET FACILITY_SELECTION_TYPE_VAR = "ONE SELECTION"
+    SET FACILITY_OPERATOR_VAR = "="
 ENDIF
 
-; Set the operator for the facility depending on the user selection
+; Set the operator for the unit location depending on the user selection
 SET UNITS_PARAMETER_TYPE_VAR = trim(reflect(parameter(parameter2($UNITS),0)))
 IF (SUBSTRING(1,1,UNITS_PARAMETER_TYPE_VAR) = "L")
 	SET UNITS_SELECTION_TYPE_VAR = "LIST SELECTION"
 	SET UNITS_OPERATOR_VAR = "IN"
-ELSE
-    IF ($UNITS = 0.00)
-        SET UNITS_SELECTION_TYPE_VAR = "ANY SELECTION"
-        SET UNITS_OPERATOR_VAR = "!="
-    ELSE
-        SET UNITS_SELECTION_TYPE_VAR = "ONE SELECTION"
-        SET UNITS_OPERATOR_VAR = "="
-    ENDIF
+ELSEIF ($UNITS = 0.00)
+    SET UNITS_SELECTION_TYPE_VAR = "ANY SELECTION"
+    SET UNITS_OPERATOR_VAR = "!="
+ELSE ; the $UNITS will be a single code value
+    SET UNITS_SELECTION_TYPE_VAR = "ONE SELECTION"
+    SET UNITS_OPERATOR_VAR = "="
 ENDIF
-
 
 ; Determine Med Selection Type
 SET MEDS_PARAMETER_TYPE_VAR = trim(reflect(parameter(parameter2($PRIMARY),0)))
 IF (SUBSTRING(1,1,MEDS_PARAMETER_TYPE_VAR) = "L")
-	SET MEDS_SELECTION_TYPE_VAR = "LIST SELECTION"
+    SET MEDS_SELECTION_TYPE_VAR = "LIST SELECTION"
+ELSEIF (FIRST_PRIMARY_CD = 0.00)
+    SET MEDS_SELECTION_TYPE_VAR = "NO SELECTION"
 ELSE
-    IF (FIRST_PRIMARY_CD = 0.00)
-        SET MEDS_SELECTION_TYPE_VAR = "NO SELECTION"
-    ELSE
-        SET MEDS_SELECTION_TYPE_VAR = "ONE SELECTION"
-    ENDIF
+    SET MEDS_SELECTION_TYPE_VAR = "ONE SELECTION"
 ENDIF
 
-; Put the Primary Catalog Codes into a record structure
+; Put the users selected Primary Catalog Codes into a record structure
 SELECT
 	IF (MEDS_SELECTION_TYPE_VAR = "LIST SELECTION")
 		MED = O.CATALOG_CD
@@ -117,7 +111,7 @@ SELECT
 		MED = O.CATALOG_CD
 		FROM ORDER_CATALOG O
 		WHERE O.CATALOG_CD = FIRST_PRIMARY_CD
-	ELSE ; no selection
+	ELSE ; no selection -> all meds. FIRST_PRIMARY_CD =0.00
 		MED = O.CATALOG_CD
 		FROM ORDER_CATALOG O
 		WHERE O.CATALOG_CD > 0
@@ -133,7 +127,9 @@ DETAIL
 	STAT = ALTERLIST(RECORD_STRUCTURE_MEDS->LIST_MEDS,COUNTER)
     ; store the catalog code in the record structure
 	RECORD_STRUCTURE_MEDS->LIST_MEDS[COUNTER].A_CATALOG_CD = MED
-WITH TIME = 90
+FOOT REPORT
+    NULL
+WITH TIME = 10
 
 SELECT DISTINCT INTO $OUTDEV
 	PATIENT = P.NAME_FULL_FORMATTED
@@ -154,20 +150,20 @@ SELECT DISTINCT INTO $OUTDEV
         ENDIF
     , PRIMARY = UAR_GET_CODE_DISPLAY(O.CATALOG_CD)
 	, ORDER_MNEMONIC = O.ORDER_MNEMONIC
+    , ADMINISTERED_BEG =
+        IF(MAE.BEG_DT_TM>0) FORMAT(MAE.BEG_DT_TM, "YYYY-MM-DD HH:MM:SS")
+        ELSE FORMAT(C.EVENT_START_DT_TM, "YYYY-MM-DD HH:MM:SS")
+        ENDIF
     , EVENT_TAG = C.EVENT_TAG
 	, ORDERED_TIME = FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
     ;O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
     ;FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
-	, ADMINISTERED_BEG =
-        IF(MAE.BEG_DT_TM>0) FORMAT(MAE.BEG_DT_TM, "YYYY-MM-DD HH:MM:SS")
-        ELSE FORMAT(C.EVENT_START_DT_TM, "YYYY-MM-DD HH:MM:SS")
-        ENDIF
 	, ADMINISTERED_END = FORMAT(MAE.END_DT_TM, "YYYY-MM-DD HH:MM:SS")
 	, ADMINISTER_POSITION =
         IF (MAE.BEG_DT_TM>0) UAR_GET_CODE_DISPLAY(MAE.POSITION_CD) ; direct position form med admin table
         ELSE UAR_GET_CODE_DISPLAY(PR.POSITION_CD) ; position from prsnl table if a surgery administration
         ENDIF
-	, SERVICE = UAR_GET_CODE_DISPLAY(E.MED_SERVICE_CD)
+	, SERVICE = UAR_GET_CODE_DISPLAY(ELH.MED_SERVICE_CD)
     , ENCOUNTER_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
     , ADMINISTERED_BY = PR.NAME_FULL_FORMATTED
     , ORDERED_BY = PR_2.NAME_FULL_FORMATTED
@@ -189,16 +185,17 @@ PLAN O_A ; ORDER_ACTION
     WHERE
     O_A.ORDER_STATUS_CD IN(2548, 2543) 	; In process or complete orders only
     AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
-    AND O_A.ACTION_DT_TM >= CNVTDATETIME($START_DATE_TIME) ; only include orders before admin time
-
+    ; only include orders ordered before the filtered administration end time
+    AND O_A.ACTION_DT_TM <= CNVTDATETIME($END_DATE_TIME)
 JOIN PR;PRSNL
-    ; This is to get the person completing/administering the medication
-    WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID);X.UPDT_ID
+    ; This is to get the person completing/administering the medication, used if done in SAA
+    WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID)
     AND PR.ACTIVE_IND = OUTERJOIN(1)
 /* Joining Order Action table again to get the original ordering personell */
 JOIN O_A_2 ; ORDER_ACTION
     WHERE O_A_2.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
     AND O_A_2.ACTION_TYPE_CD = OUTERJOIN(2534); New Order
+; Joing PRSNL table to get the person who ordered the medication
 JOIN PR_2;PRSNL
     WHERE PR_2.PERSON_ID = OUTERJOIN(O_A_2.ACTION_PERSONNEL_ID);X.UPDT_ID
     AND PR_2.ACTIVE_IND = OUTERJOIN(1)
@@ -213,7 +210,7 @@ JOIN E ; ENCOUNTER
 	WHERE E.ENCNTR_ID = O.ENCNTR_ID
     AND E.ACTIVE_IND = 1
     /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
-    AND E.LOC_FACILITY_CD != 4038465.00
+    ;AND E.LOC_FACILITY_CD != 4038465.00
 /* Patient Identifiers such as URN Medicare no etc */
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
     WHERE P_A.PERSON_ID = E.PERSON_ID
@@ -246,11 +243,13 @@ JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
 	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
 JOIN MAE ;MED_ADMIN_EVENT
     WHERE MAE.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
-    AND MAE.BEG_DT_TM >= CNVTDATETIME($START_DATE_TIME) ; administered filter
-    AND MAE.BEG_DT_TM <= CNVTDATETIME($END_DATE_TIME) ; administered filter
-    AND OPERATOR(MAE.NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS)
+    ; Administered after the chosen filter start date and time
+    AND MAE.BEG_DT_TM >= OUTERJOIN(CNVTDATETIME($START_DATE_TIME)) ; administered filter
+    ; Administered before the chosen filter end date and time
+    AND MAE.BEG_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered filter
+    ;AND OPERATOR(MAE.NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS)
 JOIN S ;SA_MEDICATION_ADMIN
-    WHERE
+    WHERE ; Note administration time is not recorded in this table, see CE table
         S.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
         AND S.ORDER_ID > OUTERJOIN(0)
         AND S.EVENT_ID > OUTERJOIN(0)
@@ -259,18 +258,25 @@ JOIN C
     WHERE
         C.ORDER_ID = OUTERJOIN(S.ORDER_ID)
 	    AND C.VIEW_LEVEL = OUTERJOIN(1)
-        AND C.EVENT_START_DT_TM >= CNVTDATETIME($START_DATE_TIME) ; administered filter
+        ; only include administrations that happened after the start date and time
+        AND C.EVENT_START_DT_TM >= OUTERJOIN(CNVTDATETIME($START_DATE_TIME)) ; administered filter
+        ; only include administrations that started before the end date and time
+        AND C.EVENT_START_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered filter
 JOIN	ELH ; ENCNTR_LOC_HIST
     WHERE ELH.ENCNTR_ID = OUTERJOIN(E.ENCNTR_ID) ; join on encounter
-    AND OPERATOR(ELH.LOC_FACILITY_CD, FACILITY_OPERATOR_VAR, $FACILITY)
-    AND OPERATOR(ELH.LOC_NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS)
+    AND OPERATOR(ELH.LOC_FACILITY_CD, FACILITY_OPERATOR_VAR, $FACILITY) ; filter by facility
+    AND OPERATOR(ELH.LOC_NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS) ;filter by unit
     AND ELH.ACTIVE_IND = OUTERJOIN(1)	; remove inactive rows
-    AND ELH.BEG_EFFECTIVE_DT_TM <  OUTERJOIN(CNVTDATETIME($START_DATE_TIME)); location began before administered
-    AND ELH.END_EFFECTIVE_DT_TM >  OUTERJOIN(CNVTDATETIME($START_DATE_TIME)); location ended after administered
+    ; location began before administration
+    AND ELH.BEG_EFFECTIVE_DT_TM <  OUTERJOIN(C.EVENT_START_DT_TM)
+    ; location ended (or will end) after administration
+    AND ELH.END_EFFECTIVE_DT_TM >  OUTERJOIN(C.EVENT_START_DT_TM)
 ORDER BY
     O.PERSON_ID
 	, O.ORDER_ID
-WITH TIME = 1000,
+WITH
+    ;TIME = 1000, ; Comment out when in testing
+    TIME = 30, ; Comment out when in production
 	NOCOUNTER,
 	SEPARATOR=" ",
 	FORMAT
