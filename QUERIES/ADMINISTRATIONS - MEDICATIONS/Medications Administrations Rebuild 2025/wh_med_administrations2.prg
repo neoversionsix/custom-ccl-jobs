@@ -157,13 +157,25 @@ SELECT DISTINCT INTO $OUTDEV
 	, ORDER_MNEMONIC = O.ORDER_MNEMONIC
     , ADMINISTERED_BEG =
         IF(MAE.BEG_DT_TM>0) FORMAT(MAE.BEG_DT_TM, "YYYY-MM-DD HH:MM:SS")
-        ELSE FORMAT(C.EVENT_START_DT_TM, "YYYY-MM-DD HH:MM:SS")
+        ELSE FORMAT(SI.ADMIN_START_DT_TM, "YYYY-MM-DD HH:MM:SS")
         ENDIF
-    , EVENT_TAG = C.EVENT_TAG
+    , DOSAGE =
+        IF (SI.ADMIN_DOSAGE != NULL)
+        SI.ADMIN_DOSAGE
+        ELSE "UNFINISHED CODE"
+        ENDIF
+    , DOSAGE_UNITS =
+        IF (S.DOSAGE_UNIT_CD != NULL)
+            UAR_GET_CODE_DISPLAY(S.DOSAGE_UNIT_CD)
+        ELSE "UNFINISHED CODE"
+        ENDIF
 	, ORDERED_TIME = FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
     ;O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
     ;FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
-	, ADMINISTERED_END = FORMAT(MAE.END_DT_TM, "YYYY-MM-DD HH:MM:SS")
+	, ADMINISTERED_END =
+        IF(MAE.END_DT_TM>0) FORMAT(MAE.END_DT_TM, "YYYY-MM-DD HH:MM:SS")
+        ELSE FORMAT(SI.ADMIN_STOP_DT_TM, "YYYY-MM-DD HH:MM:SS")
+        ENDIF
 	, ADMINISTER_POSITION =
         IF (MAE.BEG_DT_TM>0) UAR_GET_CODE_DISPLAY(MAE.POSITION_CD) ; direct position form med admin table
         ELSE UAR_GET_CODE_DISPLAY(PR.POSITION_CD) ; position from prsnl table if a surgery administration
@@ -184,7 +196,7 @@ FROM
     , PERSON_ALIAS          P_A
     , ENCNTR_ALIAS          E_A
     , SA_MEDICATION_ADMIN   S
-    , CLINICAL_EVENT        C
+    , SA_MED_ADMIN_ITEM     SI
     , ENCNTR_LOC_HIST       ELH
 PLAN O_A ; ORDER_ACTION
     WHERE
@@ -259,29 +271,34 @@ JOIN S ;SA_MEDICATION_ADMIN
         AND S.ORDER_ID > OUTERJOIN(0)
         AND S.EVENT_ID > OUTERJOIN(0)
         AND S.ACTIVE_IND = OUTERJOIN(1)
-JOIN C
+JOIN SI
     WHERE
-        C.ORDER_ID = OUTERJOIN(S.ORDER_ID)
-	    AND C.VIEW_LEVEL = OUTERJOIN(1)
-        ; only include administrations that happened after the start date and time
-        AND C.EVENT_START_DT_TM >= OUTERJOIN(CNVTDATETIME($START_DATE_TIME)) ; administered filter
-        ; only include administrations that started before the end date and time
-        AND C.EVENT_START_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered filter
+        SI.SA_MEDICATION_ADMIN_ID = OUTERJOIN(S.SA_MEDICATION_ADMIN_ID)
+        AND SI.ACTIVE_IND = OUTERJOIN(1)
+        AND SI.ADMIN_START_DT_TM >= OUTERJOIN(CNVTDATETIME($START_DATE_TIME)) ; administered time filter
+        AND SI.ADMIN_START_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered time filter
 JOIN	ELH ; ENCNTR_LOC_HIST
     WHERE ELH.ENCNTR_ID = OUTERJOIN(E.ENCNTR_ID) ; join on encounter
     AND OPERATOR(ELH.LOC_FACILITY_CD, FACILITY_OPERATOR_VAR, $FACILITY) ; filter by facility
     AND OPERATOR(ELH.LOC_NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS) ;filter by unit
     AND ELH.ACTIVE_IND = OUTERJOIN(1)	; remove inactive rows
     ; location began before administration
-    AND ELH.BEG_EFFECTIVE_DT_TM <  OUTERJOIN(C.EVENT_START_DT_TM)
+    AND ELH.BEG_EFFECTIVE_DT_TM <
+        IF(MAE.BEG_DT_TM>0)
+            MAE.BEG_DT_TM
+        ELSE
+            SI.ADMIN_START_DT_TM
+        ENDIF
     ; location ended (or will end) after administration
-    AND ELH.END_EFFECTIVE_DT_TM >  OUTERJOIN(C.EVENT_START_DT_TM)
-ORDER BY
-    O.PERSON_ID
-	, O.ORDER_ID
+    AND ELH.END_EFFECTIVE_DT_TM >
+        IF(MAE.BEG_DT_TM>0)
+            MAE.BEG_DT_TM
+        ELSE
+            SI.ADMIN_START_DT_TM
+        ENDIF
 WITH
-    TIME = 1000, ; Comment out when in testing
-    ;TIME = 30, ; Comment out when in production
+    ;TIME = 1000, ; Comment out when in testing
+    TIME = 90, ; Comment out when in production
 	NOCOUNTER,
 	SEPARATOR=" ",
 	FORMAT
