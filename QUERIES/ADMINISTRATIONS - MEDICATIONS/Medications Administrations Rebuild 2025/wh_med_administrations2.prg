@@ -60,6 +60,7 @@ RECORD RECORD_STRUCTURE_OID (
 **************************************************************/
 DECLARE COUNTER = I4 WITH NOCONSTANT(0),PROTECT
 DECLARE NUM_MEDS_SELECTED = I4 WITH NOCONSTANT(0),PROTECT
+DECLARE NUM_OIDS_SELECTED = I4 WITH NOCONSTANT(0),PROTECT
 DECLARE i = I4 WITH NOCONSTANT(0),PROTECT
 DECLARE FACILITY_SELECTION_TYPE_VAR = VC WITH NOCONSTANT(" "),PROTECT
 DECLARE FACILITY_PARAMETER_TYPE_VAR = VC WITH NOCONSTANT(" "),PROTECT
@@ -140,7 +141,7 @@ DETAIL
 	RECORD_STRUCTURE_MEDS->LIST_MEDS[COUNTER].A_CATALOG_CD = MED
 FOOT REPORT
     NUM_MEDS_SELECTED = COUNTER ; store the number of meds selected
-WITH TIME = 10
+WITH TIME = 60
 
 ; Get the Order ID from the MAE table for the selected medications
 ; This is done to make the make the program more efficient
@@ -171,7 +172,7 @@ DETAIL
     ; store the order id in the record structure
     RECORD_STRUCTURE_OID->LIST_OID[COUNTER].A_ORDER_ID = OID
 FOOT REPORT
-    NULL
+    NUM_OIDS_SELECTED = COUNTER
 WITH TIME = 60
 
 ; Get the Order ID from the S tables for the selected medications
@@ -199,7 +200,7 @@ JOIN O ; ORDERS
         ; Filter for selected meds
         AND EXPAND(i,1,NUM_MEDS_SELECTED,O.CATALOG_CD,RECORD_STRUCTURE_MEDS->LIST_MEDS[i].A_CATALOG_CD)
 HEAD REPORT
-    NULL
+    COUNTER = NUM_OIDS_SELECTED
 DETAIL
     COUNTER += 1
     ; add storage space to the list
@@ -207,7 +208,7 @@ DETAIL
     ; store the order id in the record structure
     RECORD_STRUCTURE_OID->LIST_OID[COUNTER].A_ORDER_ID = OID
 FOOT REPORT
-    NULL
+    NUM_OIDS_SELECTED = COUNTER
 WITH TIME = 60
 
 SELECT DISTINCT INTO $OUTDEV
@@ -280,66 +281,72 @@ FROM
     , SA_MEDICATION_ADMIN   S
     , SA_MED_ADMIN_ITEM     SI
     , ENCNTR_LOC_HIST       ELH
-PLAN O_A ; ORDER_ACTION
+
+PLAN O ; ORDERS
     WHERE
-    O_A.ORDER_STATUS_CD IN(2548, 2543) 	; In process or complete orders only
-    ; Only order IDs that we know we need
-    AND EXPAND(i,1,COUNTER,O_A.ORDER_ID,RECORD_STRUCTURE_OID->LIST_OID[i].A_ORDER_ID)
-    AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+        /*Pharmacy Catalog only */
+        O.CATALOG_TYPE_CD = 2516.00;
+        AND O.ACTIVE_IND = 1
+        ; Primary filter for all the catalog codes in the record structure
+        AND EXPAND(i,1,NUM_MEDS_SELECTED,O.CATALOG_CD,RECORD_STRUCTURE_MEDS->LIST_MEDS[i].A_CATALOG_CD)
+        AND EXPAND(i,1,NUM_OIDS_SELECTED,O.ORDER_ID,RECORD_STRUCTURE_OID->LIST_OID[i].A_ORDER_ID)
+JOIN O_A ; ORDER_ACTION
+    WHERE
+        O_A.ORDER_ID = O.ORDER_ID
+        AND O_A.ORDER_STATUS_CD IN(2548, 2543) 	; In process or complete orders only
+        AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
 JOIN PR;PRSNL
     ; This is to get the person completing/administering the medication, used if done in SAA
-    WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID)
-    AND PR.ACTIVE_IND = OUTERJOIN(1)
+    WHERE
+        PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID)
+        AND PR.ACTIVE_IND = OUTERJOIN(1)
 /* Joining Order Action table again to get the original ordering personell */
 JOIN O_A_2 ; ORDER_ACTION
-    WHERE O_A_2.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
-    AND O_A_2.ACTION_TYPE_CD = OUTERJOIN(2534); New Order
+    WHERE
+        O_A_2.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
+        AND O_A_2.ACTION_TYPE_CD = OUTERJOIN(2534); New Order
 ; Joing PRSNL table to get the person who ordered the medication
 JOIN PR_2;PRSNL
-    WHERE PR_2.PERSON_ID = OUTERJOIN(O_A_2.ACTION_PERSONNEL_ID);X.UPDT_ID
-    AND PR_2.ACTIVE_IND = OUTERJOIN(1)
-JOIN O ; ORDERS
-	WHERE O.ORDER_ID = O_A.ORDER_ID
-    /*Pharmacy Catalog only */
-    AND O.CATALOG_TYPE_CD = 2516.00;
-    AND O.ACTIVE_IND = 1
-    ; Primary filter for all the catalog codes in the record structure
-    AND EXPAND(i,1,NUM_MEDS_SELECTED,O.CATALOG_CD,RECORD_STRUCTURE_MEDS->LIST_MEDS[i].A_CATALOG_CD)
+    WHERE
+        PR_2.PERSON_ID = OUTERJOIN(O_A_2.ACTION_PERSONNEL_ID);X.UPDT_ID
+        AND PR_2.ACTIVE_IND = OUTERJOIN(1)
+
 JOIN E ; ENCOUNTER
-	WHERE E.ENCNTR_ID = O.ENCNTR_ID
-    AND E.ACTIVE_IND = 1
-    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
-    ;AND E.LOC_FACILITY_CD != 4038465.00
+	WHERE
+        E.ENCNTR_ID = O.ENCNTR_ID
+        AND E.ACTIVE_IND = 1
+        /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+        ;AND E.LOC_FACILITY_CD != 4038465.00
 /* Patient Identifiers such as URN Medicare no etc */
 JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
-    WHERE P_A.PERSON_ID = E.PERSON_ID
-    AND
-    /* this filters for the UR Number Alias' only */
-   	P_A.ALIAS_POOL_CD = 9569589.00
-	AND
-    /* Effective Only */
-	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
-    AND
-    /* Active Only */
-    P_A.ACTIVE_IND = 1
+    WHERE
+        P_A.PERSON_ID = E.PERSON_ID
+        /* this filters for the UR Number Alias' only */
+        AND P_A.ALIAS_POOL_CD = 9569589.00
+        /* Effective Only */
+        AND P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+        /* Active Only */
+        AND P_A.ACTIVE_IND = 1
 /* Patients */
 JOIN P;PERSON
-	WHERE P.PERSON_ID = E.PERSON_ID
-    /* Remove Inactive Patients */
-    AND P.ACTIVE_IND = 1
-    /* Remove Fake 'Test' Patients */
-    ;AND P.NAME_LAST_KEY != "*TESTWHS*"
-    /* Remove Ineffective Patients */
-    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+	WHERE
+        P.PERSON_ID = E.PERSON_ID
+        /* Remove Inactive Patients */
+        AND P.ACTIVE_IND = 1
+        /* Remove Fake 'Test' Patients */
+        ;AND P.NAME_LAST_KEY != "*TESTWHS*"
+        /* Remove Ineffective Patients */
+        AND P.END_EFFECTIVE_DT_TM > SYSDATE
 /* Encounter Identifiers such as the Financial Number */
 JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
-    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
-    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
-	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
-	/* active FIN NBRs only */
-    AND E_A.ACTIVE_IND = 1
-    /* effective FIN NBRs only */
-	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+    WHERE
+        E_A.ENCNTR_ID = E.ENCNTR_ID
+        /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+        AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+        /* active FIN NBRs only */
+        AND E_A.ACTIVE_IND = 1
+        /* effective FIN NBRs only */
+        AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
 JOIN MAE ;MED_ADMIN_EVENT
     WHERE
         MAE.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
@@ -365,25 +372,25 @@ JOIN SI
         AND SI.ADMIN_START_DT_TM >= OUTERJOIN(CNVTDATETIME($START_DATE_TIME)) ; administered time filter
         AND SI.ADMIN_START_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered time filter
 JOIN	ELH ; ENCNTR_LOC_HIST
-    WHERE ELH.ENCNTR_ID = E.ENCNTR_ID ; join on encounter
-    AND OPERATOR(ELH.LOC_FACILITY_CD, FACILITY_OPERATOR_VAR, $FACILITY) ; filter by facility
-    AND OPERATOR(ELH.LOC_NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS) ;filter by unit
-    AND ELH.ACTIVE_IND = 1	; remove inactive rows
-    ; location began before administration
-    AND
-        (
-            ELH.BEG_EFFECTIVE_DT_TM < MAE.BEG_DT_TM
-            OR
-            ELH.BEG_EFFECTIVE_DT_TM < SI.ADMIN_START_DT_TM
-        )
-    ; location ended (or will end) after administration
-    AND
-        (
-            ELH.END_EFFECTIVE_DT_TM > MAE.BEG_DT_TM
-            OR
-            ELH.END_EFFECTIVE_DT_TM > SI.ADMIN_START_DT_TM
-        )
-
+    WHERE
+        ELH.ENCNTR_ID = E.ENCNTR_ID ; join on encounter
+        AND OPERATOR(ELH.LOC_FACILITY_CD, FACILITY_OPERATOR_VAR, $FACILITY) ; filter by facility
+        AND OPERATOR(ELH.LOC_NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS) ;filter by unit
+        AND ELH.ACTIVE_IND = 1	; remove inactive rows
+        ; location began before administration
+        AND
+            (
+                ELH.BEG_EFFECTIVE_DT_TM < MAE.BEG_DT_TM
+                OR
+                ELH.BEG_EFFECTIVE_DT_TM < SI.ADMIN_START_DT_TM
+            )
+        ; location ended (or will end) after administration
+        AND
+            (
+                ELH.END_EFFECTIVE_DT_TM > MAE.BEG_DT_TM
+                OR
+                ELH.END_EFFECTIVE_DT_TM > SI.ADMIN_START_DT_TM
+            )
 
 WITH
     ;TIME = 1000, ; Comment out when in testing
