@@ -160,21 +160,21 @@ SELECT DISTINCT INTO $OUTDEV
         ELSE FORMAT(SI.ADMIN_START_DT_TM, "YYYY-MM-DD HH:MM:SS")
         ENDIF
     , DOSAGE =
-	 IF (CE.EVENT_TAG != NULL)
-	 	CE.EVENT_TAG
-	 ELSE
-	 	CONCAT
-	 	(
-	 		(
-		 		IF (SI.ADMIN_DOSAGE = 0)
-		 			TRIM(CNVTSTRING(SI.ADMIN_DOSAGE))
-		 		ELSE "NO DATA"
-		 		ENDIF
-	 		)
-	 		," "
-	 		, UAR_GET_CODE_DISPLAY(S.DOSAGE_UNIT_CD)
-	 	)
-	 ENDIF
+        IF (CE.EVENT_TAG != NULL)
+            CE.EVENT_TAG
+        ELSE
+            CONCAT
+            (
+                (
+                    IF (SI.ADMIN_DOSAGE = 0)
+                        TRIM(CNVTSTRING(SI.ADMIN_DOSAGE))
+                    ELSE "NO DATA"
+                    ENDIF
+                )
+                ," "
+                , UAR_GET_CODE_DISPLAY(S.DOSAGE_UNIT_CD)
+            )
+        ENDIF
 	, ORDERED_TIME = FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
     ;O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
     ;FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
