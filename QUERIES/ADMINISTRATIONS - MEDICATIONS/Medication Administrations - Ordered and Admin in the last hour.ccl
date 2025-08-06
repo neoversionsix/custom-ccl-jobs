@@ -1,5 +1,8 @@
 SELECT DISTINCT
 	PATIENT = P.NAME_FULL_FORMATTED
+	, ACTIONDT = FORMAT(O_A.ACTION_DT_TM, "YYYY-MM-DD HH:MM:SS")
+	, UPDATED = FORMAT(O_A.UPDT_DT_TM, "YYYY-MM-DD HH:MM:SS")
+	, ACTION_TYPE = UAR_GET_CODE_DISPLAY(O_A.ACTION_TYPE_CD)
 	, PATIENT_URN = P_A.ALIAS
 	, ELH_FACILITY = UAR_GET_CODE_DISPLAY(ELH.LOC_FACILITY_CD)
 	, UNIT =
@@ -22,23 +25,21 @@ SELECT DISTINCT
         ELSE FORMAT(SI.ADMIN_START_DT_TM, "YYYY-MM-DD HH:MM:SS")
         ENDIF
     , DOSAGE =
-        IF (SI.ADMIN_DOSAGE != NULL)
-        	CNVTSTRING(SI.ADMIN_DOSAGE)
+        IF (CE.EVENT_TAG != NULL)
+            CE.EVENT_TAG
         ELSE
-        	CNVTSTRING(CE.EVENT_TAG)
+            CONCAT
+            (
+                (
+                    IF (SI.ADMIN_DOSAGE = 0)
+                        TRIM(CNVTSTRING(SI.ADMIN_DOSAGE))
+                    ELSE "NO DATA"
+                    ENDIF
+                )
+                ," "
+                , UAR_GET_CODE_DISPLAY(S.DOSAGE_UNIT_CD)
+            )
         ENDIF
-    , DOSAGE_UNITS =
-        IF (S.DOSAGE_UNIT_CD != 0)
-            UAR_GET_CODE_DISPLAY(S.DOSAGE_UNIT_CD)
-        ELSE
-        	NULL
-        ENDIF
-    , DOSAGE2 =
-	 IF (CE.EVENT_TAG != NULL)
-	 	CE.EVENT_TAG
-	 ELSE
-	 	CONCAT(TRIM(CNVTSTRING(SI.ADMIN_DOSAGE))," ", UAR_GET_CODE_DISPLAY(S.DOSAGE_UNIT_CD))
-	 ENDIF
 	, ORDERED_TIME = FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
     ;O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
     ;FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
@@ -74,7 +75,7 @@ PLAN O_A ; ORDER_ACTION
     O_A.ORDER_STATUS_CD IN(2548, 2543) 	; In process or complete orders only
     AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
     ; only include orders ordered before the filtered administration end time
-    AND O_A.ACTION_DT_TM > CNVTLOOKBEHIND("1,H")
+    AND O_A.ACTION_DT_TM >= CNVTLOOKBEHIND("1,H")
 JOIN PR;PRSNL
     ; This is to get the person completing/administering the medication, used if done in SAA
     WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID)
@@ -153,18 +154,29 @@ JOIN SI
         AND SI.ADMIN_START_DT_TM >= OUTERJOIN(CNVTLOOKBEHIND("1,H")) ; administered time filter
         ;AND SI.ADMIN_START_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered time filter
 JOIN	ELH ; ENCNTR_LOC_HIST
-    WHERE ELH.ENCNTR_ID = OUTERJOIN(E.ENCNTR_ID) ; join on encounter
+    WHERE ELH.ENCNTR_ID = E.ENCNTR_ID ; join on encounter
     ;AND OPERATOR(ELH.LOC_FACILITY_CD, FACILITY_OPERATOR_VAR, $FACILITY) ; filter by facility
     ;AND OPERATOR(ELH.LOC_NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS) ;filter by unit
-    AND ELH.ACTIVE_IND = OUTERJOIN(1)	; remove inactive rows
+    AND ELH.ACTIVE_IND = 1	; remove inactive rows
     ; location began before administration
-    AND (ELH.BEG_EFFECTIVE_DT_TM < MAE.BEG_DT_TM
-    OR ELH.BEG_EFFECTIVE_DT_TM < SI.ADMIN_START_DT_TM)
-    AND (ELH.END_EFFECTIVE_DT_TM > MAE.BEG_DT_TM
-    OR ELH.END_EFFECTIVE_DT_TM > SI.ADMIN_START_DT_TM)
+    AND
+        (
+            ELH.BEG_EFFECTIVE_DT_TM < MAE.BEG_DT_TM
+            OR
+            ELH.BEG_EFFECTIVE_DT_TM < SI.ADMIN_START_DT_TM
+        )
+    ; location ended (or will end) after administration
+    AND
+        (
+            ELH.END_EFFECTIVE_DT_TM > MAE.BEG_DT_TM
+            OR
+            ELH.END_EFFECTIVE_DT_TM > SI.ADMIN_START_DT_TM
+        )
+
+
 WITH
     ;TIME = 1000, ; Comment out when in testing
-    TIME = 10, ; Comment out when in production
+    TIME = 20, ; Comment out when in production
 	NOCOUNTER,
 	SEPARATOR=" ",
 	FORMAT

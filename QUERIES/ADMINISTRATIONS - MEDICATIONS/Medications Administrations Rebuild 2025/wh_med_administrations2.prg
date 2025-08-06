@@ -50,10 +50,16 @@ RECORD RECORD_STRUCTURE_MEDS (
     2 A_CATALOG_CD = f8
 )
 
+RECORD RECORD_STRUCTURE_OID (
+  1 LIST_OID [*]
+    2 A_ORDER_ID = f8
+)
+
 /**************************************************************
 ; DVDev DECLARED VARIABLES
 **************************************************************/
 DECLARE COUNTER = I4 WITH NOCONSTANT(0),PROTECT
+DECLARE NUM_MEDS_SELECTED = I4 WITH NOCONSTANT(0),PROTECT
 DECLARE i = I4 WITH NOCONSTANT(0),PROTECT
 DECLARE FACILITY_SELECTION_TYPE_VAR = VC WITH NOCONSTANT(" "),PROTECT
 DECLARE FACILITY_PARAMETER_TYPE_VAR = VC WITH NOCONSTANT(" "),PROTECT
@@ -133,8 +139,76 @@ DETAIL
     ; store the catalog code in the record structure
 	RECORD_STRUCTURE_MEDS->LIST_MEDS[COUNTER].A_CATALOG_CD = MED
 FOOT REPORT
-    NULL
+    NUM_MEDS_SELECTED = COUNTER ; store the number of meds selected
 WITH TIME = 10
+
+; Get the Order ID from the MAE table for the selected medications
+; This is done to make the make the program more efficient
+SELECT INTO "NL:"
+    OID = MAE.ORDER_ID
+FROM
+     MED_ADMIN_EVENT    MAE
+    , ORDERS            O
+PLAN MAE; MED_ADMIN_EVENT
+    WHERE
+        ; Administered after the chosen filter start date and time
+        MAE.BEG_DT_TM >= CNVTDATETIME($START_DATE_TIME); administered filter
+        ; Administered before the chosen filter end date and time
+        AND MAE.BEG_DT_TM <= CNVTDATETIME($END_DATE_TIME) ; administered filter
+        ;AND OPERATOR(MAE.NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS)
+JOIN O ; ORDERS
+    WHERE
+        O.ORDER_ID = MAE.ORDER_ID
+        AND O.ACTIVE_IND = 1
+        ; Filter for selected meds
+        AND EXPAND(i,1,NUM_MEDS_SELECTED,O.CATALOG_CD,RECORD_STRUCTURE_MEDS->LIST_MEDS[i].A_CATALOG_CD)
+HEAD REPORT
+    COUNTER = 0
+DETAIL
+    COUNTER += 1
+    ; add storage space to the list
+    STAT = ALTERLIST(RECORD_STRUCTURE_OID->LIST_OID,COUNTER)
+    ; store the order id in the record structure
+    RECORD_STRUCTURE_OID->LIST_OID[COUNTER].A_ORDER_ID = OID
+FOOT REPORT
+    NULL
+WITH TIME = 60
+
+; Get the Order ID from the S tables for the selected medications
+; This is done to make the make the program more efficient
+SELECT INTO "NL:"
+    OID = S.ORDER_ID
+FROM
+    SA_MEDICATION_ADMIN   S
+    , SA_MED_ADMIN_ITEM     SI
+    , ORDERS            O
+PLAN SI; SA_MED_ADMIN_ITEM
+    WHERE
+        SI.ADMIN_START_DT_TM >= CNVTDATETIME($START_DATE_TIME) ; administered time filter
+        AND SI.ADMIN_START_DT_TM <= CNVTDATETIME($END_DATE_TIME) ; administered time filter
+JOIN S ; SA_MEDICATION_ADMIN
+    WHERE
+        S.SA_MEDICATION_ADMIN_ID = SI.SA_MEDICATION_ADMIN_ID
+        AND S.ACTIVE_IND = 1
+        AND S.ORDER_ID > 0
+        AND S.EVENT_ID > 0
+JOIN O ; ORDERS
+    WHERE
+        O.ORDER_ID = S.ORDER_ID
+        AND O.ACTIVE_IND = 1
+        ; Filter for selected meds
+        AND EXPAND(i,1,NUM_MEDS_SELECTED,O.CATALOG_CD,RECORD_STRUCTURE_MEDS->LIST_MEDS[i].A_CATALOG_CD)
+HEAD REPORT
+    NULL
+DETAIL
+    COUNTER += 1
+    ; add storage space to the list
+    STAT = ALTERLIST(RECORD_STRUCTURE_OID->LIST_OID,COUNTER)
+    ; store the order id in the record structure
+    RECORD_STRUCTURE_OID->LIST_OID[COUNTER].A_ORDER_ID = OID
+FOOT REPORT
+    NULL
+WITH TIME = 60
 
 SELECT DISTINCT INTO $OUTDEV
 	PATIENT = P.NAME_FULL_FORMATTED
@@ -166,9 +240,10 @@ SELECT DISTINCT INTO $OUTDEV
             CONCAT
             (
                 (
-                    IF (SI.ADMIN_DOSAGE = 0)
+                    IF (SI.ADMIN_DOSAGE > 0)
                         TRIM(CNVTSTRING(SI.ADMIN_DOSAGE))
-                    ELSE "NO DATA"
+                    ELSE
+                        TRIM(CNVTSTRING(S.CONC_DOSAGE))
                     ENDIF
                 )
                 ," "
@@ -208,9 +283,9 @@ FROM
 PLAN O_A ; ORDER_ACTION
     WHERE
     O_A.ORDER_STATUS_CD IN(2548, 2543) 	; In process or complete orders only
+    ; Only order IDs that we know we need
+    AND EXPAND(i,1,COUNTER,O_A.ORDER_ID,RECORD_STRUCTURE_OID->LIST_OID[i].A_ORDER_ID)
     AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
-    ; only include orders ordered before the filtered administration end time
-    AND O_A.ACTION_DT_TM <= CNVTDATETIME($END_DATE_TIME)
 JOIN PR;PRSNL
     ; This is to get the person completing/administering the medication, used if done in SAA
     WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID)
@@ -229,7 +304,7 @@ JOIN O ; ORDERS
     AND O.CATALOG_TYPE_CD = 2516.00;
     AND O.ACTIVE_IND = 1
     ; Primary filter for all the catalog codes in the record structure
-    AND EXPAND(i,1,COUNTER,O.CATALOG_CD,RECORD_STRUCTURE_MEDS->LIST_MEDS[i].A_CATALOG_CD)
+    AND EXPAND(i,1,NUM_MEDS_SELECTED,O.CATALOG_CD,RECORD_STRUCTURE_MEDS->LIST_MEDS[i].A_CATALOG_CD)
 JOIN E ; ENCOUNTER
 	WHERE E.ENCNTR_ID = O.ENCNTR_ID
     AND E.ACTIVE_IND = 1
@@ -266,12 +341,13 @@ JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
     /* effective FIN NBRs only */
 	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
 JOIN MAE ;MED_ADMIN_EVENT
-    WHERE MAE.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
-    ; Administered after the chosen filter start date and time
-    AND MAE.BEG_DT_TM >= OUTERJOIN(CNVTDATETIME($START_DATE_TIME)) ; administered filter
-    ; Administered before the chosen filter end date and time
-    AND MAE.BEG_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered filter
-    ;AND OPERATOR(MAE.NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS)
+    WHERE
+        MAE.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
+        ; Administered after the chosen filter start date and time
+        AND MAE.BEG_DT_TM >= OUTERJOIN(CNVTDATETIME($START_DATE_TIME)) ; administered filter
+        ; Administered before the chosen filter end date and time
+        AND MAE.BEG_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered filter
+        ;AND OPERATOR(MAE.NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS)
 JOIN CE
     WHERE
         CE.EVENT_ID = OUTERJOIN(MAE.EVENT_ID)
