@@ -1,0 +1,170 @@
+SELECT DISTINCT
+	PATIENT = P.NAME_FULL_FORMATTED
+	, PATIENT_URN = P_A.ALIAS
+	, ELH_FACILITY = UAR_GET_CODE_DISPLAY(ELH.LOC_FACILITY_CD)
+	, UNIT =
+        IF (MAE.BEG_DT_TM>0) UAR_GET_CODE_DISPLAY(MAE.NURSE_UNIT_CD); unit
+        ELSE UAR_GET_CODE_DISPLAY(ELH.LOC_NURSE_UNIT_CD)
+        ENDIF
+	, ENCOUNTER_ = E_A.ALIAS
+	, EVENT_TYPE =
+        IF(MAE.BEG_DT_TM>0) UAR_GET_CODE_DISPLAY(MAE.EVENT_TYPE_CD); EVENT TYPE
+        ELSE "SURGINET"
+        ENDIF
+    , INTERFACE = ; POWERCHART OR SURGINET?
+        IF (MAE.MED_ADMIN_EVENT_ID>0) "POWERCHART"
+        ELSE "SURGINET"
+        ENDIF
+    , PRIMARY = UAR_GET_CODE_DISPLAY(O.CATALOG_CD)
+	, ORDER_MNEMONIC = O.ORDER_MNEMONIC
+    , ADMINISTERED_BEG =
+        IF(MAE.BEG_DT_TM>0) FORMAT(MAE.BEG_DT_TM, "YYYY-MM-DD HH:MM:SS")
+        ELSE FORMAT(SI.ADMIN_START_DT_TM, "YYYY-MM-DD HH:MM:SS")
+        ENDIF
+    , DOSAGE =
+        IF (SI.ADMIN_DOSAGE != NULL)
+        	CNVTSTRING(SI.ADMIN_DOSAGE)
+        ELSE
+        	CNVTSTRING(CE.EVENT_TAG)
+        ENDIF
+    , DOSAGE_UNITS =
+        IF (S.DOSAGE_UNIT_CD != 0)
+            UAR_GET_CODE_DISPLAY(S.DOSAGE_UNIT_CD)
+        ELSE
+        	NULL
+        ENDIF
+    , DOSAGE2 =
+	 IF (CE.EVENT_TAG != NULL)
+	 	CE.EVENT_TAG
+	 ELSE
+	 	CONCAT(TRIM(CNVTSTRING(SI.ADMIN_DOSAGE))," ", UAR_GET_CODE_DISPLAY(S.DOSAGE_UNIT_CD))
+	 ENDIF
+	, ORDERED_TIME = FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
+    ;O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
+    ;FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
+	, ADMINISTERED_END =
+        IF(MAE.END_DT_TM>0) FORMAT(MAE.END_DT_TM, "YYYY-MM-DD HH:MM:SS")
+        ELSE FORMAT(SI.ADMIN_STOP_DT_TM, "YYYY-MM-DD HH:MM:SS")
+        ENDIF
+	, ADMINISTER_POSITION =
+        IF (MAE.BEG_DT_TM>0) UAR_GET_CODE_DISPLAY(MAE.POSITION_CD) ; direct position form med admin table
+        ELSE UAR_GET_CODE_DISPLAY(PR.POSITION_CD) ; position from prsnl table if a surgery administration
+        ENDIF
+	, SERVICE = UAR_GET_CODE_DISPLAY(ELH.MED_SERVICE_CD)
+    , ENCOUNTER_TYPE = UAR_GET_CODE_DISPLAY(E.ENCNTR_TYPE_CD)
+    , ADMINISTERED_BY = PR.NAME_FULL_FORMATTED
+    , ORDERED_BY = PR_2.NAME_FULL_FORMATTED
+FROM
+    ORDER_ACTION          	O_A
+    , ORDER_ACTION          O_A_2
+	, ORDERS                O
+	, ENCOUNTER             E
+	, MED_ADMIN_EVENT       MAE
+    , CLINICAL_EVENT        CE
+    , PRSNL                 PR
+    , PRSNL                 PR_2
+    , PERSON				P
+    , PERSON_ALIAS          P_A
+    , ENCNTR_ALIAS          E_A
+    , SA_MEDICATION_ADMIN   S
+    , SA_MED_ADMIN_ITEM     SI
+    , ENCNTR_LOC_HIST       ELH
+PLAN O_A ; ORDER_ACTION
+    WHERE
+    O_A.ORDER_STATUS_CD IN(2548, 2543) 	; In process or complete orders only
+    AND O_A.ORDER_CONVS_SEQ = 1 ; removes duplicates on this table
+    ; only include orders ordered before the filtered administration end time
+    AND O_A.ACTION_DT_TM > CNVTLOOKBEHIND("1,H")
+JOIN PR;PRSNL
+    ; This is to get the person completing/administering the medication, used if done in SAA
+    WHERE PR.PERSON_ID = OUTERJOIN(O_A.ACTION_PERSONNEL_ID)
+    AND PR.ACTIVE_IND = OUTERJOIN(1)
+/* Joining Order Action table again to get the original ordering personell */
+JOIN O_A_2 ; ORDER_ACTION
+    WHERE O_A_2.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
+    AND O_A_2.ACTION_TYPE_CD = OUTERJOIN(2534); New Order
+; Joing PRSNL table to get the person who ordered the medication
+JOIN PR_2;PRSNL
+    WHERE PR_2.PERSON_ID = OUTERJOIN(O_A_2.ACTION_PERSONNEL_ID);X.UPDT_ID
+    AND PR_2.ACTIVE_IND = OUTERJOIN(1)
+JOIN O ; ORDERS
+	WHERE O.ORDER_ID = O_A.ORDER_ID
+    /*Pharmacy Catalog only */
+    AND O.CATALOG_TYPE_CD = 2516.00;
+    AND O.ACTIVE_IND = 1
+    ; Primary filter for all the catalog codes in the record structure
+    ;AND EXPAND(i,1,COUNTER,O.CATALOG_CD,RECORD_STRUCTURE_MEDS->LIST_MEDS[i].A_CATALOG_CD)
+JOIN E ; ENCOUNTER
+	WHERE E.ENCNTR_ID = O.ENCNTR_ID
+    AND E.ACTIVE_IND = 1
+    /* Not "DEMO 1 HOSPITAL" Removes Fake Data From The Demo Hospital */
+    ;AND E.LOC_FACILITY_CD != 4038465.00
+/* Patient Identifiers such as URN Medicare no etc */
+JOIN P_A;PERSON_ALIAS; PATIENT_URN = P_A.ALIAS
+    WHERE P_A.PERSON_ID = E.PERSON_ID
+    AND
+    /* this filters for the UR Number Alias' only */
+   	P_A.ALIAS_POOL_CD = 9569589.00
+	AND
+    /* Effective Only */
+	P_A.END_EFFECTIVE_DT_TM >CNVTDATETIME(CURDATE, curtime3)
+    AND
+    /* Active Only */
+    P_A.ACTIVE_IND = 1
+/* Patients */
+JOIN P;PERSON
+	WHERE P.PERSON_ID = E.PERSON_ID
+    /* Remove Inactive Patients */
+    AND P.ACTIVE_IND = 1
+    /* Remove Fake 'Test' Patients */
+    ;AND P.NAME_LAST_KEY != "*TESTWHS*"
+    /* Remove Ineffective Patients */
+    AND P.END_EFFECTIVE_DT_TM > SYSDATE
+/* Encounter Identifiers such as the Financial Number */
+JOIN E_A;ENCNTR_ALIAS; ENCOUNTER_NO = E_A.ALIAS
+    WHERE E_A.ENCNTR_ID = E.ENCNTR_ID
+    /*  'FIN/ENCOUNTER/VISIT NBR' from code set 319 */
+	AND E_A.ENCNTR_ALIAS_TYPE_CD = 1077
+	/* active FIN NBRs only */
+    AND E_A.ACTIVE_IND = 1
+    /* effective FIN NBRs only */
+	AND E_A.END_EFFECTIVE_DT_TM > SYSDATE
+JOIN MAE ;MED_ADMIN_EVENT
+    WHERE MAE.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
+    ; Administered after the chosen filter start date and time
+    AND MAE.BEG_DT_TM >= OUTERJOIN(CNVTLOOKBEHIND("1,H")) ; administered filter
+    ; Administered before the chosen filter end date and time
+    ;AND MAE.BEG_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered filter
+    ;AND OPERATOR(MAE.NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS)
+JOIN CE
+    WHERE
+        CE.EVENT_ID = OUTERJOIN(MAE.EVENT_ID)
+        AND CE.VIEW_LEVEL = OUTERJOIN(1)
+JOIN S ;SA_MEDICATION_ADMIN
+    WHERE ; Note administration time is not recorded in this table, see CE table
+        S.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
+        AND S.ORDER_ID > OUTERJOIN(0)
+        AND S.EVENT_ID > OUTERJOIN(0)
+        AND S.ACTIVE_IND = OUTERJOIN(1)
+JOIN SI
+    WHERE
+        SI.SA_MEDICATION_ADMIN_ID = OUTERJOIN(S.SA_MEDICATION_ADMIN_ID)
+        AND SI.ACTIVE_IND = OUTERJOIN(1)
+        AND SI.ADMIN_START_DT_TM >= OUTERJOIN(CNVTLOOKBEHIND("1,H")) ; administered time filter
+        ;AND SI.ADMIN_START_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered time filter
+JOIN	ELH ; ENCNTR_LOC_HIST
+    WHERE ELH.ENCNTR_ID = OUTERJOIN(E.ENCNTR_ID) ; join on encounter
+    ;AND OPERATOR(ELH.LOC_FACILITY_CD, FACILITY_OPERATOR_VAR, $FACILITY) ; filter by facility
+    ;AND OPERATOR(ELH.LOC_NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS) ;filter by unit
+    AND ELH.ACTIVE_IND = OUTERJOIN(1)	; remove inactive rows
+    ; location began before administration
+    AND (ELH.BEG_EFFECTIVE_DT_TM < MAE.BEG_DT_TM
+    OR ELH.BEG_EFFECTIVE_DT_TM < SI.ADMIN_START_DT_TM)
+    AND (ELH.END_EFFECTIVE_DT_TM > MAE.BEG_DT_TM
+    OR ELH.END_EFFECTIVE_DT_TM > SI.ADMIN_START_DT_TM)
+WITH
+    ;TIME = 1000, ; Comment out when in testing
+    TIME = 10, ; Comment out when in production
+	NOCOUNTER,
+	SEPARATOR=" ",
+	FORMAT

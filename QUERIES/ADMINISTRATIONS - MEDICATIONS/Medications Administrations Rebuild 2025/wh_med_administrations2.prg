@@ -160,15 +160,21 @@ SELECT DISTINCT INTO $OUTDEV
         ELSE FORMAT(SI.ADMIN_START_DT_TM, "YYYY-MM-DD HH:MM:SS")
         ENDIF
     , DOSAGE =
-        IF (SI.ADMIN_DOSAGE != NULL)
-        SI.ADMIN_DOSAGE
-        ELSE "UNFINISHED CODE"
-        ENDIF
-    , DOSAGE_UNITS =
-        IF (S.DOSAGE_UNIT_CD != NULL)
-            UAR_GET_CODE_DISPLAY(S.DOSAGE_UNIT_CD)
-        ELSE "UNFINISHED CODE"
-        ENDIF
+	 IF (CE.EVENT_TAG != NULL)
+	 	CE.EVENT_TAG
+	 ELSE
+	 	CONCAT
+	 	(
+	 		(
+		 		IF (SI.ADMIN_DOSAGE = 0)
+		 			TRIM(CNVTSTRING(SI.ADMIN_DOSAGE))
+		 		ELSE "NO DATA"
+		 		ENDIF
+	 		)
+	 		," "
+	 		, UAR_GET_CODE_DISPLAY(S.DOSAGE_UNIT_CD)
+	 	)
+	 ENDIF
 	, ORDERED_TIME = FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
     ;O.ORIG_ORDER_DT_TM "DD-MMM-YYYY HH:MM:SS;;D"
     ;FORMAT(O.ORIG_ORDER_DT_TM, "YYYY-MM-DD HH:MM:SS")
@@ -190,6 +196,7 @@ FROM
 	, ORDERS                O
 	, ENCOUNTER             E
 	, MED_ADMIN_EVENT       MAE
+    , CLINICAL_EVENT        CE
     , PRSNL                 PR
     , PRSNL                 PR_2
     , PERSON				P
@@ -265,6 +272,10 @@ JOIN MAE ;MED_ADMIN_EVENT
     ; Administered before the chosen filter end date and time
     AND MAE.BEG_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered filter
     ;AND OPERATOR(MAE.NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS)
+JOIN CE
+    WHERE
+        CE.EVENT_ID = OUTERJOIN(MAE.EVENT_ID)
+        AND CE.VIEW_LEVEL = OUTERJOIN(1)
 JOIN S ;SA_MEDICATION_ADMIN
     WHERE ; Note administration time is not recorded in this table, see CE table
         S.ORDER_ID = OUTERJOIN(O_A.ORDER_ID)
@@ -278,24 +289,26 @@ JOIN SI
         AND SI.ADMIN_START_DT_TM >= OUTERJOIN(CNVTDATETIME($START_DATE_TIME)) ; administered time filter
         AND SI.ADMIN_START_DT_TM <= OUTERJOIN(CNVTDATETIME($END_DATE_TIME)) ; administered time filter
 JOIN	ELH ; ENCNTR_LOC_HIST
-    WHERE ELH.ENCNTR_ID = OUTERJOIN(E.ENCNTR_ID) ; join on encounter
+    WHERE ELH.ENCNTR_ID = E.ENCNTR_ID ; join on encounter
     AND OPERATOR(ELH.LOC_FACILITY_CD, FACILITY_OPERATOR_VAR, $FACILITY) ; filter by facility
     AND OPERATOR(ELH.LOC_NURSE_UNIT_CD, UNITS_OPERATOR_VAR, $UNITS) ;filter by unit
-    AND ELH.ACTIVE_IND = OUTERJOIN(1)	; remove inactive rows
+    AND ELH.ACTIVE_IND = 1	; remove inactive rows
     ; location began before administration
-    AND ELH.BEG_EFFECTIVE_DT_TM <
-        IF(MAE.BEG_DT_TM>0)
-            MAE.BEG_DT_TM
-        ELSE
-            SI.ADMIN_START_DT_TM
-        ENDIF
+    AND
+        (
+            ELH.BEG_EFFECTIVE_DT_TM < MAE.BEG_DT_TM
+            OR
+            ELH.BEG_EFFECTIVE_DT_TM < SI.ADMIN_START_DT_TM
+        )
     ; location ended (or will end) after administration
-    AND ELH.END_EFFECTIVE_DT_TM >
-        IF(MAE.BEG_DT_TM>0)
-            MAE.BEG_DT_TM
-        ELSE
-            SI.ADMIN_START_DT_TM
-        ENDIF
+    AND
+        (
+            ELH.END_EFFECTIVE_DT_TM > MAE.BEG_DT_TM
+            OR
+            ELH.END_EFFECTIVE_DT_TM > SI.ADMIN_START_DT_TM
+        )
+
+
 WITH
     ;TIME = 1000, ; Comment out when in testing
     TIME = 90, ; Comment out when in production
