@@ -7,4 +7,6 @@ UPDATE INTO PRSNL P
         , P.UPDT_CNT = P.UPDT_CNT + 1
     WHERE
         P.USERNAME = "_USERNAME_" ; <---COLUMN HEADER NAME FOR GENERATOR
+        ; Only End date if not already end dated
+        AND P.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE,CURTIME3)
 ;------------------------------------------------------------------------
