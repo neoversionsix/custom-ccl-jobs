@@ -10,3 +10,21 @@ UPDATE INTO PRSNL P
         ; Only End date if not already end dated
         AND P.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE,CURTIME3)
 ;------------------------------------------------------------------------
+
+
+
+
+
+; THIS IS JUST FOR CHECKING AFTERWARDS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SELECT
+	P.USERNAME
+	, P.END_EFFECTIVE_DT_TM "YYYY-MM-DD HH:MM:SS"
+	, P.UPDT_DT_TM "YYYY-MM-DD HH:MM:SS"
+
+FROM
+	PRSNL   P
+WHERE
+	P.UPDT_DT_TM > CNVTLOOKBEHIND("1,H") ;was updated in the last hour
+	AND P.UPDT_ID = REQINFO->UPDT_ID ; Was updated by the person running this script
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, TIME = 10
