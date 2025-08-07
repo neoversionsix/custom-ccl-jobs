@@ -284,6 +284,12 @@ FROM
     , SA_MEDICATION_ADMIN   S
     , SA_MED_ADMIN_ITEM     SI
     , ENCNTR_LOC_HIST       ELH
+    ; below tables for for powerplan, regimen, cycle
+    , REGIMEN               R
+	, REGIMEN_DETAIL        RD
+	, PATHWAY               PW
+	, PATHWAY_ACTION        PA
+	, ACT_PW_COMP           APC
 
 PLAN O ; ORDERS
     WHERE
@@ -394,6 +400,27 @@ JOIN	ELH ; ENCNTR_LOC_HIST
                 OR
                 ELH.END_EFFECTIVE_DT_TM > SI.ADMIN_START_DT_TM
             )
+; below joins for for powerplan, regimen, cycle
+JOIN APC ; ACT_PW_COMP
+     WHERE APC.ENCNTR_ID = O.ENCNTR_ID
+           AND (APC.PARENT_ENTITY_ID = O.ORDER_ID
+                 OR APC.PARENT_ENTITY_ID = O.TEMPLATE_ORDER_ID)
+		   AND APC.PARENT_ENTITY_NAME = "ORDERS"
+JOIN PW ; PATHWAY
+    WHERE
+        PW.PATHWAY_ID = APC.PATHWAY_ID
+JOIN PA ; PATHWAY_ACTION
+    WHERE
+        PA.PATHWAY_ID = PW.PATHWAY_ID
+        AND PA.PW_ACTION_SEQ = 1
+JOIN R ; REGIMEN
+    WHERE
+        R.ENCNTR_ID = O.ENCNTR_ID
+JOIN RD ; REGIMEN_DETAIL
+    WHERE
+        RD.REGIMEN_ID = R.REGIMEN_ID
+		AND RD.ACTIVITY_ENTITY_ID = PW.PW_GROUP_NBR
+        AND RD.REFERENCE_ENTITY_ID = O.PATHWAY_CATALOG_ID
 
 WITH
     TIME = 1000, ; Comment out when in testing
@@ -403,8 +430,8 @@ WITH
 	SEPARATOR=" ",
 	FORMAT
 
-end
-go
+END
+GO
 
 
 /*
