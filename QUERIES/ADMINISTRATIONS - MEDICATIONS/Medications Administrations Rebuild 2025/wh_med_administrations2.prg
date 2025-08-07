@@ -175,7 +175,8 @@ FOOT REPORT
     NUM_OIDS_SELECTED = COUNTER
 WITH TIME = 60, EXPAND = 2
 
-; Get the Order ID from the S tables for the selected medications
+; Get the Order IDs from the S tables for the selected medications
+; then add them onto the existing record structure
 ; This is done to make the make the program more efficient
 SELECT INTO "NL:"
     OID = S.ORDER_ID
@@ -286,12 +287,6 @@ FROM
     , SA_MEDICATION_ADMIN   S
     , SA_MED_ADMIN_ITEM     SI
     , ENCNTR_LOC_HIST       ELH
-    ; below tables for for powerplan, regimen, cycle
-    , REGIMEN               R
-	, REGIMEN_DETAIL        RD
-	, PATHWAY               PW
-	, PATHWAY_ACTION        PA
-	, ACT_PW_COMP           APC
 
 PLAN O ; ORDERS
     WHERE
@@ -402,28 +397,6 @@ JOIN	ELH ; ENCNTR_LOC_HIST
                 OR
                 ELH.END_EFFECTIVE_DT_TM > SI.ADMIN_START_DT_TM
             )
-; below joins for for powerplan, regimen, cycle
-JOIN APC ; ACT_PW_COMP
-     WHERE APC.ENCNTR_ID = OUTERJOIN(O.ENCNTR_ID)
-           AND (APC.PARENT_ENTITY_ID = OUTERJOIN(O.ORDER_ID)
-                 OR APC.PARENT_ENTITY_ID = OUTERJOIN(O.TEMPLATE_ORDER_ID))
-		   AND APC.PARENT_ENTITY_NAME = OUTERJOIN("ORDERS")
-JOIN PW ; PATHWAY
-    WHERE
-        PW.PATHWAY_ID = OUTERJOIN(APC.PATHWAY_ID)
-JOIN PA ; PATHWAY_ACTION
-    WHERE
-        PA.PATHWAY_ID = OUTERJOIN(PW.PATHWAY_ID)
-        AND PA.PW_ACTION_SEQ = OUTERJOIN(1)
-JOIN R ; REGIMEN
-    WHERE
-        R.ENCNTR_ID = OUTERJOIN(O.ENCNTR_ID)
-JOIN RD ; REGIMEN_DETAIL
-    WHERE
-        RD.REGIMEN_ID = OUTERJOIN(R.REGIMEN_ID)
-		AND RD.ACTIVITY_ENTITY_ID = OUTERJOIN(PW.PW_GROUP_NBR)
-        AND RD.REFERENCE_ENTITY_ID = OUTERJOIN(O.PATHWAY_CATALOG_ID)
-
 WITH
     TIME = 1000, ; Comment out when in testing
     ;TIME = 90, ; Comment out when in production
