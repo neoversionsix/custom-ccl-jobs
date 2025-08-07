@@ -257,10 +257,6 @@ SELECT DISTINCT INTO $OUTDEV
                 , UAR_GET_CODE_DISPLAY(S.DOSAGE_UNIT_CD)
             )
         ENDIF
-    , REGIMEN = R.REGIMEN_NAME
-    , POWERPLAN = TRIM(PW.PW_GROUP_DESC)
-    , CYCLE = CNVTSTRING(RD.CYCLE_NBR)
-    , IV_DAY = PW.DESCRIPTION
 	, ADMINISTER_POSITION =
         IF (MAE.BEG_DT_TM>0) UAR_GET_CODE_DISPLAY(MAE.POSITION_CD) ; direct position form med admin table
         ELSE UAR_GET_CODE_DISPLAY(PR.POSITION_CD) ; position from prsnl table if a surgery administration
