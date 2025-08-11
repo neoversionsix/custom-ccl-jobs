@@ -144,7 +144,7 @@ DETAIL
 	RECORD_STRUCTURE_MEDS->LIST_MEDS[COUNTER].A_CATALOG_CD = MED
 FOOT REPORT
     NUM_MEDS_SELECTED = COUNTER ; store the number of meds selected
-WITH TIME = 60
+WITH TIME = 1000
 
 ; Get the Order ID from the MAE table for the selected medications
 ; This is done to make the make the program more efficient
@@ -176,7 +176,7 @@ DETAIL
     RECORD_STRUCTURE_OID->LIST_OID[COUNTER].A_ORDER_ID = OID
 FOOT REPORT
     NUM_OIDS_SELECTED = COUNTER
-WITH TIME = 60, EXPAND = 2
+WITH TIME = 1000, EXPAND = 2
 
 ; Get the Order IDs from the S tables for the selected medications
 ; then add them onto the existing record structure
@@ -213,7 +213,7 @@ DETAIL
     RECORD_STRUCTURE_OID->LIST_OID[COUNTER].A_ORDER_ID = OID
 FOOT REPORT
     NUM_OIDS_SELECTED = COUNTER
-WITH TIME = 60, EXPAND = 2
+WITH TIME = 1000, EXPAND = 2
 
 SELECT DISTINCT INTO $OUTDEV
 	PATIENT = P.NAME_FULL_FORMATTED
