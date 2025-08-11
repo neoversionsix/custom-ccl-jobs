@@ -2,9 +2,12 @@ drop program wh_med_administrations2 go
 create program wh_med_administrations2
 /* PROGRAM NOTES
 Programmer: Jason Whittle
+Cherwell Ticket No: 701356
 Created: 16 Nov 2023
 Updated: 25 Jun 2025
-Use: Medication Administrations (including surgery)
+Use: Medication Administrations (including surgery). User can
+filter by date/time, facility, units and primary catalog names
+of pharmacy medications.
 Config Instructions: Queries for the selection boxes at bottom
 START_DATE_TIME
     - Control Type: Date Time
