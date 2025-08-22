@@ -3,7 +3,7 @@ SELECT INTO TABLE CUST_WH_NOTES_JW
   NOTE_ID = TYPE("F8"), ; ID for the Note
   PERSON_ID = TYPE("F8"), ; Back end ID for the patient
   CREATE_PRSNL_PERSON_ID = TYPE("F8"), ; Back end id for the note creater
-  FULL_NOTE = TYPE("VC50"), ; The note written for the patient
+  FULL_NOTE = TYPE("VC"), ; The note written for the patient
   CREATE_DT_TM = TYPE("DQ8"), ; The date the note was created
   UPDT_DT_TM = TYPE("DQ8"), ; The date the note was last updated
   UPDT_ID = TYPE("F8"), ; Last updater for the note, or row in the database
