@@ -1,0 +1,26 @@
+SELECT INTO TABLE CUST_WH_NOTES_JW
+  ACTIVE_ROW_IND = TYPE("I2"), ; ROW ACTIVE? 1 or 0
+  NOTE_ID = TYPE("F8"), ; ID for the Note
+  PERSON_ID = TYPE("F8"), ; Back end ID for the patient
+  CREATE_PRSNL_PERSON_ID = TYPE("F8"), ; Back end id for the note creater
+  FULL_NOTE = TYPE("VC50"), ; The note written for the patient
+  CREATE_DT_TM = TYPE("DQ8"), ; The date the note was created
+  UPDT_DT_TM = TYPE("DQ8"), ; The date the note was last updated
+  UPDT_ID = TYPE("F8"), ; Last updater for the note, or row in the database
+  BEG_EFF_DT_TM = TYPE("DQ8"), ; Begin Effective date-time for the note
+  END_EFF_DT_TM = TYPE("DQ8") ; End Effective date-time for the note (when it was deactivated)
+
+FROM DUMMYT D1
+WITH INDEXUNIQUE(NOTE_ID), ; Primary key for the table
+  INDEX ; Indexed Columns below, for faster querying of the table
+    (
+          PERSON_ID
+        , CREATE_PRSNL_PERSON_ID
+        , CREATE_DT_TM
+        , UPDT_DT_TM
+        , UPDT_ID
+    ),
+     ORGANIZATION = "P",
+     CONSTRAINT(NOTE_ID,"NOT NULL"),
+     OWNER="V500",
+     SYNONYM="CUST_WH_NOTES_JW"
