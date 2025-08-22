@@ -19,10 +19,30 @@ FROM
 
 PLAN N
 	WHERE N.SOURCE_VOCABULARY_CD IN
-        (
-            639026 ; Allergy
-            , 1236 ; Multum Allergy Category
-        )
+	(
+		SELECT I.CODE_VALUE
+		FROM CODE_VALUE I
+		WHERE I.CODE_SET = 400
+		AND CNVTUPPER(I.DISPLAY) = "*ALLERGY*"
+		WITH TIME = 10
+	)
+        ; (
+        ;       639026	Allergy
+		; 	, 614419	Medicom Allergy Category
+		; 	, 1236	Multum Allergy Category
+			; , 4005198	SNOMED III
+			; , 1242	SNOMED 2nd ed
+			; , 1243	SNOMED 2nd  ed Extension
+			; , 673967	SNOMED CT
+			; , 1244	SNOMED International
+			; , 1245	SNOMED International Extension
+			; , 1236	Multum Allergy Category
+			; , 88011856	Multum Drug Condition
+			; , 637888	Multum Drug Classification
+			; , 1237	Multum Drug
+			; , 1238	Multum Formulation
+			; , 13126872	Multum Drug Ingredient
+        ; )
 
 JOIN C
     WHERE
