@@ -1,39 +1,39 @@
 SELECT
-	CREATED = O_T.CREATE_DT_TM "DD-MMM-YYYY HH:MM:SS"
-	, GOING =
-		IF (O_T.EVENTID = "1001") "INBOUND"
-		ELSEIF (O_T.EVENTID = "2001") "OUTBOUND"
-		ELSE O_T.EVENTID
+	CREATE_DT = FORMAT(OT.CREATE_DT_TM, "YYYY-MM-DD HH:MM:SS ;L;D")
+	, OT.MSG_DATE
+	, OT.MSG_TIME
+	, GOING = IF (OT.EVENTID = "1001") "INBOUND"
+		ELSEIF (OT.EVENTID = "2001") "OUTBOUND"
+		ELSE OT.EVENTID
 		ENDIF
-	, HL7 = O_T.MSG_TEXT
-
+	, OP.PROC_NAME
+	, OP.PROC_DESC
+	, OT.INTERFACEID
+	, OT.SEQ_NO
+	, OT.MSG_LEN
+	, OT.INST_ID
+	, OT.TXN_ID_TEXT
+	, MESSAGE = OT.MSG_TEXT
 FROM
-	OEN_TXLOG   O_T
+	  OEN_TXLOG   		OT
+	, OEN_PROCINFO		OP
+PLAN OT
+	WHERE
+		;;TIME FROM NOW FILTER
+		OT.CREATE_DT_TM > cnvtlookbehind("1,H") ; Messages created in the last 1 hour
+	    ; AND OT.CREATE_DT_TM > cnvtdatetime("26-NOV-2024 00:00") ; Messages created after
+		; AND OT.CREATE_DT_TM < cnvtdatetime("03-DEC-2024 17:00") ; Messages created before change
+		;;Filter text, order id, urn etc
+		AND OT.MSG_TEXT = "*1613161*" ; TEST PATIENT URN
+		;;INBOUND OR OUTBOUND? MESSAGES ONLY
+		;; "2001" => OUTBOUND
+		;; "1001" => INBOUND
+		AND OT.EVENTID != "1001" ; NOT AN INBOUND MESSAGE
 
-WHERE
-	/* TIME FROM NOW FILTER */
-	O_T.CREATE_DT_TM > cnvtlookbehind("1,H")
-	/*
-		O_T.CREATE_DT_TM BETWEEN
-           CNVTDATETIME("10-JAN-2024 23:00")
-           AND
-           CNVTDATETIME("11-JAN-2024 10:00")
-	 */
-	/* Filter text, order id, urn etc */
-	AND O_T.MSG_TEXT = "*1613161*"
-    /* Pathology Messages */
-	; AND
-    ;     (
-    ;         O_T.MSG_TEXT = "MSH|^~\&|CERNERLAB|*"
-    ;         OR
-    ;         O_T.MSG_TEXT = "MSH|^~\&|AWHS_ULTRA|*"
-    ;     )
-
-	/* INBOUND OR OUTBOUND? MESSAGES ONLY
-	"2001" => OUTBOUND
-	"1001" => INBOUND
-	*/
-	AND O_T.EVENTID = "2001"
+JOIN OP ; OEN_PROCINFO
+	WHERE
+		OP.INTERFACEID = OUTERJOIN(CNVTINT(OT.INTERFACEID))
+		AND OP.PROC_NAME = ("WH_RAD_ORM_OUT_TCPIP") ; RAD RIS INTERFACE ONLY
 
 
-WITH FORMAT, SEPERATOR = " ", TIME = 20, MAXREC = 1000
+WITH MAXREC = 1000, FORMAT, SEPERATOR = " ", TIME = 20
