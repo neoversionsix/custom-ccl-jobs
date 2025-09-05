@@ -1,0 +1,4 @@
+select DOC_FOLDER=concat(trim(info_char),"\winintel")
+from dm_info
+where info_domain='INS' and info_name='FE_DATA'
+with time = 10

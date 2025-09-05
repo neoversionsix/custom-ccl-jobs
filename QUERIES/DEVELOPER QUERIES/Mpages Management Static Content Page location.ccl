@@ -1,0 +1,8 @@
+SELECT
+build2(trim(d.info_char),"/manager")
+
+FROM
+dm_info d
+
+where d.info_domain = "INS" and d.info_name = "CONTENT_SERVICE_URL"
+with time = 10
