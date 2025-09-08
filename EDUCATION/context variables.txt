@@ -1,0 +1,44 @@
+The following is a list of context variables supported by certain solutions using the DiscernOutputViewer control. MPages and Discern Notify support the following context variables in CCLLINK and APPLINK. MPages also supports context variables in the REPORT_NAME and REPORT_PARAM preferences of the Discern Report component in Preference Maintenance (PrefMaint.exe). Context variables are useful for substituting runtime values from the current solution context during the execution of a Discern Explorer (CCL) program link. The variable names should be nested within dollar signs ($) in order to substitute the appropriate context data.
+
+
+PAT_PersonId
+
+The person ID of the patient currently loaded in PowerChart or a PowerChart clone. This is available at the Chart level within MPages.
+
+number
+
+PAT_PPRCode
+
+The person-personnel relationship code of the patient currently loaded in PowerChart or a PowerChart clone. This is available at the Chart level within MPages.
+
+number
+
+VIS_EncntrId
+
+The encounter ID of the patient currently loaded in PowerChart or a PowerChart clone. This is available at the Chart level within MPages.
+
+number
+
+USR_PersonId
+
+The person ID of the user running PowerChart or a PowerChart clone. This is available in Discern Notification, as well as the Organizer and Chart levels within MPages.
+
+number
+
+USR_PositionCd
+
+The position code of the user currently loaded in PowerChart or a PowerChart clone. This is available at the Organizer and Chart levels within MPages.
+
+number
+
+DEV_Location
+
+The configured location of the device or client. This is equivalent to the device_location logical configured in WtsLocation.exe. This is available in Discern Notification, as well as the Organizer and Chart levels within MPages.
+
+string
+
+APP_AppName
+
+The name of the executable that is currently in context. This is available in Discern Notification, as well the Organizer and Chart level within MPages.
+
+string
