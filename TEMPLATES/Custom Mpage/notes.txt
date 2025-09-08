@@ -1,0 +1,15 @@
+PrefMaint Settings
+    * Add Tab: Discern Report
+    * Level 1 settings
+        * VIEW_CAPTION: Title of the Mpage on the Front end Tab
+        * WEB_BROWSER_SELECTION: 1-Edge Chromium
+    * Level 2 settings
+        * REPORT_NAME: program_name (where program is the name of the .prg file to execute
+         without the file extenstion, so in this case program_name.prg would be exectuted)
+        * REPORT_PARAM: \
+        eg: MINE,$PAT_PERSONID$, $VIS_ENCNTRID$, $USR_PERSONID$,"I:\\WININTEL\\static_content\\jw1_mpage",^cust_script:jw1_mpage.html^
+        These are the parameters passed to the program that is executed. Can be from PowerChart
+        eg the ones with $$ signs or can be strings set here. Must be in the same order that
+        the program accepts the parameters. The parmeters from pawerchart are called context
+        variables and have pre set names. eg $PAT_PERSONID$ is the patient id of the patient 
+        that is open in powerchart
