@@ -15,7 +15,6 @@ async function patientInfoTable(){
 
 	// Get the response
 	patInfo.onreadystatechange = function () {
-		// 4->Completed, 200->Success for XMLCCLREQUEST
 		if (patInfo.readyState == 4 && patInfo.status == 200) {
             var msgPatient = patInfo.responseText;
 			if (msgPatient != undefined && msgPatient != null && msgPatient > " ") {
@@ -39,7 +38,7 @@ async function patientInfoTable(){
 			// Insert the table into the patient information section
 			document.getElementById('patientInfoTable').innerHTML  = tableBody.join("");
 			
-			var link = tabLink("Custom Patient Information","Patient Information","$APP_APPNAME$");
+			var link = tabLink("Custom Patient Information","Patient Information","APP_APPNAME");
 
 			// Insert the link into the patient information section header
 			document.getElementById('patHeader').innerHTML  = link;
@@ -58,8 +57,10 @@ async function patientInfoTable(){
     //Add ,true for Edge Compatibility******************
 	patInfo.open('GET', "JW1_MPAGE_PATIENTINFO",true);
 	//patInfo.send("MINE, $PAT_Personid$"); 
-	allInfo.send("MINE, "+MPAGE_REC.PERSON_ID+".0");
-	//patInfo.send("MINE,1416145.00"); // use this line while testing in dvdev
+	//patInfo.send("MINE, "+MPAGE_REC.PERSON_ID);
+	patInfo.send(`MINE, ${person_id_var}`);
+	//patInfo.send(`MINE, ${person_id_var.toFixed(2)}`);
+	//patInfo.send("MINE,1416145.00"); 
     //Added for Edge Compatibility ***Start********************
     });
     console.log("starting to wait for promise");        
