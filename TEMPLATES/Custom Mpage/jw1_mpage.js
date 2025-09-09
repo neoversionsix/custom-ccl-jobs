@@ -17,6 +17,7 @@ async function patientInfoTable(){
 	patInfo.onreadystatechange = function () {
 		if (patInfo.readyState == 4 && patInfo.status == 200) {
             var msgPatient = patInfo.responseText;
+			debug.log("raw patient payload:", msgPatient);
 			if (msgPatient != undefined && msgPatient != null && msgPatient > " ") {
 				var jsonPatient = eval('(' + msgPatient + ')');
 			}
@@ -58,6 +59,7 @@ async function patientInfoTable(){
 	patInfo.open('GET', "JW1_MPAGE_PATIENTINFO",true);
 	//patInfo.send("MINE, $PAT_Personid$"); 
 	//patInfo.send("MINE, "+MPAGE_REC.PERSON_ID);
+	debug.log(`→ JW1_MPAGE_PATIENTINFO args: MINE, ${person_id_var}`);
 	patInfo.send(`MINE, ${person_id_var}`);
 	//patInfo.send(`MINE, ${person_id_var.toFixed(2)}`);
 	//patInfo.send("MINE,1416145.00"); 
@@ -211,4 +213,4 @@ function addAllergy() {
 	var paramString =  "$PAT_Personid$|$VIS_Encntrid$|0|0|||0||0|0";
 	MPAGES_EVENT("Allergy", paramString);
 	allergyInfoTable();
-} //end addAllergy 
+} //end addAllergy
