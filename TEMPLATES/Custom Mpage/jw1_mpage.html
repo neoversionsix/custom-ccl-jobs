@@ -4,18 +4,25 @@
 <head>
     <meta http-equiv="Content-Type" content="XMLCCLREQUEST,APPLINK,MPAGES_EVENT,CCLLINK" name="discern"/>
     <link href="$SOURCE_DIR$\jw1_mpage.css" rel="stylesheet" type="text/css" charset="UTF-8"/>
+    <script src="$SOURCE_DIR$\mpage-debug.js" data-debug="1"></script>
+	<!--   set data-debug="0" to turn off the console log   -->
+	<link href="$SOURCE_DIR$\mpage-debug.css" rel="stylesheet" type="text/css"/>
+	
+	<script>
+	  window.PERSON_ID_VAR = Number("{{PERSON_ID_VAR}}");
+	  document.addEventListener('DOMContentLoaded', function () {
+	    debug.log("HEAD PERSON_ID literal =", "{{PERSON_ID_VAR}}");
+	    debug.log("HEAD PERSON_ID_VAR parsed =", window.PERSON_ID_VAR);
+	  });
+	</script>
+
+	
     <script language="javascript" type="text/javascript" src="$SOURCE_DIR$\jw1_mpage.js" charset="UTF-8"></script>
 	<script language="javascript" type="text/javascript" src="$SOURCE_DIR$\jquery.js" charset="UTF-8"></script>
 	<script language="javascript" type="text/javascript" src="$SOURCE_DIR$\jw1_mpage_common.js" charset="UTF-8"></script>
 	<script language="javascript" type="text/javascript">
 		var MPAGE_REC = $MPAGE_REC$.MPAGE_REC;
 	</script>
-	<script>
-  		const person_id_var = Number(__PERSON_ID_VAR__);
-  		//const person_id_var = Number(15779987);
-	</script>
-	<script src="$SOURCE_DIR$\mpage-debug.js" data-debug="1"></script>
-	<!--   set data-debug="0" to turn off the console log   -->
 </head>
 <body onload="javascript:getEvents();">
 	<div class="wrap">

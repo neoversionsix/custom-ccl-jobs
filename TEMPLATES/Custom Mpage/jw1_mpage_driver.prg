@@ -12,7 +12,7 @@ prompt
 with OUTDEV, PERSON_ID, ENCNTR_ID, USER_ID, SOURCEDIR, HTML_FILE
 
 ; DECLARE VARIABLES
-declare PERSON_ID_VAR = VC with Constant("0.00"),Protect
+declare person_id_var = VC with noConstant("0.00"), protect
 declare directory_var = VC with constant("\\wheaaunas\wheaau\c2031\winintel\static_content\jw1_mpage")
 declare html_file_var = vc with constant("cust_script:jw1_mpage.html")
 /***************************************************************************
@@ -36,7 +36,11 @@ set mpage_rec->user_id = $user_id
 set mpage_rec->source_dir = $sourcedir
 set mpage_rec->html_file = $html_file
 
-set PERSON_ID_VAR = cnvtstring($PERSON_ID)
+/* after the $MPAGE_REC$ replace */
+set person_id_var = cnvtstring($PERSON_ID)
+;set getReply->data_blob = replace(getReply->data_blob, "{{PERSON_ID_VAR}}", person_id_var, 0)
+
+
 
 
 /***************************************************************************
@@ -74,13 +78,15 @@ endif
 /***************************************************************************
  * 		Replace special strings in HTML File				*
  ***************************************************************************/
+;set getReply->data_blob = replace(getReply->data_blob, "{{PERSON_ID_VAR}}", cnvtstring(mpage_rec->person_id), 0)
+set getReply->data_blob = replace(getReply->data_blob, "{{PERSON_ID_VAR}}", cnvtstring(person_id_var), 0)
 ; Replace $SOURCE_DIR$ in the HTML file with the actual location of the static_content files
 set getReply->data_blob = replace(getReply->data_blob,"$SOURCE_DIR$", mpage_rec->source_dir,0)
 
 ; Replace $MPAGE_REC$ in the HTML file with the JSON for the record
 set getReply->data_blob = replace(getReply->data_blob,"$MPAGE_REC$", CNVTRECTOJSON(mpage_rec),0)
 
-set getReply->data_blob = replace(getReply->data_blob,"__PERSON_ID_VAR__", PERSON_ID_VAR, 0)
+
 /***************************************************************************
  * 		Outputs HTML to the display					*
  ***************************************************************************/
