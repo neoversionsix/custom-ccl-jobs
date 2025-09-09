@@ -12,7 +12,7 @@ prompt
 with OUTDEV, PERSON_ID, ENCNTR_ID, USER_ID, SOURCEDIR, HTML_FILE
 
 ; DECLARE VARIABLES
-declare person_id_var = F8 with Constant(0.00),Protect
+declare person_id_var = VC with Constant("0.00"),Protect
 declare directory_var = VC with constant("\\wheaaunas\wheaau\c2031\winintel\static_content\jw1_mpage")
 declare html_file_var = vc with constant("cust_script:jw1_mpage.html")
 /***************************************************************************
@@ -36,7 +36,7 @@ set mpage_rec->user_id = $user_id
 set mpage_rec->source_dir = $sourcedir
 set mpage_rec->html_file = $html_file
 
-set person_id_var = $PERSON_ID
+set person_id_var = cnvtstring($PERSON_ID)
 
 
 /***************************************************************************
@@ -80,7 +80,7 @@ set getReply->data_blob = replace(getReply->data_blob,"$SOURCE_DIR$", mpage_rec-
 ; Replace $MPAGE_REC$ in the HTML file with the JSON for the record
 set getReply->data_blob = replace(getReply->data_blob,"$MPAGE_REC$", CNVTRECTOJSON(mpage_rec),0)
 
-set getReply->data_blob = replace(getReply->data_blob,"__PERSON_ID_VAR__", cnvtstring(PERSON_ID_VAR), 0)
+set getReply->data_blob = replace(getReply->data_blob,"__PERSON_ID_VAR__", PERSON_ID_VAR, 0)
 /***************************************************************************
  * 		Outputs HTML to the display					*
  ***************************************************************************/

@@ -59,8 +59,9 @@ async function patientInfoTable(){
 	patInfo.open('GET', "JW1_MPAGE_PATIENTINFO",true);
 	//patInfo.send("MINE, $PAT_Personid$"); 
 	//patInfo.send("MINE, "+MPAGE_REC.PERSON_ID);
-	debug.log(`→ JW1_MPAGE_PATIENTINFO args: MINE, ${person_id_var}`);
+	debug.log(`? JW1_MPAGE_PATIENTINFO args: MINE, ${person_id_var}`);
 	patInfo.send(`MINE, ${person_id_var}`);
+	//patInfo.send("MINE, " + person_id_var);
 	//patInfo.send(`MINE, ${person_id_var.toFixed(2)}`);
 	//patInfo.send("MINE,1416145.00"); 
     //Added for Edge Compatibility ***Start********************
