@@ -81,7 +81,7 @@ endif
 ;set getReply->data_blob = replace(getReply->data_blob, "{{PERSON_ID_VAR}}", cnvtstring(mpage_rec->person_id), 0)
 set getReply->data_blob = replace(getReply->data_blob, "{{PERSON_ID_VAR}}", cnvtstring(person_id_var), 0)
 ; Replace $SOURCE_DIR$ in the HTML file with the actual location of the static_content files
-set getReply->data_blob = replace(getReply->data_blob,"$SOURCE_DIR$", mpage_rec->source_dir,0)
+set getReply->data_blob = replace(getReply->data_blob,"__SOURCE_DIR__", directory_var,0)
 
 ; Replace $MPAGE_REC$ in the HTML file with the JSON for the record
 set getReply->data_blob = replace(getReply->data_blob,"$MPAGE_REC$", CNVTRECTOJSON(mpage_rec),0)
