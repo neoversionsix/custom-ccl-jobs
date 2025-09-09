@@ -13,3 +13,7 @@ PrefMaint Settings
         the program accepts the parameters. The parmeters from pawerchart are called context
         variables and have pre set names. eg $PAT_PERSONID$ is the patient id of the patient 
         that is open in powerchart
+
+- html template file goes in cust_script folder. You can put in in there with dvdev
+- js and css files go in your folder that you created in within your environments static_content folder.
+- the js can call programs and rewrite the html
