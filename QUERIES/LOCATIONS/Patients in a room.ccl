@@ -32,11 +32,11 @@ PLAN ELH
 			)
 		AND ;Patient is still in the location
 			(
-				ELH.END_EFFECTIVE_DT_TM > SYSDATE ; Ends in the future
+				ELH.END_EFFECTIVE_DT_TM > CNVTDATETIME(CURDATE, CURTIME) ; Ends in the future
 				OR
 				ELH.END_EFFECTIVE_DT_TM = NULL ; Has no end date yet
 			)
-		AND ELH.BEG_EFFECTIVE_DT_TM < SYSDATE ; Started in the past
+		AND ELH.BEG_EFFECTIVE_DT_TM < CNVTDATETIME(CURDATE, CURTIME) ; Started in the past
 
 JOIN E
 	WHERE
