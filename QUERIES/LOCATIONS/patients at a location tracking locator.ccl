@@ -1,0 +1,54 @@
+SELECT
+	TL_LOC_ROOM_DISP = UAR_GET_CODE_DISPLAY(TL.LOC_ROOM_CD)
+	, p.NAME_FULL_FORMATTED
+	, ARRIVE_DT_TM = FORMAT(tl.ARRIVE_DT_TM, "YYYY-MM-DD HH:MM:SS")
+	, depart_dt_tm = FORMAT(tl.depart_dt_tm, "YYYY-MM-DD HH:MM:SS")
+	, UPDT_DT_TM = FORMAT(tl.UPDT_DT_TM, "YYYY-MM-DD HH:MM:SS")
+	, E.ENCNTR_ID
+	, UPDATER = pr.NAME_FULL_FORMATTED
+	, tl.UPDT_TASK
+	, tl.TRACKING_ID
+
+FROM
+	tracking_locator   tl
+	, tracking_item   ti
+	, person   p
+	, encounter   e
+	, prsnl   pr
+
+PLAN tl
+   WHERE TL.LOC_ROOM_CD =   164237775.00;"LEFT VIA SSU/BAU/HUB"
+;   IN
+;   			(
+;				SELECT CV.CODE_VALUE
+;				FROM CODE_VALUE CV
+;				WHERE
+;					CV.CODE_SET=220
+;					;AND CNVTUPPER(CV.DISPLAY)= "*LEFT *"
+;					AND CNVTUPPER(CV.DISPLAY)= "LEFT VIA SSU/BAU/HUB"
+;			)
+	;tl.UPDT_DT_TM > cnvtlookbehind("1,D")
+    AND tl.depart_dt_tm=cnvtdatetime("31 DEC 2100")
+   JOIN ti
+   WHERE ti.tracking_id=tl.tracking_id
+    AND ti.cur_tracking_locator_id=tl.tracking_locator_id
+    AND ti.tracking_type_flag=0
+    AND ti.encntr_id != 0.0
+    AND ti.person_id != 0.0
+    AND ti.active_ind=1
+JOIN p
+   WHERE p.person_id=ti.person_id
+    AND p.active_ind=1
+    AND p.beg_effective_dt_tm <= cnvtdatetime(sysdate)
+    AND p.end_effective_dt_tm >= cnvtdatetime(sysdate)
+JOIN e
+   WHERE e.encntr_id=ti.encntr_id
+    AND e.active_ind=1
+    AND e.beg_effective_dt_tm <= cnvtdatetime(sysdate)
+    AND e.end_effective_dt_tm >= cnvtdatetime(sysdate)
+
+JOIN pr
+	where pr.PERSON_ID = outerjoin(tl.UPDT_ID)
+	and pr.ACTIVE_IND = outerjoin(1)
+
+WITH TIME = 10
