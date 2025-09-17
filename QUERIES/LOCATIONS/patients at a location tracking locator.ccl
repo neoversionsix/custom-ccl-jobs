@@ -1,54 +1,53 @@
 SELECT
-	TL_LOC_ROOM_DISP = UAR_GET_CODE_DISPLAY(TL.LOC_ROOM_CD)
-	, p.NAME_FULL_FORMATTED
-	, ARRIVE_DT_TM = FORMAT(tl.ARRIVE_DT_TM, "YYYY-MM-DD HH:MM:SS")
-	, depart_dt_tm = FORMAT(tl.depart_dt_tm, "YYYY-MM-DD HH:MM:SS")
-	, UPDT_DT_TM = FORMAT(tl.UPDT_DT_TM, "YYYY-MM-DD HH:MM:SS")
-	, E.ENCNTR_ID
-	, UPDATER = pr.NAME_FULL_FORMATTED
-	, tl.UPDT_TASK
-	, tl.TRACKING_ID
-
+    TL_LOC_ROOM_DISP = UAR_GET_CODE_DISPLAY(TL.LOC_ROOM_CD)
+  , P.NAME_FULL_FORMATTED
+  , ARRIVE_DT_TM = FORMAT(TL.ARRIVE_DT_TM, "YYYY-MM-DD HH:MM:SS")
+  , DEPART_DT_TM = FORMAT(TL.DEPART_DT_TM, "YYYY-MM-DD HH:MM:SS")
+  , UPDT_DT_TM = FORMAT(TL.UPDT_DT_TM, "YYYY-MM-DD HH:MM:SS")
+  , E.ENCNTR_ID
+  , UPDATER = PR.NAME_FULL_FORMATTED
+  , TL.UPDT_TASK
+  , TL.TRACKING_ID
 FROM
-	tracking_locator   tl
-	, tracking_item   ti
-	, person   p
-	, encounter   e
-	, prsnl   pr
-
-PLAN tl
-   WHERE TL.LOC_ROOM_CD =   164237775.00;"LEFT VIA SSU/BAU/HUB"
+    TRACKING_LOCATOR TL
+  , TRACKING_ITEM TI
+  , PERSON P
+  , ENCOUNTER E
+  , PRSNL PR
+  , APPLICATION A
+PLAN TL
+    WHERE TL.LOC_ROOM_CD = 164237775.00 ;"LEFT VIA SSU/BAU/HUB"
 ;   IN
-;   			(
-;				SELECT CV.CODE_VALUE
-;				FROM CODE_VALUE CV
-;				WHERE
-;					CV.CODE_SET=220
-;					;AND CNVTUPPER(CV.DISPLAY)= "*LEFT *"
-;					AND CNVTUPPER(CV.DISPLAY)= "LEFT VIA SSU/BAU/HUB"
-;			)
-	;tl.UPDT_DT_TM > cnvtlookbehind("1,D")
-    AND tl.depart_dt_tm=cnvtdatetime("31 DEC 2100")
-   JOIN ti
-   WHERE ti.tracking_id=tl.tracking_id
-    AND ti.cur_tracking_locator_id=tl.tracking_locator_id
-    AND ti.tracking_type_flag=0
-    AND ti.encntr_id != 0.0
-    AND ti.person_id != 0.0
-    AND ti.active_ind=1
-JOIN p
-   WHERE p.person_id=ti.person_id
-    AND p.active_ind=1
-    AND p.beg_effective_dt_tm <= cnvtdatetime(sysdate)
-    AND p.end_effective_dt_tm >= cnvtdatetime(sysdate)
-JOIN e
-   WHERE e.encntr_id=ti.encntr_id
-    AND e.active_ind=1
-    AND e.beg_effective_dt_tm <= cnvtdatetime(sysdate)
-    AND e.end_effective_dt_tm >= cnvtdatetime(sysdate)
-
-JOIN pr
-	where pr.PERSON_ID = outerjoin(tl.UPDT_ID)
-	and pr.ACTIVE_IND = outerjoin(1)
-
+;       (
+;           SELECT CV.CODE_VALUE
+;           FROM CODE_VALUE CV
+;           WHERE
+;               CV.CODE_SET = 220
+;               ;AND CNVTUPPER(CV.DISPLAY) = "*LEFT *"
+;               ;AND CNVTUPPER(CV.DISPLAY) = "LEFT VIA SSU/BAU/HUB"
+;       )
+    ;TL.UPDT_DT_TM > CNVTLOOKBEHIND("1,D")
+    AND TL.DEPART_DT_TM = CNVTDATETIME("31 DEC 2100")
+JOIN TI
+    WHERE TI.TRACKING_ID = TL.TRACKING_ID
+    AND TI.CUR_TRACKING_LOCATOR_ID = TL.TRACKING_LOCATOR_ID
+    AND TI.TRACKING_TYPE_FLAG = 0
+    AND TI.ENCNTR_ID != 0.0
+    AND TI.PERSON_ID != 0.0
+    AND TI.ACTIVE_IND = 1
+JOIN P
+    WHERE P.PERSON_ID = TI.PERSON_ID
+    AND P.ACTIVE_IND = 1
+    AND P.BEG_EFFECTIVE_DT_TM <= CNVTDATETIME(SYSDATE)
+    AND P.END_EFFECTIVE_DT_TM >= CNVTDATETIME(SYSDATE)
+JOIN E
+    WHERE E.ENCNTR_ID = TI.ENCNTR_ID
+    AND E.ACTIVE_IND = 1
+    AND E.BEG_EFFECTIVE_DT_TM <= CNVTDATETIME(SYSDATE)
+    AND E.END_EFFECTIVE_DT_TM >= CNVTDATETIME(SYSDATE)
+JOIN PR
+    WHERE PR.PERSON_ID = OUTERJOIN(TL.UPDT_ID)
+    AND PR.ACTIVE_IND = OUTERJOIN(1)
+JOIN A
+    WHERE A.APPLICATION_NUMBER = TL.UPDT_TASK
 WITH TIME = 10
