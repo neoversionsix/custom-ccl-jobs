@@ -1,0 +1,16 @@
+SELECT
+	R.REQUEST_NUMBER ; Request number from front end help
+	, TRR.TASK_NUMBER
+	, R.REQUEST_NAME ; Name of the program that was executed
+	, R.DESCRIPTION
+FROM
+	REQUEST   R
+	, TASK_REQUEST_R TRR
+PLAN R
+	WHERE
+		R.REQUEST_NUMBER = 4250311; Request number from front end EDIT!
+JOIN TRR
+	WHERE
+		TRR.REQUEST_NUMBER = OUTERJOIN(R.REQUEST_NUMBER)
+
+WITH NOCOUNTER, SEPARATOR=" ", FORMAT, time = 10, maxrec = 10000
