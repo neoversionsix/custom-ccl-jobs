@@ -47,7 +47,7 @@ UPDATE INTO TRACKING_LOCATOR TL
 
 ; Audit after
 
-SELECT DISTINCT ; Patients stuck on tracking board tables
+SELECT ; Patients stuck on tracking board tables
     __TRACKING_ID__ = TC.TRACKING_ID
     , __DISCH_DT_TM__ = FORMAT(E.DISCH_DT_TM, "DD-MMM-YYYY HH:MM:SS")
     , __TRACKING_GROUP_CODE__ = TC.TRACKING_GROUP_CD
