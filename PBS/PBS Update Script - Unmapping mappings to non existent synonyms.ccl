@@ -1,0 +1,54 @@
+SELECT
+; RUN BEFORE MAKING CHANGES to see what will be changed
+	  P.PBS_OCS_MAPPING_ID
+    ; , COUNT(*)
+FROM
+	PBS_OCS_MAPPING     P
+WHERE
+    P.DRUG_SYNONYM_ID NOT IN (SELECT I.SYNONYM_ID FROM ORDER_CATALOG_SYNONYM I)
+WITH
+    TIME = 5
+; UPDATE SCRIPT FOR MAKING CHANGES
+; Notes: The update script is to unmap all PBS mappings to non existent synonyms
+
+
+
+SELECT
+; RUN AFTER MAKING CHANGES to see what was changed
+	  P.PBS_OCS_MAPPING_ID
+      , *
+      ; , COUNT(*)
+FROM
+	PBS_OCS_MAPPING     P
+WHERE
+    P.UPDT_ID = REQINFO->UPDT_ID
+    AND P.UPDT_DT_TM > cnvtlookbehind("1,H")
+    ;P.DRUG_SYNONYM_ID NOT IN (SELECT I.SYNONYM_ID FROM ORDER_CATALOG_SYNONYM I)
+WITH
+    TIME = 5
+
+
+
+; Notes: The update script is to unmap all PBS mappings to non existent synonyms
+;UPDATE SCRIPT TO REMOVE PBS MAPPINGS TO SYNONYMS THAT DO NOT EXIST */
+UPDATE INTO PBS_OCS_MAPPING P
+SET
+    ;End Date to 5 mins past midnight today
+    P.END_EFFECTIVE_DT_TM = CNVTDATETIME(CURDATE, 0005)
+    ;Set the drug ID to the dummy number
+    , P.PBS_DRUG_ID = 11111111
+    ; clear multum mapping (multum mappings are not used)
+    , P.DRUG_SYNONYM_ID = 0
+    ; Set the mapped Synonym to the dummy number
+    , P.SYNONYM_ID = 1111111
+    ; clear multum mapping
+    , P.MAIN_MULTUM_DRUG_CODE = 0
+    ; clear multum mapping
+    , P.DRUG_IDENTIFIER = "0"
+    ;Update trail edits below
+    , P.UPDT_ID = REQINFO->UPDT_ID
+    , P.UPDT_DT_TM = CNVTDATETIME(CURDATE,CURTIME3)
+WHERE
+    ; Unmap all rows with non existent synonym ids
+    P.DRUG_SYNONYM_ID NOT IN (SELECT I.SYNONYM_ID FROM ORDER_CATALOG_SYNONYM I)
+;--------------------------------------------------------------
