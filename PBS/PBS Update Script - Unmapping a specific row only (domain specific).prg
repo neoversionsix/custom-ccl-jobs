@@ -51,5 +51,5 @@ SET
     , P_O_M.UPDT_DT_TM = CNVTDATETIME(CURDATE,CURTIME3)
 WHERE
     /* Change Line below to select the PBS Drug ID to unmap */
-    P_O_M.PBS_OCS_MAPPING_ID IN (160429007, 160429285) ; $$$$$$$$$EDIT THIS LINE!!!!!!!!!!
+    P_O_M.PBS_OCS_MAPPING_ID IN (82230624.00) ; $$$$$$$$$EDIT THIS LINE!!!!!!!!!!
 /* -------------------------------------------------------------- */
