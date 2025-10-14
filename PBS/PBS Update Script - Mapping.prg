@@ -1,19 +1,17 @@
-/*
-This Script Is used for mapping a PBS Code to a Catalog Item
-It edits an unused line in the pbs_ocs_mapping table and switches the
-PBS_DRUG_ID and SYNONYM_ID to the ones that are now related
+;____________________________________________________________________________________________________________
+; This Script Is used for mapping a PBS Code to a Catalog Item
+; It edits an unused line in the pbs_ocs_mapping table and switches the
+; PBS_DRUG_ID and SYNONYM_ID to the ones that are now related
 
-Checker Script - recent updated lines
-select * from pbs_ocs_mapping where updt_dt_tm > cnvtlookbehind("1,H")
+; Checker Script - recent updated lines by you
+; select * from pbs_ocs_mapping where updt_dt_tm > cnvtlookbehind("1,H") and updt_id = reqinfo->updt_id
+;____________________________________________________________________________________________________________
 
-;and curdomain = "C2031"; used to only run in a domain. Add to end of query if required
- */
+;____________________________________________________________________________________________________________
+;  PBS update mapping script for:
+;  MAP_PBS_DRUG_ID_ = PBS_NAME_
+;  MAP_SYNONYM_ID_ = SYNONYM_NAME_
 
-
-
-
-;________________________________________________
-;  PBS mapping script for PBS_DRUG_ID: MAP_PBS_DRUG_ID_ and SYNONYM_ID: MAP_SYNONYM_ID_
 update into pbs_ocs_mapping P_O_M
 set
     P_O_M.beg_effective_dt_tm = cnvtdatetime(curdate, 0004)
@@ -44,4 +42,4 @@ where
         and synonym_id = MAP_SYNONYM_ID_ ; Swap With Synonym Id
         and end_effective_dt_tm > sysdate
     )
-;________________________________________________
+;____________________________________________________________________________________________________________
