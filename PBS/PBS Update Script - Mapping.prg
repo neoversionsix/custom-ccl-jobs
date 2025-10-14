@@ -9,37 +9,37 @@
 
 ;____________________________________________________________________________________________________________
 ;  PBS update mapping script for:
-;  MAP_PBS_DRUG_ID_ = PBS_NAME_
-;  MAP_SYNONYM_ID_ = SYNONYM_NAME_
+;  PBS_DRUG_ID = MAP_PBS_DRUG_ID_
+;  SYNONYM_ID = MAP_SYNONYM_ID_
 
-update into pbs_ocs_mapping P_O_M
-set
-    P_O_M.beg_effective_dt_tm = cnvtdatetime(curdate, 0004)
-    ; Above line sets the activation time to today at 12:04 am, used to identify this type of update
-    , P_O_M.end_effective_dt_tm = cnvtdatetime("31-DEC-2100")
+UPDATE INTO PBS_OCS_MAPPING P_O_M
+SET
+    P_O_M.BEG_EFFECTIVE_DT_TM = CNVTDATETIME(CURDATE, 0004)
+    ; ABOVE LINE SETS THE ACTIVATION TIME TO TODAY AT 12:04 AM, USED TO IDENTIFY THIS TYPE OF UPDATE
+    , P_O_M.END_EFFECTIVE_DT_TM = CNVTDATETIME("31-DEC-2100")
     /*CHANGE THE ROW BELOW MAP_PBS_DRUG_ID_*/
-    , P_O_M.pbs_drug_id = MAP_PBS_DRUG_ID_ ; Swap With Pbs Drug Id that maps to the synonym id
+    , P_O_M.PBS_DRUG_ID = MAP_PBS_DRUG_ID_ ; SWAP WITH PBS DRUG ID THAT MAPS TO THE SYNONYM ID
     /*CHANGE THE ROW BELOW MAP_SYNONYM_ID_*/
-    , P_O_M.synonym_id = MAP_SYNONYM_ID_ ; Swap With Synonym Id that maps to the pbs_drug_id
-    , P_O_M.drug_synonym_id = 0 ; clear multum mapping (multum mappings are not used)
-    , P_O_M.main_multum_drug_code = 0 ; clear multum mapping
-    , P_O_M.drug_identifier = "0" ; clear multum mapping
-    , P_O_M.updt_dt_tm = cnvtdatetime(curdate,curtime3)
-    , P_O_M.updt_id = reqinfo->updt_id
-    , P_O_M.updt_cnt = P_O_M.updt_cnt + 1
-where
-    ;Update the next unused row
-    P_O_M.pbs_ocs_mapping_id =
-    (select min(pbs_ocs_mapping_id) from pbs_ocs_mapping where end_effective_dt_tm < sysdate)
-    ; Only Update if the item is NOT already mapped
-    and not exists
+    , P_O_M.SYNONYM_ID = MAP_SYNONYM_ID_ ; SWAP WITH SYNONYM ID THAT MAPS TO THE PBS_DRUG_ID
+    , P_O_M.DRUG_SYNONYM_ID = 0 ; CLEAR MULTUM MAPPING (MULTUM MAPPINGS ARE NOT USED)
+    , P_O_M.MAIN_MULTUM_DRUG_CODE = 0 ; CLEAR MULTUM MAPPING
+    , P_O_M.DRUG_IDENTIFIER = "0" ; CLEAR MULTUM MAPPING
+    , P_O_M.UPDT_DT_TM = CNVTDATETIME(CURDATE,CURTIME3)
+    , P_O_M.UPDT_ID = REQINFO->UPDT_ID
+    , P_O_M.UPDT_CNT = P_O_M.UPDT_CNT + 1
+WHERE
+    ;UPDATE THE NEXT UNUSED ROW
+    P_O_M.PBS_OCS_MAPPING_ID =
+    (SELECT MIN(PBS_OCS_MAPPING_ID) FROM PBS_OCS_MAPPING WHERE END_EFFECTIVE_DT_TM < SYSDATE)
+    ; ONLY UPDATE IF THE ITEM IS NOT ALREADY MAPPED
+    AND NOT EXISTS
     (
-        select 1
-        from pbs_ocs_mapping
+        SELECT 1
+        FROM PBS_OCS_MAPPING
         /*CHANGE THE ROW BELOW MAP_PBS_DRUG_ID_*/
-        where pbs_drug_id = MAP_PBS_DRUG_ID_ ; Swap With Pbs Drug Id
+        WHERE PBS_DRUG_ID = MAP_PBS_DRUG_ID_ ; SWAP WITH PBS DRUG ID
         /*CHANGE THE ROW BELOW MAP_SYNONYM_ID_*/
-        and synonym_id = MAP_SYNONYM_ID_ ; Swap With Synonym Id
-        and end_effective_dt_tm > sysdate
+        AND SYNONYM_ID = MAP_SYNONYM_ID_ ; SWAP WITH SYNONYM ID
+        AND END_EFFECTIVE_DT_TM > SYSDATE
     )
 ;____________________________________________________________________________________________________________
