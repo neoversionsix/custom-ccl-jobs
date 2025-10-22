@@ -13,6 +13,7 @@ SELECT
 	, O_CATALOG_TYPE_DISP = UAR_GET_CODE_DISPLAY(OCS.CATALOG_TYPE_CD)
 	, OCS.CKI
 	, O_C.OE_FORMAT_ID
+	, EXTRACT_META = concat( trim(curdomain) ,' (', format(sysdate,"yyyymmdd hhmm;3;q"), ")" )
 
 FROM
 	ORDER_CATALOG_SYNONYM   OCS
